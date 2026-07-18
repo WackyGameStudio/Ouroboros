@@ -25,9 +25,9 @@ namespace Ouroboros.Tests.PlayMode
             yield return SceneManager.LoadSceneAsync("20_Game", LoadSceneMode.Single);
             yield return null;
 
-            var session = Object.FindFirstObjectByType<OSGameSessionController>();
-            var router = Object.FindFirstObjectByType<OSInputRouter>();
-            var presenter = Object.FindFirstObjectByType<OSSessionStatePresenter>();
+            var session = Object.FindAnyObjectByType<OSGameSessionController>();
+            var router = Object.FindAnyObjectByType<OSInputRouter>();
+            var presenter = Object.FindAnyObjectByType<OSSessionStatePresenter>();
             var canvas = GameObject.Find("Canvas");
             var bodyPanel = canvas?.transform.Find("BodyRoleSelectionPanel")?.gameObject;
             var levelPanel = canvas?.transform.Find("LevelUpPanel")?.gameObject;

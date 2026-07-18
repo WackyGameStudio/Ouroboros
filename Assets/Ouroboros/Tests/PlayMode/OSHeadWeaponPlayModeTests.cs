@@ -13,10 +13,12 @@ namespace Ouroboros.Tests.PlayMode
             public GameObject Root;
             public GameObject EnemyPrefabObject;
             public GameObject ProjectilePrefabObject;
+            public GameObject BodySegmentPrefabObject;
             public GameObject WeaponObject;
             public OSPoolRegistry Pool;
             public OSEnemyRegistry Registry;
             public OSHeadWeapon Weapon;
+            public OSBodyChain BodyChain;
         }
 
         private TestRig _rig;
@@ -33,6 +35,7 @@ namespace Ouroboros.Tests.PlayMode
             DestroyImmediate(_rig.Root);
             DestroyImmediate(_rig.EnemyPrefabObject);
             DestroyImmediate(_rig.ProjectilePrefabObject);
+            DestroyImmediate(_rig.BodySegmentPrefabObject);
             DestroyImmediate(_rig.WeaponObject);
             _rig = null;
         }
@@ -182,10 +185,32 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(_rig.Pool.GetActiveCount("head_projectile"), Is.Zero);
         }
 
+        [TestCase(4, 11.6f, 1)]
+        [TestCase(5, 12f, 2)]
+        [TestCase(10, 14f, 3)]
+        public void BodyLength_UpdatesHeadDamageAndAuxiliaryProjectileCount(
+            int bodyCount,
+            float expectedDamage,
+            int expectedProjectileCount)
+        {
+            _rig = CreateRig(
+                enemyCapacity: 1,
+                projectileCapacity: expectedProjectileCount,
+                bodyCount: bodyCount);
+            RentEnemy(_rig, Vector2.right * 3f);
+
+            Assert.That(_rig.Weapon.Damage, Is.EqualTo(expectedDamage).Within(0.0001f));
+            Assert.That(_rig.Weapon.ProjectileCountPerVolley, Is.EqualTo(expectedProjectileCount));
+            Assert.That(_rig.Weapon.TryFireNow(), Is.True);
+            Assert.That(_rig.Weapon.LastVolleyProjectileCount, Is.EqualTo(expectedProjectileCount));
+            Assert.That(_rig.Weapon.ShotsFired, Is.EqualTo(expectedProjectileCount));
+        }
+
         private static TestRig CreateRig(
             int enemyCapacity,
             int projectileCapacity,
-            int projectilePierce = 0)
+            int projectilePierce = 0,
+            int bodyCount = 0)
         {
             var rig = new TestRig
             {
@@ -202,6 +227,11 @@ namespace Ouroboros.Tests.PlayMode
                     typeof(Rigidbody2D),
                     typeof(CircleCollider2D),
                     typeof(OSProjectile)),
+                BodySegmentPrefabObject = new GameObject(
+                    "Step08BodySegmentPrefab",
+                    typeof(SpriteRenderer),
+                    typeof(CircleCollider2D),
+                    typeof(OSBodySegmentView)),
                 WeaponObject = new GameObject("Step07Weapon", typeof(OSHeadWeapon))
             };
 
@@ -236,13 +266,26 @@ namespace Ouroboros.Tests.PlayMode
                 new OSPoolPrewarmEntry("enemy_chaser", enemyPrefab, enemyCapacity),
                 new OSPoolPrewarmEntry("head_projectile", projectilePrefab, projectileCapacity));
 
+            rig.BodySegmentPrefabObject.SetActive(false);
+            var chainObject = new GameObject("BodyChain", typeof(OSBodyChain));
+            chainObject.transform.SetParent(rig.Root.transform, false);
+            var segmentPool = new GameObject("BodySegmentPool").transform;
+            segmentPool.SetParent(rig.Root.transform, false);
+            rig.BodyChain = chainObject.GetComponent<OSBodyChain>();
+            rig.BodyChain.ConfigureForTesting(
+                rig.WeaponObject.transform,
+                rig.BodySegmentPrefabObject.GetComponent<OSBodySegmentView>(),
+                segmentPool);
+            Assert.That(rig.BodyChain.SetDebugSegmentCount(bodyCount).IsAccepted, Is.True);
+
             rig.Weapon = rig.WeaponObject.GetComponent<OSHeadWeapon>();
             rig.Weapon.ConfigureForTesting(
                 rig.Pool,
                 rig.Registry,
                 null,
                 rig.WeaponObject.transform,
-                projectilePierce: projectilePierce);
+                projectilePierce: projectilePierce,
+                chain: rig.BodyChain);
             return rig;
         }
 

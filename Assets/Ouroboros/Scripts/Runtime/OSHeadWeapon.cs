@@ -34,8 +34,12 @@ namespace Ouroboros.Runtime
         private const float DefaultDamage = 10f;
         private const float DefaultFireInterval = 0.5f;
         private const float DefaultRange = 6f;
+        private const float DefaultBodyDamageRate = 0.04f;
+        private const float AuxiliaryAngleStep = 4f;
 
         [SerializeField] private OSPlayerBalanceData playerBalance;
+        [SerializeField] private OSBodyBalanceData bodyBalance;
+        [SerializeField] private OSBodyChain bodyChain;
         [SerializeField] private OSPoolRegistry poolRegistry;
         [SerializeField] private OSEnemyRegistry enemyRegistry;
         [SerializeField] private OSGameSessionController sessionController;
@@ -47,6 +51,7 @@ namespace Ouroboros.Runtime
         private float _damage = DefaultDamage;
         private float _fireInterval = DefaultFireInterval;
         private float _range = DefaultRange;
+        private float _bodyDamageRate = DefaultBodyDamageRate;
         private float _cooldown;
         private int _currentTargetRuntimeId;
         private bool _subscribed;
@@ -55,11 +60,13 @@ namespace Ouroboros.Runtime
         public event Action<OSDamageEvent> HitConfirmed;
 
         public float Cooldown => _cooldown;
-        public float Damage => _damage;
+        public float Damage => CalculateVolleyDamage();
         public float FireInterval => _fireInterval;
         public float Range => _range;
         public int Pierce => pierce;
         public int CurrentTargetRuntimeId => _currentTargetRuntimeId;
+        public int ProjectileCountPerVolley => 1 + ((bodyChain != null ? bodyChain.ActiveCount : 0) / 5);
+        public int LastVolleyProjectileCount { get; private set; }
         public int ShotsFired { get; private set; }
         public int HitsConfirmed { get; private set; }
         public int DefeatsConfirmed { get; private set; }
@@ -90,7 +97,9 @@ namespace Ouroboros.Runtime
             OSPoolRegistry pool,
             OSEnemyRegistry registry,
             OSGameSessionController session,
-            Transform muzzle)
+            Transform muzzle,
+            OSBodyChain chain = null,
+            OSBodyBalanceData bodyData = null)
         {
             Unsubscribe();
             playerBalance = balance;
@@ -98,6 +107,8 @@ namespace Ouroboros.Runtime
             enemyRegistry = registry;
             sessionController = session;
             firePoint = muzzle != null ? muzzle : transform;
+            bodyChain = chain;
+            bodyBalance = bodyData;
             ResolveDefinition();
             Subscribe();
         }
@@ -110,7 +121,9 @@ namespace Ouroboros.Runtime
             float damage = DefaultDamage,
             float fireInterval = DefaultFireInterval,
             float range = DefaultRange,
-            int projectilePierce = 0)
+            int projectilePierce = 0,
+            OSBodyChain chain = null,
+            float bodyDamageRate = DefaultBodyDamageRate)
         {
             Unsubscribe();
             playerBalance = null;
@@ -118,9 +131,12 @@ namespace Ouroboros.Runtime
             enemyRegistry = registry;
             sessionController = session;
             firePoint = muzzle != null ? muzzle : transform;
+            bodyChain = chain;
+            bodyBalance = null;
             _damage = Mathf.Max(0.01f, damage);
             _fireInterval = Mathf.Max(0.01f, fireInterval);
             _range = Mathf.Max(0.01f, range);
+            _bodyDamageRate = Mathf.Max(0f, bodyDamageRate);
             pierce = Mathf.Max(0, projectilePierce);
             ResetWeaponState(returnProjectiles: false);
             Subscribe();
@@ -161,44 +177,30 @@ namespace Ouroboros.Runtime
                 direction = Vector2.right;
             }
 
-            var rentResult = poolRegistry.Rent(
-                projectilePoolKey,
-                firePoint.position,
-                Quaternion.identity);
-            if (!rentResult.IsAccepted || rentResult.Payload is not OSProjectile projectile)
+            var projectileCount = ProjectileCountPerVolley;
+            var damage = CalculateVolleyDamage();
+            var firedCount = 0;
+            for (var index = 0; index < projectileCount; index++)
             {
-                return false;
+                var angleOffset = (index - ((projectileCount - 1) * 0.5f)) * AuxiliaryAngleStep;
+                var shotDirection = Quaternion.Euler(0f, 0f, angleOffset) * direction;
+                if (!TryLaunchProjectile(target, origin, shotDirection, damage))
+                {
+                    break;
+                }
+
+                firedCount++;
             }
 
-            var idResult = poolRegistry.NextAttackEventId();
-            if (!idResult.IsAccepted)
+            if (firedCount <= 0)
             {
-                projectile.ReturnToPool();
-                return false;
-            }
-
-            var launchResult = projectile.Launch(
-                idResult.Payload,
-                sourceRuntimeId,
-                direction,
-                _damage,
-                _range,
-                pierce,
-                this);
-            if (!launchResult.IsAccepted)
-            {
-                projectile.ReturnToPool();
+                LastVolleyProjectileCount = 0;
                 return false;
             }
 
             _cooldown = _fireInterval;
-            ShotsFired++;
-            Fired?.Invoke(new OSHeadFireFeedback(
-                idResult.Payload,
-                projectile.RuntimeId,
-                target.RuntimeId,
-                origin,
-                direction.normalized));
+            LastVolleyProjectileCount = firedCount;
+            ShotsFired += firedCount;
             return true;
         }
 
@@ -223,6 +225,58 @@ namespace Ouroboros.Runtime
             _damage = playerBalance.HeadDamage;
             _fireInterval = playerBalance.HeadFireInterval;
             _range = playerBalance.HeadRange;
+            _bodyDamageRate = bodyBalance != null ? bodyBalance.BodyDamageRate : DefaultBodyDamageRate;
+        }
+
+        private bool TryLaunchProjectile(
+            OSEnemyController target,
+            Vector2 origin,
+            Vector2 direction,
+            float damage)
+        {
+            var rentResult = poolRegistry.Rent(
+                projectilePoolKey,
+                firePoint.position,
+                Quaternion.identity);
+            if (!rentResult.IsAccepted || rentResult.Payload is not OSProjectile projectile)
+            {
+                return false;
+            }
+
+            var idResult = poolRegistry.NextAttackEventId();
+            if (!idResult.IsAccepted)
+            {
+                projectile.ReturnToPool();
+                return false;
+            }
+
+            var launchResult = projectile.Launch(
+                idResult.Payload,
+                sourceRuntimeId,
+                direction,
+                damage,
+                _range,
+                pierce,
+                this);
+            if (!launchResult.IsAccepted)
+            {
+                projectile.ReturnToPool();
+                return false;
+            }
+
+            Fired?.Invoke(new OSHeadFireFeedback(
+                idResult.Payload,
+                projectile.RuntimeId,
+                target.RuntimeId,
+                origin,
+                direction.normalized));
+            return true;
+        }
+
+        private float CalculateVolleyDamage()
+        {
+            var length = bodyChain != null ? bodyChain.ActiveCount : 0;
+            return _damage * (1f + (length * _bodyDamageRate));
         }
 
         private void Subscribe()
@@ -271,6 +325,7 @@ namespace Ouroboros.Runtime
             ShotsFired = 0;
             HitsConfirmed = 0;
             DefeatsConfirmed = 0;
+            LastVolleyProjectileCount = 0;
         }
 
         private void OnValidate()

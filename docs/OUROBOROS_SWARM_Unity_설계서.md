@@ -969,6 +969,8 @@ public enum OSSessionState
 | `OSPlayerController` | MonoBehaviour | 머리 이동, 장애물 Cast, 마지막 방향 |
 | `OSPlayerHealth` | MonoBehaviour | `OSSessionRuntimeState`의 HP에 회복·피격/폭발 무적 규칙을 적용하고 사망 요청 |
 | `OSHeadWeapon` | MonoBehaviour | 머리 표적, 발사 주기, 길이 배율과 보조탄 |
+| `OSBodyGrowthProgress` | 순수 C# | 조각 진행도, 다중 생성 요청, 활성+대기 64 기술 가드와 보류 상태 계산 |
+| `OSBodyGrowthController` | MonoBehaviour | 조각 수집을 Body 선택 요청으로 변환하고 역할 확정·꼬리 추가·보류 재개를 연결 |
 | `OSBodyChain` | MonoBehaviour | 경로 버퍼, 세그먼트 순서, 생성·절단·예약·소비 |
 | `OSBodySegmentView` | MonoBehaviour | 세그먼트 Transform, 역할 시각, Hurtbox ID 전달 |
 | `OSShieldBodyRole` | MonoBehaviour | 실드 등록·범위·충전·재충전·방어 |
@@ -986,6 +988,7 @@ public enum OSSessionState
 | `OSWaveDirector` | MonoBehaviour | 시간대별 스폰 티켓, 조합, 정예·보스 등장, 상한 |
 | `OSProjectile` | MonoBehaviour | 이동, 수명, 페이로드, 고유 적 중복 명중 방지 |
 | `OSPickup` | MonoBehaviour | 타입·수량, 자석 이동, 수집 후보 등록 |
+| `OSPickupCollector` | MonoBehaviour | 머리 전용 Trigger에서 픽업 수집을 확정 |
 | `OSPickupSpawner` | MonoBehaviour | 드롭 병합, 풀 대여, 총량 보존 |
 | `OSPoolRegistry` | MonoBehaviour | 종류별 사전 생성, Rent/Return, 활성 상한 |
 
@@ -994,6 +997,7 @@ public enum OSSessionState
 | 클래스 | 형태 | 단일 책임 |
 | --- | --- | --- |
 | `OSCombatHud` | MonoBehaviour | 확정 이벤트를 표시 모델에 반영하고 프레임 말 1회 갱신 |
+| `OSBodyGrowthPresenter` | MonoBehaviour | 몸통 수·역할별 보유 수·조각 진행도를 HUD에 표시 |
 | `OSBodyRoleSelectionPanel` | MonoBehaviour | 고정 4택 표시와 요청 1회 확정 |
 | `OSLevelUpPanel` | MonoBehaviour | 후보 3개 표시와 업그레이드 1회 확정 |
 | `OSTutorialController` | MonoBehaviour | 조건 기반 첫 세션 안내 |

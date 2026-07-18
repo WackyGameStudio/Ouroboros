@@ -583,6 +583,14 @@ OSBodySegmentView
 
 적 처치에서 몸통 성장 선택까지의 축적 루프를 연결한다.
 
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-18
+- 완료: `OSPickup`·`OSPickupSpawner`·머리 전용 `OSPickupCollector`를 추가하고 `enemy_chaser` 사망 시 정의된 확률·수량으로 몸통 조각을 드롭하도록 연결했다. 같은 종류 픽업은 1.5 반경에서 amount를 병합하고, 256개 풀이 포화되면 가장 가까운 같은 종류 픽업에 총량을 보존하며, 선택 중에는 자석 이동과 수집을 멈춘다. 순수 C# `OSBodyGrowthProgress`와 `OSBodyGrowthController`가 조각 12 경계, 한 번에 여러 요청, 활성+대기 64 기술 가드, 공간 발생 후 보류 요청 1건 재개를 소유한다. `OSBodyRoleSelectionPanel`은 Shield/Attack/Laser/Control 고정 4장을 같은 순서로 표시하고 요청마다 정확히 한 번만 확정하며, 선택한 역할을 `OSBodyChain.AppendSegment`로 꼬리에 추가한다. 시작 역할 요청 2건도 같은 경로를 사용한다. `OSHeadWeapon`에는 `base × runtime multiplier × (1 + L × 0.04)` 피해와 `1 + floor(L / 5)`발, 4도 간격 보조탄을 연결했다. `20_Game.unity`, `PF_Pickup_BodyFragment.prefab`, Pickup/PickupCollector 레이어와 풀 항목을 구성했고 재적용 메뉴는 `Ouroboros/Setup/Apply Step 08 Body Growth`이다.
+- 남음: 없음. Step 09 피격·HP·몸통 절단 구현을 시작할 수 있다.
+- 검증: Unity 6000.5.1f1 컴파일 및 최종 Console Error/Exception/Warning 0. EditMode 전체 27/27, `Ouroboros.Tests.PlayMode` 전체 42/42 통과. 11/12·23/24 경계, Body 요청 직렬화, 동일 프레임 중복 확정 방지, 고정 카드 4개, 64 보류·꼬리 제거 후 재개, 근접/풀 포화 병합 총량, 선택 중 수집 정지, L=4/5/10 피해·보조탄, 시작 2회 선택, 조각 선택 19회로 21칸 성장까지 자동 검증했다. 최종 증분 WebGL Development Build `Builds/Step08/WebGL/index.html` 성공(128.80 MiB, 12.15초, errors 0, warnings 0; 최초 전체 빌드 352.08초). `Tools/Serve-WebGL.ps1`로 `http://127.0.0.1:8089/`을 실행해 index/WASM HTTP 200, WASM MIME `application/wasm`, Canvas 960×540, MainMenu→고정 4역할 카드→Shield/Attack 두 선택→Combat, 실시간 `BODY 2 / S 1 / A 1` HUD, 자동 공격과 실제 처치 드롭 수집 후 `FRAGMENT 2/12` 증가를 확인했다. 브라우저 error/exception은 0건이며 WebGL에서 지원되지 않는 URP FSR 후처리 warning은 로드당 1건만 남았다. Windows 빌드는 WebGL 전용 반복 검증 규칙에 따라 실행하지 않았다.
+
 ### 선행 조건
 
 - Step 05 완료
@@ -609,20 +617,20 @@ OSBodySegmentView
 
 ### 픽업 병합
 
-- [ ] 같은 종류 근접 픽업 amount 병합
-- [ ] 풀 포화 시 가장 가까운 같은 종류에 값 보존
-- [ ] 선택 중 이동·수집 정지
+- [x] 같은 종류 근접 픽업 amount 병합
+- [x] 풀 포화 시 가장 가까운 같은 종류에 값 보존
+- [x] 선택 중 이동·수집 정지
 
 ### 테스트
 
-- [ ] 조각 11→요청 없음, 12→1건
-- [ ] 23→1건+11, 24→2건
-- [ ] Body 요청 여러 건 직렬 처리
-- [ ] 클릭·Submit 중복으로 세그먼트 2개 생성되지 않음
-- [ ] 역할 카드 4개가 정확히 한 번씩 표시
-- [ ] 활성+대기 64에서 요청 보류
-- [ ] 세그먼트 제거를 디버그 호출한 뒤 보류 요청 재개
-- [ ] L=4/5/10의 머리 피해·보조탄
+- [x] 조각 11→요청 없음, 12→1건
+- [x] 23→1건+11, 24→2건
+- [x] Body 요청 여러 건 직렬 처리
+- [x] 클릭·Submit 중복으로 세그먼트 2개 생성되지 않음
+- [x] 역할 카드 4개가 정확히 한 번씩 표시
+- [x] 활성+대기 64에서 요청 보류
+- [x] 세그먼트 제거를 디버그 호출한 뒤 보류 요청 재개
+- [x] L=4/5/10의 머리 피해·보조탄
 
 ### 완료 기준
 

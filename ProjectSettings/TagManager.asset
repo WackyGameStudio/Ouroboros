@@ -21,8 +21,8 @@ TagManager:
   - EnemyHurtbox
   - EnemyHitbox
   - PlayerProjectile
-  - 
-  - 
+  - Pickup
+  - PickupCollector
   - 
   - 
   - 

@@ -26,6 +26,12 @@ namespace Ouroboros.Runtime
         public float UiElapsedTime { get; private set; }
         public OSSelectionRequest? ActiveSelection => _activeSelection;
         public int PendingSelectionCount => _selectionQueue.Count;
+        public int PendingBodySelectionCount => _selectionQueue.BodyCount +
+                                                (_activeSelection.HasValue &&
+                                                 _activeSelection.Value.Kind is OSSelectionKind.StartBody or
+                                                     OSSelectionKind.BodyRole
+                                                    ? 1
+                                                    : 0);
         public bool IsSimulationRunning => State is OSSessionState.Combat or OSSessionState.ExplosionTelegraph;
         public bool IsPlayerInputAllowed => State is OSSessionState.Combat or OSSessionState.ExplosionTelegraph;
 
@@ -349,7 +355,7 @@ namespace Ouroboros.Runtime
 
         private void HandleSubmitRequested()
         {
-            if (IsSelectionState(State))
+            if (State == OSSessionState.LevelUpSelection)
             {
                 CompleteActiveSelection();
             }

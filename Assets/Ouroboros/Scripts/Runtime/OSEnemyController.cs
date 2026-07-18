@@ -28,6 +28,8 @@ namespace Ouroboros.Runtime
         [SerializeField, Min(0f)] private float moveSpeed = 2.1f;
         [SerializeField, Min(0f)] private float contactDamage = 8f;
         [SerializeField, Min(0.01f)] private float attackInterval = 1f;
+        [SerializeField, Min(0)] private int fragmentDropAmount = 1;
+        [SerializeField, Range(0f, 1f)] private float fragmentDropChance = 0.15f;
         [SerializeField] private bool controlAffectsMovement = true;
         [SerializeField] private bool controlAffectsAttack;
 
@@ -53,6 +55,8 @@ namespace Ouroboros.Runtime
         public float MoveSpeed => moveSpeed;
         public float ContactDamage => contactDamage;
         public float AttackInterval => attackInterval;
+        public int FragmentDropAmount => fragmentDropAmount;
+        public float FragmentDropChance => fragmentDropChance;
         public float AttackCooldown => _attackCooldown;
         public bool IsDeathConfirmed => _deathConfirmed;
         public bool HasContactTarget => _hasContact;
@@ -191,8 +195,16 @@ namespace Ouroboros.Runtime
             moveSpeed = Mathf.Max(0f, speed);
             contactDamage = Mathf.Max(0f, damage);
             attackInterval = Mathf.Max(0.01f, interval);
+            fragmentDropAmount = 0;
+            fragmentDropChance = 0f;
             encounterBalance = null;
             _definitionResolved = true;
+        }
+
+        internal void ConfigureDropForTesting(int amount, float chance)
+        {
+            fragmentDropAmount = Mathf.Max(0, amount);
+            fragmentDropChance = Mathf.Clamp01(chance);
         }
 
         protected override void OnRented()
@@ -330,6 +342,8 @@ namespace Ouroboros.Runtime
                 moveSpeed = definition.MoveSpeed;
                 contactDamage = definition.ContactDamage;
                 attackInterval = definition.AttackInterval;
+                fragmentDropAmount = definition.DropTable.FragmentAmount;
+                fragmentDropChance = definition.DropTable.FragmentChance;
                 controlAffectsMovement = definition.ControlAffectsMovement;
                 controlAffectsAttack = definition.ControlAffectsAttack;
                 _definitionResolved = true;
@@ -348,6 +362,8 @@ namespace Ouroboros.Runtime
             moveSpeed = Mathf.Max(0f, moveSpeed);
             contactDamage = Mathf.Max(0f, contactDamage);
             attackInterval = Mathf.Max(0.01f, attackInterval);
+            fragmentDropAmount = Mathf.Max(0, fragmentDropAmount);
+            fragmentDropChance = Mathf.Clamp01(fragmentDropChance);
         }
     }
 }

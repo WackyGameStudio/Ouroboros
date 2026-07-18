@@ -162,6 +162,50 @@ namespace Ouroboros.Runtime
             return OSRuleResult<int>.Accepted(ActiveCount, "body.debug_count.accepted");
         }
 
+        /// <summary>
+        /// Removes a requested number of tail segments in reverse order and reports the new count.
+        /// </summary>
+        public OSRuleResult<int> RemoveTailSegments(int removeCount)
+        {
+            if (removeCount <= 0 || removeCount > ActiveCount)
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedRequirement,
+                    "body.remove_tail.invalid_count",
+                    ActiveCount);
+            }
+
+            var newCount = ActiveCount - removeCount;
+            for (var index = ActiveCount - 1; index >= newCount; index--)
+            {
+                _poolViews[index]?.Deactivate();
+                _runtimeSlots[index]?.Deactivate();
+            }
+
+            ActiveCount = newCount;
+            ApplySegmentPoses();
+            SegmentCountChanged?.Invoke(ActiveCount);
+            ChainOrderChanged?.Invoke();
+            return OSRuleResult<int>.Accepted(ActiveCount, "body.remove_tail.accepted");
+        }
+
+        /// <summary>
+        /// Counts active segments assigned to one visual role.
+        /// </summary>
+        public int GetRoleCount(OSBodyRoleType role)
+        {
+            var count = 0;
+            for (var index = 0; index < ActiveCount; index++)
+            {
+                if (_runtimeSlots[index].Role == role)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         [ContextMenu("Debug/Set 2 Segments")]
         private void DebugSetTwoSegments()
         {

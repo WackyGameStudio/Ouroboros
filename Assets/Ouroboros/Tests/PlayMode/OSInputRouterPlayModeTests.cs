@@ -92,14 +92,17 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [Test]
-        public void UiSubmitWorksAtTimeScaleZeroAndRestartReturnsToCombatMap()
+        public void UiSubmitWorksAtTimeScaleZeroAndRestartPreservesRoleSelectionContract()
         {
             Assert.That(_session.BeginSession().IsAccepted, Is.True);
             Assert.That(Time.timeScale, Is.Zero);
             Assert.That(_router.CurrentMode, Is.EqualTo(OSInputMode.UI));
 
             Tap(_keyboard.enterKey);
-            Tap(_keyboard.enterKey);
+            Assert.That(_session.State, Is.EqualTo(OSSessionState.StartBodySelection),
+                "Generic Submit must not bypass the fixed body-role cards.");
+            Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
+            Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
             Assert.That(_session.State, Is.EqualTo(OSSessionState.Combat));
             Assert.That(Time.timeScale, Is.EqualTo(1f));
             Assert.That(_router.CurrentMode, Is.EqualTo(OSInputMode.Player));
@@ -111,7 +114,9 @@ namespace Ouroboros.Tests.PlayMode
             Tap(_keyboard.enterKey);
             Assert.That(_session.State, Is.EqualTo(OSSessionState.StartBodySelection));
             Tap(_keyboard.enterKey);
-            Tap(_keyboard.enterKey);
+            Assert.That(_session.State, Is.EqualTo(OSSessionState.StartBodySelection));
+            Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
+            Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
 
             Assert.That(_session.State, Is.EqualTo(OSSessionState.Combat));
             Assert.That(Time.timeScale, Is.EqualTo(1f));
