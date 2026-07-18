@@ -614,6 +614,7 @@ RequiredXP(next) = ceil(previous × 1.18)
 - 모든 공격은 안정 공격 이벤트 ID를 갖는다.
 - 적 사망은 한 번만 확정하고 드롭·풀 반환 이벤트를 중복 발행하지 않는다.
 - 화면 밖 적도 규칙상 존재하지만, 너무 멀어진 적은 스폰 디렉터가 안전 위치로 재배치하거나 풀 반환한다.
+- **[가설]** Step 10 G0의 웨이브 디렉터 이전 세로 슬라이스는 `enemy_chaser` 12개를 활성 유지하고 사망 후 1.5초 간격으로 보충하며 몸통 조각 드롭 확률을 25%로 둔다. Step 12에서 실제 웨이브 스케줄로 교체하되 조각 확률은 플레이테스트 결론 전까지 유지한다.
 
 ## 7.2 일반 적 4종 초기 가설
 
@@ -1000,6 +1001,7 @@ public enum OSSessionState
 | `OSCombatHud` | MonoBehaviour | 확정 이벤트를 표시 모델에 반영하고 프레임 말 1회 갱신 |
 | `OSPlayerHealthPresenter` | MonoBehaviour | 머리 HP·무적 시간과 머리 피해·몸통 절단 피드백을 HUD에 표시 |
 | `OSBodyGrowthPresenter` | MonoBehaviour | 몸통 수·역할별 보유 수·조각 진행도를 HUD에 표시 |
+| `OSExplosionPresenter` | MonoBehaviour | 예약 원·소비 예상 수·예고 시간·폭발 결과를 사전 생성 View로 표시 |
 | `OSBodyRoleSelectionPanel` | MonoBehaviour | 고정 4택 표시와 요청 1회 확정 |
 | `OSLevelUpPanel` | MonoBehaviour | 후보 3개 표시와 업그레이드 1회 확정 |
 | `OSTutorialController` | MonoBehaviour | 조건 기반 첫 세션 안내 |
@@ -1017,14 +1019,18 @@ flowchart LR
     Player --> Chain[OSBodyChain]
     Chain --> Roles[4 Role Managers]
     Chain --> Explosion[OSExplosionController]
+    Resolver --> Explosion
     Registry[OSEnemyRegistry] --> Head[OSHeadWeapon]
     Registry --> Roles
+    Registry --> Explosion
     Wave[OSWaveDirector] --> Pool[OSPoolRegistry]
     Pool --> Enemy[OSEnemyController]
     Enemy --> Resolver
     Pickup[OSPickup] --> Buffer
     Resolver --> Health[OSPlayerHealth]
     Resolver --> Chain
+    Explosion --> Health
+    Explosion --> Session
     Health --> Session
     Runtime[OSSessionRuntimeState] --> HUD[OSCombatHud]
     Health --> HealthHUD[OSPlayerHealthPresenter]

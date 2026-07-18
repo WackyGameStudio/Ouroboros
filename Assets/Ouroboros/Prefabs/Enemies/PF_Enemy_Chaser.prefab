@@ -397,5 +397,7 @@ MonoBehaviour:
   moveSpeed: 2.1
   contactDamage: 8
   attackInterval: 1
+  fragmentDropAmount: 1
+  fragmentDropChance: 0.15
   controlAffectsMovement: 1
   controlAffectsAttack: 0

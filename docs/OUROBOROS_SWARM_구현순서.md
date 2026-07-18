@@ -98,8 +98,8 @@ flowchart TD
 ### 구현 현황
 
 - 상태: 완료
-- 최근 갱신: 2026-07-17
-- 완료: 확정 규칙·가설·데이터 소유권·안정 ID·업그레이드 카탈로그·0~10분 웨이브·범위 등급을 `docs/RuleDecisionLog.md`, `docs/BalanceHypotheses.md`, `docs/AcceptanceCriteria.md`에 등록하고 두 기준 문서와 대조했다.
+- 최근 갱신: 2026-07-18
+- 완료: 확정 규칙·가설·데이터 소유권·안정 ID·업그레이드 카탈로그·0~10분 웨이브·범위 등급을 `docs/RuleDecisionLog.md`, `docs/BalanceHypotheses.md`, `docs/AcceptanceCriteria.md`에 등록하고 두 기준 문서와 대조했다. Step 10 G0 브라우저 관찰에서 초기 100개 추적체와 15% 조각 드롭으로 코어 루프 진입이 막히는 것을 확인해 `H-031`에 12개 유지 스폰·1.5초 보충·추적체 조각 25% 가설을 추가했다.
 - 남음: 없음. Step 01 프로젝트 기반 작업을 시작할 수 있다.
 - 검증: 문서 필수 항목, ID 중복, 금지된 과거 규칙, Markdown 구조를 정적 검사했다. 코드·에셋 변경이 없어 Unity 컴파일 및 테스트는 실행하지 않았다.
 
@@ -221,7 +221,7 @@ Scene 없이 테스트 가능한 값 타입, 결과 코드, SO, 런타임 복사
 
 - 상태: 완료
 - 최근 갱신: 2026-07-18
-- 완료: `Assets/Ouroboros/Scripts/Core/`에 필수 enum·readonly struct·`OSRuleResult<T>`·6종 SO·개별/교차 데이터 검증·`OSSessionRuntimeState` 독립 복사를 구현했다. 기본 데이터 에셋과 검증용 적 프리팹을 만들고 `00_Boot`의 `OSBootstrap`이 검증 실패를 `ConfigurationError`로 차단하도록 연결했다.
+- 완료: `Assets/Ouroboros/Scripts/Core/`에 필수 enum·readonly struct·`OSRuleResult<T>`·6종 SO·개별/교차 데이터 검증·`OSSessionRuntimeState` 독립 복사를 구현했다. 기본 데이터 에셋과 검증용 적 프리팹을 만들고 `00_Boot`의 `OSBootstrap`이 검증 실패를 `ConfigurationError`로 차단하도록 연결했다. Step 10 G0 가설에 맞춰 `enemy_chaser`의 몸통 조각 드롭 확률을 0.25로 조정하고 Step 02 재생성 코드에도 같은 값을 반영했다.
 - 남음: 없음. Step 03 세션 상태·입력·일시정지 구현을 시작할 수 있다.
 - 검증: Unity 컴파일 오류 0. `Ouroboros.Tests.EditMode` 13/13 통과(신규 데이터 검증 9건과 Step 01 회귀 4건), `Ouroboros.Tests.PlayMode` 2/2 통과(정상 Boot→MainMenu→Game 및 잘못된 설정 차단). null 프리팹, 중복 ID, 0 요구량, 음수 값, NaN/Infinity, 적격 업그레이드 3개 미만, SO 직렬화 불변, 런타임 상태 독립성을 자동 검증했다. Windows Development Build `Builds/Step02/WindowsPlayer/OuroborosSwarm.exe` 성공(errors 0, warnings 0), WebGL Development Build `Builds/Step02/WebGL/index.html` 성공(errors 0, IL2CPP의 TextMeshPro 대형 메서드 분리 정보성 메시지 3건) 후 Console Error 0을 재확인했다.
 
@@ -482,9 +482,9 @@ OSBodySegmentView
 
 - 상태: 완료
 - 최근 갱신: 2026-07-18
-- 완료: `OSPoolableBehaviour`와 `OSPoolRegistry`에 키별 고정 배열/스택 사전 생성, 안정 Runtime ID·공격 이벤트 ID, 명시적 Rent/Return, 용량 고갈 거부, 외부·중복 Return 검증을 구현했다. `OSEnemyRegistry`는 최대 200개의 활성 적을 swap-back 배열로 비할당 순회·조회하며, `OSEnemyController`는 Definition 기반 HP·추적 이동·단순 분리·제어·접촉 공격 주기·단일 사망 확정·32유닛 원거리 회수·풀 상태 초기화를 소유한다. `PF_Enemy_Chaser.prefab`에는 Kinematic Rigidbody2D, 분리된 `EnemyHurtbox`/`EnemyHitbox`, 접촉 릴레이와 앵커를 구성했다. `20_Game.unity`는 `enemy_chaser` 200개를 세션 전에 사전 생성하고 100개를 디버그 배치하며 `PlayerHeadHurtbox`와 적 전용 레이어 충돌 계약을 연결한다. 재적용 메뉴는 `Ouroboros/Setup/Apply Step 06 Enemy Foundation`이다.
+- 완료: `OSPoolableBehaviour`와 `OSPoolRegistry`에 키별 고정 배열/스택 사전 생성, 안정 Runtime ID·공격 이벤트 ID, 명시적 Rent/Return, 용량 고갈 거부, 외부·중복 Return 검증을 구현했다. `OSEnemyRegistry`는 최대 200개의 활성 적을 swap-back 배열로 비할당 순회·조회하며, `OSEnemyController`는 Definition 기반 HP·추적 이동·단순 분리·제어·접촉 공격 주기·단일 사망 확정·32유닛 원거리 회수·풀 상태 초기화를 소유한다. `PF_Enemy_Chaser.prefab`에는 Kinematic Rigidbody2D, 분리된 `EnemyHurtbox`/`EnemyHitbox`, 접촉 릴레이와 앵커를 구성했다. `20_Game.unity`는 `enemy_chaser` 200개를 세션 전에 사전 생성하고 G0 동안 12개를 활성 유지하며, 사망 후 1.5초 간격으로 카메라 바깥 고리에 보충한다. `PlayerHeadHurtbox`와 적 전용 레이어 충돌 계약을 연결했으며 재적용 메뉴는 `Ouroboros/Setup/Apply Step 06 Enemy Foundation`이다.
 - 남음: 없음. Step 07 머리 자동 공격·투사체 구현을 시작할 수 있다.
-- 검증: Unity 컴파일 및 Editor PlayMode Console Error/Exception 0. `Ouroboros.Tests.EditMode` 22/22, `Ouroboros.Tests.PlayMode` 25/25 통과(200회 Rent/Return 상태 초기화, 중복 Return, Registry swap-back/조회, 사망 1회, 접촉 공격 ID·주기, 선택 중 이동·공격 타이머 정지, 씬의 100 활성/200 사전 생성과 물리 충돌 계약). 180개 활성 적을 120틱 측정한 결과 284ms, managed allocation 0B였다. 첫 WebGL 시도는 단일 IL2CPP C 오브젝트의 진단문 없는 Emscripten 실패로 종료됐으나 동일 명령 개별 재실행 성공 후 재빌드가 `Builds/Step06/WebGL/index.html`로 성공했다(job `build-b36cedbdf5`, 128.72MB, errors 0, 정보성 warnings 3). `Tools/Serve-WebGL.ps1`로 `http://127.0.0.1:8066/`을 실행해 index/loader/WASM HTTP 200, WASM MIME `application/wasm`, Canvas 960×540, MainMenu→Game→두 선택→Combat 전환과 100개 추적 이동을 확인했다. 브라우저 error/exception은 0건이며 WebGL에서 지원되지 않는 URP FSR 후처리 warning 1건만 남았다. Windows 빌드는 WebGL 전용 반복 검증 규칙에 따라 실행하지 않았다.
+- 검증: Unity 6000.5.1f1 컴파일 및 최종 Console Error/Exception 0. Step 10 전체 회귀에서 EditMode 36/36, PlayMode 60/60을 통과했으며, 씬의 200개 사전 생성·12개 활성·사망 후 1.5초 보충과 기존 풀/Registry/물리 계약을 함께 검증했다. 180개 활성 적 120틱의 과거 성능 게이트 284ms·managed allocation 0B도 유지한다. 최종 Step 10 WebGL Canvas에서 12개 G0 배치, 자동 공격, HP/사망 경로와 브라우저 error 0건을 확인했다. Windows 빌드는 WebGL 전용 반복 검증 규칙에 따라 실행하지 않았다.
 
 ### 선행 조건
 
@@ -705,6 +705,14 @@ OSBodySegmentView
 
 게임의 핵심인 `축적 → 방출 → 약화 → 재성장`을 처음부터 끝까지 플레이 가능하게 한다.
 
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-18
+- 완료: `OSExplosionMath`와 `OSExplosionController`에 N≥4, `ceil(N×0.30)`, 꼬리 안정 ID·고정 위치 예약, 0.25초 예고, 예고 중 절단 예약 축소, 합집합 고유 적 `A×35` 1회 피해, 같은 원자 처리의 꼬리 소비, 0.4초 머리 무적과 Body 우선 선택 재개를 구현했다. 컨트롤러 실행 순서를 `OSPlayerCombatResolver` 뒤로 고정해 같은 물리 틱의 머리 피해·절단을 먼저 확정하며, A=0·사망·클리어는 무소비 취소한다. `OSExplosionPresenter`와 20개 사전 생성 `LineRenderer`가 예약 범위·예상 잔여 수·결과를 HUD에 표시하고, `20_Game.unity`와 Space 입력을 연결했다. G0 진입을 위해 디버그 추적체는 200개 풀 중 12개만 활성 유지하고 1.5초 간격으로 보충하며 `enemy_chaser` 조각 드롭 가설을 25%로 조정했다. 재적용 메뉴는 `Ouroboros/Setup/Apply Step 10 Encirclement Explosion`이다.
+- 남음: 없음. Step 11의 Shield/Attack/Laser/Control 실제 역할 효과를 시작할 수 있다.
+- 검증: Unity 6000.5.1f1 컴파일 및 최종 Console Error/Exception 0. EditMode 36/36, PlayMode 60/60 통과. `OSExplosionMathEditModeTests`, `OSExplosionControllerPlayModeTests`, `OSStep10ScenePlayModeTests`로 N=3 거부, 4/5/10/64 소비 수, 역할 무관 꼬리 예약, 재입력, 합집합 중복 피해 방지, 예고 중 일부/전체 절단, 이중 제거 방지, 선택·사망 우선순위와 `축적→절단→폭발→재성장→사망→재시작` G0 규칙 경로를 자동 검증했다. 최종 WebGL Development Build `Builds/Step10/WebGL/index.html` 성공(128.96 MiB, errors 0, warnings 5). `http://127.0.0.1:8100/`에서 index/WASM HTTP 200, WASM MIME `application/wasm`, MainMenu→시작 역할 2회→12개 추적체 Combat→HP 사망 화면과 브라우저 error 0건을 확인했다. Windows 빌드는 실행하지 않았다.
+
 ### 선행 조건
 
 - Step 08 몸통 생성
@@ -728,17 +736,17 @@ OSBodySegmentView
 
 ### 테스트
 
-- [ ] N=3 무소비 거부
-- [ ] 4→2, 5→2, 10→3, 64→20
-- [ ] 꼬리부터 역할 무관 예약
-- [ ] 예고 중 이동·자동 공격 유지
-- [ ] 예고 중 재입력 무시
-- [ ] 원 중첩 적 1회 피해
-- [ ] 예고 중 절단 후 A 감소
-- [ ] 예약 전체 절단 후 A=0 취소
-- [ ] 같은 세그먼트 절단+폭발 이중 제거 없음
-- [ ] 폭발 완료와 조각 수집 동시 → 폭발 후 선택
-- [ ] 폭발 완료와 사망 동시 → 사망 우선
+- [x] N=3 무소비 거부
+- [x] 4→2, 5→2, 10→3, 64→20
+- [x] 꼬리부터 역할 무관 예약
+- [x] 예고 중 이동·자동 공격 유지
+- [x] 예고 중 재입력 무시
+- [x] 원 중첩 적 1회 피해
+- [x] 예고 중 절단 후 A 감소
+- [x] 예약 전체 절단 후 A=0 취소
+- [x] 같은 세그먼트 절단+폭발 이중 제거 없음
+- [x] 폭발 완료와 조각 수집 동시 → 폭발 후 선택
+- [x] 폭발 완료와 사망 동시 → 사망 우선
 
 ### 코어 세로 슬라이스 게이트 G0
 

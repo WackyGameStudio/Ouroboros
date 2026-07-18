@@ -48,7 +48,7 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(weapon.ShotsFired, Is.GreaterThanOrEqualTo(2));
             Assert.That(weapon.HitsConfirmed, Is.GreaterThanOrEqualTo(2));
             Assert.That(weapon.DefeatsConfirmed, Is.GreaterThanOrEqualTo(1));
-            Assert.That(registry.Count, Is.LessThan(100));
+            Assert.That(registry.Count, Is.LessThan(12));
         }
     }
 }

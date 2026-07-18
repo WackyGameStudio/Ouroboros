@@ -127,6 +127,30 @@ namespace Ouroboros.Runtime
                     "body.remove_tail.chain_missing");
         }
 
+        public OSRuleResult<int> ResumeDeferredAfterCapacityChange()
+        {
+            if (sessionController == null || bodyChain == null ||
+                sessionController.State != OSSessionState.Combat || !Progress.HasDeferredRequest)
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedState,
+                    "body.deferred.resume.invalid_state",
+                    0);
+            }
+
+            var resume = Progress.TryResumeDeferred(
+                bodyChain.ActiveCount,
+                sessionController.PendingBodySelectionCount);
+            if (!resume.IsAccepted || resume.Payload <= 0)
+            {
+                return resume;
+            }
+
+            var queued = QueueBodyRequests(resume.Payload);
+            FragmentProgressChanged?.Invoke(FragmentProgress, FragmentRequirement);
+            return queued;
+        }
+
         internal void ConfigureForTesting(
             OSGameSessionController session,
             OSBodyChain chain,
@@ -231,14 +255,7 @@ namespace Ouroboros.Runtime
                 return;
             }
 
-            var resume = Progress.TryResumeDeferred(
-                bodyChain.ActiveCount,
-                sessionController.PendingBodySelectionCount);
-            if (resume.IsAccepted && resume.Payload > 0)
-            {
-                QueueBodyRequests(resume.Payload);
-                FragmentProgressChanged?.Invoke(FragmentProgress, FragmentRequirement);
-            }
+            ResumeDeferredAfterCapacityChange();
         }
 
         private void HandleSessionStateChanged(OSSessionState previous, OSSessionState current)

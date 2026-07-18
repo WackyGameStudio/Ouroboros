@@ -24,7 +24,7 @@ MonoBehaviour:
     dropTable:
       experienceAmount: 1
       fragmentAmount: 1
-      fragmentChance: 0.15
+      fragmentChance: 0.25
       healAmount: 10
       healChance: 0.02
     controlAffectsMovement: 1

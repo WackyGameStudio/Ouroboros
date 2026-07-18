@@ -46,7 +46,7 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(growth.ConfirmRole(OSBodyRoleType.Attack).IsAccepted, Is.True);
             Assert.That(session.State, Is.EqualTo(OSSessionState.Combat));
             Assert.That(chain.ActiveCount, Is.EqualTo(2));
-            Assert.That(registry.Count, Is.EqualTo(100));
+            Assert.That(registry.Count, Is.EqualTo(12));
 
             var enemy = registry.GetAt(0);
             var head = GameObject.Find("Head").transform;

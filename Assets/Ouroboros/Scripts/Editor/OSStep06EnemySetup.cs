@@ -222,12 +222,13 @@ namespace Ouroboros.Editor
                 Assign(spawner, "sessionController", session);
                 Assign(spawner, "target", head);
                 Assign(spawner, "poolKey", ChaserKey);
-                Assign(spawner, "initialEnemyCount", 100);
+                Assign(spawner, "initialEnemyCount", 12);
                 Assign(spawner, "minimumRadius", 6.5f);
                 Assign(spawner, "maximumRadius", 11.5f);
+                Assign(spawner, "replacementDelay", 1.5f);
 
                 var foundationLabel = RequireComponent<TMP_Text>(gameRoot.transform, "Canvas/FoundationLabel");
-                foundationLabel.text = "STEP 06 ENEMY POOL  |  ACTIVE 100 / PREWARM 200";
+                foundationLabel.text = "STEP 06 ENEMY POOL  |  ACTIVE 12 / PREWARM 200 / REPLACE 1.5s";
                 EditorUtility.SetDirty(foundationLabel);
 
                 EditorSceneManager.MarkSceneDirty(scene);

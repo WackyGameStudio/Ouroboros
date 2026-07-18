@@ -225,6 +225,40 @@ namespace Ouroboros.Runtime
             return OSRuleResult<int>.Accepted(ActiveCount, "body.remove_tail.accepted");
         }
 
+        internal bool AreReservedIdsCurrentTail(int[] reservedStableIds, int count)
+        {
+            if (reservedStableIds == null || count <= 0 || count > reservedStableIds.Length ||
+                count > ActiveCount)
+            {
+                return false;
+            }
+
+            var startIndex = ActiveCount - count;
+            for (var index = 0; index < count; index++)
+            {
+                if (_runtimeSlots[startIndex + index].StableId != reservedStableIds[index])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        internal OSRuleResult<int> ConsumeReservedTail(int[] reservedStableIds, int count)
+        {
+            if (!AreReservedIdsCurrentTail(reservedStableIds, count))
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.CancelledNoReservedSegment,
+                    "body.explosion.reservation_mismatch",
+                    ActiveCount);
+            }
+
+            var removal = RemoveFrom(ActiveCount - count, OSBodyRemovalCause.Explosion, Vector2.zero);
+            return OSRuleResult<int>.Accepted(removal.RemovedCount, "body.explosion.consume.accepted");
+        }
+
         /// <summary>
         /// Cuts the hit segment and every segment behind it. Removed stable IDs are published
         /// in their original head-to-tail order while pool deactivation runs tail-first.

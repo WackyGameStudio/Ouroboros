@@ -163,7 +163,7 @@ namespace Ouroboros.Editor
             var enemies = Require(serialized, "enemyDefinitions");
             enemies.arraySize = 5;
             ConfigureEnemy(enemies.GetArrayElementAtIndex(0), "enemy_chaser", OSEnemyArchetype.Chaser,
-                prefab, 18f, 2.1f, 8f, 1f, 64);
+                prefab, 18f, 2.1f, 8f, 1f, 64, 0.25f);
             ConfigureEnemy(enemies.GetArrayElementAtIndex(1), "enemy_charger", OSEnemyArchetype.Charger,
                 prefab, 42f, 1.6f, 14f, 1.5f, 32);
             ConfigureEnemy(enemies.GetArrayElementAtIndex(2), "enemy_shooter", OSEnemyArchetype.Shooter,
@@ -187,7 +187,8 @@ namespace Ouroboros.Editor
             float speed,
             float damage,
             float interval,
-            int capacity)
+            int capacity,
+            float fragmentChance = 0.15f)
         {
             property.FindPropertyRelative("id").stringValue = id;
             property.FindPropertyRelative("archetype").enumValueIndex = (int)archetype;
@@ -203,7 +204,7 @@ namespace Ouroboros.Editor
             var drop = property.FindPropertyRelative("dropTable");
             drop.FindPropertyRelative("experienceAmount").intValue = 1;
             drop.FindPropertyRelative("fragmentAmount").intValue = 1;
-            drop.FindPropertyRelative("fragmentChance").floatValue = 0.15f;
+            drop.FindPropertyRelative("fragmentChance").floatValue = fragmentChance;
             drop.FindPropertyRelative("healAmount").intValue = 10;
             drop.FindPropertyRelative("healChance").floatValue = 0.02f;
         }
