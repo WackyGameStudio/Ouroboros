@@ -710,7 +710,7 @@ OSBodySegmentView
 - 상태: 완료
 - 최근 갱신: 2026-07-18
 - 완료: `OSExplosionMath`와 `OSExplosionController`에 N≥4, `ceil(N×0.30)`, 꼬리 안정 ID·고정 위치 예약, 0.25초 예고, 예고 중 절단 예약 축소, 합집합 고유 적 `A×35` 1회 피해, 같은 원자 처리의 꼬리 소비, 0.4초 머리 무적과 Body 우선 선택 재개를 구현했다. 컨트롤러 실행 순서를 `OSPlayerCombatResolver` 뒤로 고정해 같은 물리 틱의 머리 피해·절단을 먼저 확정하며, A=0·사망·클리어는 무소비 취소한다. `OSExplosionPresenter`와 20개 사전 생성 `LineRenderer`가 예약 범위·예상 잔여 수·결과를 HUD에 표시하고, `20_Game.unity`와 Space 입력을 연결했다. G0 진입을 위해 디버그 추적체는 200개 풀 중 12개만 활성 유지하고 1.5초 간격으로 보충하며 `enemy_chaser` 조각 드롭 가설을 25%로 조정했다. 재적용 메뉴는 `Ouroboros/Setup/Apply Step 10 Encirclement Explosion`이다.
-- 남음: 없음. Step 11의 Shield/Attack/Laser/Control 실제 역할 효과까지 연결됐으며 다음 단계는 Step 12다.
+- 남음: 없음. Step 11 역할 효과와 Step 12 경험치·레벨업·업그레이드까지 연결됐으며 다음 단계는 Step 13이다.
 - 검증: Unity 6000.5.1f1 컴파일 및 최종 Console Error/Exception 0. EditMode 36/36, PlayMode 60/60 통과. `OSExplosionMathEditModeTests`, `OSExplosionControllerPlayModeTests`, `OSStep10ScenePlayModeTests`로 N=3 거부, 4/5/10/64 소비 수, 역할 무관 꼬리 예약, 재입력, 합집합 중복 피해 방지, 예고 중 일부/전체 절단, 이중 제거 방지, 선택·사망 우선순위와 `축적→절단→폭발→재성장→사망→재시작` G0 규칙 경로를 자동 검증했다. 최종 WebGL Development Build `Builds/Step10/WebGL/index.html` 성공(128.96 MiB, errors 0, warnings 5). `http://127.0.0.1:8100/`에서 index/WASM HTTP 200, WASM MIME `application/wasm`, MainMenu→시작 역할 2회→12개 추적체 Combat→HP 사망 화면과 브라우저 error 0건을 확인했다. Windows 빌드는 실행하지 않았다.
 
 ### 선행 조건
@@ -786,7 +786,7 @@ G0를 통과하기 전에는 적 종류, 보스, 실제 ComfyUI API를 늘리지
 - 상태: 완료
 - 최근 갱신: 2026-07-18
 - 완료: `OSBodyRoleRegistry`가 `OSBodyChain`의 추가·절단·폭발 소비 이벤트를 고정 배열 기반 역할별 런타임 목록으로 반영한다. Attack은 세그먼트별 최근접 표적·독립 주기와 기존 `head_projectile` 풀을 재사용하고, Laser는 발사 시점 시작점·방향 스냅샷과 0.2초 예고 뒤 고유 적 관통 판정을 적용한다. Control은 64개 사전 생성 `body_control_projectile` 풀에서 피해 0 제어탄을 발사해 일반 1초·정예/보스 0.5초의 이동/공격 정지를 큰 잔여 시간 기준으로 적용한다. Shield는 세그먼트별 1충전·반경 1.5·전투 시간 6초 재충전과 피격점 최근접/머리 쪽 동률 규칙으로 유효 머리·몸통 피격만 막는다. 역할 원본이 제거되면 신규 Attack/Control 발사, Laser 예고, Shield 상태는 즉시 폐기하고 이미 발사된 투사체만 독립적으로 끝까지 처리한다. 64개 Laser 예고선과 Shield 링을 사전 생성했고 `OSBodyRoleCombatPresenter`가 역할별 보유 수·발동 수·실드 충전을 HUD에 표시한다. `20_Game.unity`, `PF_ControlProjectile.prefab`, 풀 설정과 피해 Resolver 실드 연결을 완료했으며 재적용 메뉴는 `Ouroboros/Setup/Apply Step 11 Body Roles`다.
-- 남음: 없음. Step 12 경험치·레벨업·업그레이드를 시작할 수 있다.
+- 남음: 없음. Step 12 경험치·레벨업·업그레이드까지 완료됐으며 다음 단계는 Step 13이다.
 - 검증: Unity 6000.5.1f1 컴파일 및 최종 Console Error/Exception 0. EditMode 43/43, PlayMode 78/78 통과. `OSBodyRoleMathEditModeTests`, `OSBodyRolesPlayModeTests`, `OSStep11ScenePlayModeTests`로 역할 목록·안정 ID, Attack 독립 발사와 풀 포화, Laser 좌표·관통·다중 Collider·독립 피해·제거 취소, Control HP 불변·비합산·선택 정지·보스 캐스팅 유지, Shield 머리/몸통 방어·최근접/동률·유효하지 않은 피격 미소비·재충전·제거, 절단·폭발 후 역할과 길이 화력 감소를 자동 검증했다. 최종 WebGL Development Build `Builds/Step11/WebGL/index.html` 성공(129.07 MiB, errors 0, warnings 6). `http://127.0.0.1:8111/`에서 index/WASM HTTP 200, WASM MIME `application/wasm`, MainMenu→Laser/Shield 선택→Combat의 역할 HUD·실드 범위 표시와 브라우저 error 0건을 확인했다. Windows 빌드는 실행하지 않았다.
 
 ### 선행 조건
@@ -883,6 +883,14 @@ G0를 통과하기 전에는 적 종류, 보스, 실제 ComfyUI API를 늘리지
 
 로그라이트 런 빌드를 완성한다.
 
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-19
+- 완료: `OSExperienceProgress`가 요구량 15에서 시작해 이전 요구량의 ×1.18 올림과 초과 경험치 보존·다중 LevelUp 요청을 처리한다. `OSRunRandom`과 `OSUpgradeRunState`가 원본 `OSUpgradeCatalog`를 런타임 복사해 같은 런 시드의 결정적 순서, 후보 ID 고유성, 최대 단계 제외, 첫 3회 Firepower/Body/Survival 각 1개와 이후 단계 가중 추출을 적용한다. `OSLevelUpController`가 LevelUp 요청 ID별 1회 확정과 Body 우선 직렬화, 15종 강화 Modifier 재계산·런 초기화를 소유하며 머리 피해/주기/관통, 조각 요구량, 칸당 화력, 역할 주기, 폭발 범위·피해·소비율, HP·이동·회복, 자석·경험치, 정예 우선을 실제 전투 시스템에 연결했다. 경험치·몸통 조각·회복은 256개 사전 생성 픽업 풀을 타입별 병합·색상으로 공유하고 적 드롭 테이블의 경험치/회복 값을 사용한다. `OSLevelUpPanel`은 같은 높이의 3개 카드에 이름·계열·현재/다음 단계와 현재→적용 후 수치를 표시하며 일반 Submit으로 자동 확정하지 않는다. `OSLevelProgressPresenter`는 HUD 레벨/XP/강화 피드백과 결과 화면의 런 시드·강화명/단계를 기록한다. `20_Game.unity` 연결과 재적용 메뉴 `Ouroboros/Setup/Apply Step 12 Level Up And Upgrades`를 추가했다.
+- 남음: 없음. Step 13 일반 적 4종·웨이브·정예를 시작할 수 있다.
+- 검증: Unity 6000.5.1f1 컴파일 오류 및 프로젝트 코드 경고 0. `Ouroboros.Tests.EditMode` 49/49, `Ouroboros.Tests.PlayMode` 83/83 통과. 신규 `OSLevelUpCoreEditModeTests`, `OSLevelUpPlayModeTests`, `OSStep12ScenePlayModeTests`로 정확 경계·다중 레벨/초과분, 같은 시드 재현, 후보 고유/최대 단계 제외/초반 계열, 15개 연산과 SO 불변, 수치 하한·상한, Body 우선, 선택 중 시간 정지, 오래된 요청·중복 확정 거부, XP 픽업·결과 통계와 씬/UI 연결을 자동 검증했다. WebGL Development Build `Builds/Step12/WebGL/index.html` 성공(129.16 MiB, errors 0, warnings 3; TextMeshPro 대형 메서드 C++ 파일 분리 정보성 로그 3건). `http://127.0.0.1:8112/`에서 index/WASM HTTP 200, WASM MIME `application/wasm`, MainMenu→Shield/Attack 선택→Combat의 Level 1·XP 0/15·강화 0 HUD와 사망 결과의 Run Seed/Build 표시, 브라우저 error 0건을 확인했다. Windows 빌드는 실행하지 않았다.
+
 ### 선행 조건
 
 - Step 03 선택 큐
@@ -905,28 +913,28 @@ G0를 통과하기 전에는 적 종류, 보스, 실제 ComfyUI API를 늘리지
 
 ### 업그레이드 적용 순서
 
-- [ ] 머리 피해
-- [ ] 머리 발사 속도
-- [ ] 관통
-- [ ] 조각 요구량
-- [ ] 몸통 칸당 배율
-- [ ] 역할 과충전
-- [ ] 폭발 범위/피해/소비율
-- [ ] 최대 HP/이동/회복
-- [ ] 자석/경험치
-- [ ] 정예 우선
+- [x] 머리 피해
+- [x] 머리 발사 속도
+- [x] 관통
+- [x] 조각 요구량
+- [x] 몸통 칸당 배율
+- [x] 역할 과충전
+- [x] 폭발 범위/피해/소비율
+- [x] 최대 HP/이동/회복
+- [x] 자석/경험치
+- [x] 정예 우선
 
 ### 테스트
 
-- [ ] 후보 ID 3개 고유
-- [ ] 최대 단계 제외
-- [ ] 레벨 1~3 각 화면 공격/몸통/생존 1개
-- [ ] Body 요청과 동시이면 Body 전부 먼저
-- [ ] 선택 중 전투 완전 정지
-- [ ] 오래된 요청·중복 클릭 무부작용
-- [ ] 같은 시드에서 같은 후보 순서
-- [ ] SO 원본 단계 변경 없음
-- [ ] 수치 하한/상한: 발사 주기, 조각 요구량, 폭발 소비율
+- [x] 후보 ID 3개 고유
+- [x] 최대 단계 제외
+- [x] 레벨 1~3 각 화면 공격/몸통/생존 1개
+- [x] Body 요청과 동시이면 Body 전부 먼저
+- [x] 선택 중 전투 완전 정지
+- [x] 오래된 요청·중복 클릭 무부작용
+- [x] 같은 시드에서 같은 후보 순서
+- [x] SO 원본 단계 변경 없음
+- [x] 수치 하한/상한: 발사 주기, 조각 요구량, 폭발 소비율
 
 ### 완료 기준
 

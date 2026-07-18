@@ -48,6 +48,7 @@ namespace Ouroboros.Runtime
         private float _testRadius = -1f;
         private int _testCharges;
         private float _testRecharge = -1f;
+        private float _cooldownMultiplier = 1f;
 
         public event Action<OSShieldChargeEvent> ShieldConsumed;
         public event Action<OSShieldChargeEvent> ShieldRecharged;
@@ -229,6 +230,15 @@ namespace Ouroboros.Runtime
             return index >= 0 ? _rechargeRemaining[index] : -1f;
         }
 
+        public void ApplyUpgradeModifiers(OSUpgradeModifiers modifiers)
+        {
+            _cooldownMultiplier = Mathf.Clamp(modifiers.RoleCooldownMultiplier, 0.5f, 1f);
+            for (var index = 0; index < _stateCount; index++)
+            {
+                _rechargeRemaining[index] = Mathf.Min(_rechargeRemaining[index], EffectiveRecharge);
+            }
+        }
+
         private float EffectiveRadius => _testRadius >= 0f
             ? _testRadius
             : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Shield)?.Radius ?? DefaultRadius;
@@ -237,7 +247,10 @@ namespace Ouroboros.Runtime
             : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Shield)?.Charges ?? DefaultCharges;
         private float EffectiveRecharge => _testRecharge >= 0f
             ? _testRecharge
-            : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Shield)?.RechargeDuration ?? DefaultRecharge;
+            : Mathf.Max(
+                0.15f,
+                (bodyBalance?.GetRoleDefinition(OSBodyRoleType.Shield)?.RechargeDuration ?? DefaultRecharge) *
+                _cooldownMultiplier);
 
         private void SynchronizeStates()
         {

@@ -548,6 +548,8 @@ K = max(1, ceil(N × 0.30))
 4. 풀이 포화되면 가장 가까운 같은 종류 픽업에 거리를 무시하고 값을 합친다.
 5. 값은 보존하고 GameObject 수만 줄인다.
 
+Step 12 기준 경험치·몸통 조각·회복은 세션 전 256개를 만든 공용 `body_fragment_pickup` 풀을 사용한다. 풀 키는 구현 호환을 위해 유지하되 각 인스턴스는 `OSPickupType`으로 효과·병합 대상을 구분하고 경험치/조각/회복 색상을 다르게 표시한다.
+
 ## 6.3 경험치 요구량
 
 ```text
@@ -588,8 +590,9 @@ RequiredXP(next) = ceil(previous × 1.18)
 3. 레벨 1~3에서는 각 화면에 지속 화력, 몸통, 생존 계열을 각각 1개씩 배치한다.
 4. 레벨 4 이후에는 계열별 기본 가중치와 현재 보유 단계에 따라 추출한다.
 5. 같은 계열을 이미 많이 선택했더라도 완전히 배제하지 않는다.
-6. 후보 생성과 확정에는 세션 전용 `System.Random`을 사용하고 시드를 결과에 기록한다.
-7. 후보가 3개 미만이면 설정 오류로 처리한다. P0에서는 리롤·대체 보상을 만들지 않는다.
+6. 후보 생성과 확정에는 런 시작 시 확정된 `OSRunRandom`(`System.Random`)만 사용한다. 같은 시드와 같은 선택 이력은 같은 후보 순서를 만들며 시드는 결과에 기록한다.
+7. 후보와 단계는 `OSUpgradeCatalog` 원본을 수정하지 않는 런타임 복사본에서 계산한다.
+8. 후보가 3개 미만이면 설정 오류로 처리한다. P0에서는 리롤·대체 보상을 만들지 않는다.
 
 ## 6.5 빌드 방향
 
@@ -958,11 +961,14 @@ public enum OSSessionState
 | --- | --- | --- |
 | `OSGameSessionController` | MonoBehaviour | 세션 상태, 시간, 사망/클리어, 재시작을 확정 |
 | `OSInputRouter` | MonoBehaviour | Input Action 구독과 Player/UI Map 전환, 입력 버퍼 제거 |
-| `OSSessionRuntimeState` | 순수 C# | HP, 레벨, 경험치, 조각, 업그레이드 단계, 통계 등 세션 가변값 소유 |
+| `OSSessionRuntimeState` | 순수 C# | 검증된 SO의 플레이어·몸통·적·웨이브·업그레이드 정의를 원본과 독립된 세션 복사본으로 제공 |
 | `OSCombatEventBuffer` | 순수 C# | 한 물리 틱의 전투 후보 수집·중복 제거·결정 정렬. Step 09에서는 적대 피해 배치를 우선 제공 |
 | `OSPlayerCombatResolver` | MonoBehaviour | 적대 피해 배치를 머리 우선으로 처리하고, 유효 피격의 실드 방어와 생존 시 머리에 가장 가까운 몸통 절단 후보 1건을 확정 |
 | `OSSelectionQueue` | 순수 C# | Body 요청과 LevelUp 요청을 Body 우선으로 직렬화 |
 | `OSRunRandom` | 순수 C# | 세션 시드와 규칙용 난수 제공 |
+| `OSExperienceProgress` | 순수 C# | 레벨·현재 경험치·다음 요구량과 초과분 보존·다중 레벨 계산 |
+| `OSUpgradeRunState` | 순수 C# | 카탈로그 런타임 복사, 업그레이드 단계·적격 3택·최종 Modifier 계산 |
+| `OSLevelUpController` | MonoBehaviour | 경험치를 LevelUp 요청으로 변환하고 후보 요청 ID별 1회 확정·Modifier 배포·런 결과를 소유 |
 
 ### 플레이어·몸통
 
@@ -986,14 +992,14 @@ public enum OSSessionState
 
 | 클래스 | 형태 | 단일 책임 |
 | --- | --- | --- |
-| `OSEnemyRegistry` | MonoBehaviour | 활성 적의 비할당 목록과 안정 ID 조회 |
+| `OSEnemyRegistry` | MonoBehaviour | 활성 적의 비할당 목록과 안정 ID 조회, 머리 강화 시 정예·보스 우선 표적군 제공 |
 | `OSEnemyController` | MonoBehaviour | 적 한 개의 이동·공격·피격·제어·사망 |
 | `OSWaveDirector` | MonoBehaviour | 시간대별 스폰 티켓, 조합, 정예·보스 등장, 상한 |
 | `OSProjectile` | MonoBehaviour | 피해 투사체의 이동, 수명, 페이로드, 고유 적 중복 명중 방지 |
 | `OSControlProjectile` | MonoBehaviour | 피해 0 제어탄의 이동·첫 명중·제어 시간 적용·풀 반환 |
 | `OSPickup` | MonoBehaviour | 타입·수량, 자석 이동, 수집 후보 등록 |
 | `OSPickupCollector` | MonoBehaviour | 머리 전용 Trigger에서 픽업 수집을 확정 |
-| `OSPickupSpawner` | MonoBehaviour | 드롭 병합, 풀 대여, 총량 보존 |
+| `OSPickupSpawner` | MonoBehaviour | 경험치·조각·회복의 타입별 병합, 공용 풀 대여, 총량 보존과 수집 효과 전달 |
 | `OSPoolRegistry` | MonoBehaviour | 종류별 사전 생성, Rent/Return, 활성 상한 |
 
 ### UI
@@ -1007,6 +1013,7 @@ public enum OSSessionState
 | `OSExplosionPresenter` | MonoBehaviour | 예약 원·소비 예상 수·예고 시간·폭발 결과를 사전 생성 View로 표시 |
 | `OSBodyRoleSelectionPanel` | MonoBehaviour | 고정 4택 표시와 요청 1회 확정 |
 | `OSLevelUpPanel` | MonoBehaviour | 후보 3개 표시와 업그레이드 1회 확정 |
+| `OSLevelProgressPresenter` | MonoBehaviour | HUD 레벨·XP·적용 피드백과 결과의 런 시드·업그레이드 단계 표시 |
 | `OSTutorialController` | MonoBehaviour | 조건 기반 첫 세션 안내 |
 | `OSResultPanel` | MonoBehaviour | 세션 요약과 재시작/메뉴 명령 |
 
@@ -1030,7 +1037,15 @@ flowchart LR
     Wave[OSWaveDirector] --> Pool[OSPoolRegistry]
     Pool --> Enemy[OSEnemyController]
     Enemy --> Resolver
-    Pickup[OSPickup] --> Buffer
+    Enemy --> Pickup[OSPickup/OSPickupSpawner]
+    Pickup --> Growth[OSBodyGrowthController]
+    Pickup --> Level[OSLevelUpController]
+    Pickup --> Health
+    Level --> Queue
+    Level --> Head
+    Level --> Roles
+    Level --> Explosion
+    Level --> LevelUI
     Resolver --> Health[OSPlayerHealth]
     Resolver --> Chain
     Explosion --> Health
@@ -1214,6 +1229,8 @@ public enum OSUpgradeOperation
 ```
 
 적용 순서는 `기본값 → 합연산 보너스 → 곱연산 보너스 → 하한/상한`으로 통일한다.
+
+`OSUpgradeRunState`는 15종 단계에서 불변 `OSUpgradeModifiers` 스냅샷을 다시 계산하고 `OSLevelUpController`가 머리 무기, 성장, 역할 4종, 폭발, HP, 이동, 픽업 수집 계통에 배포한다. 적용 중 `OSUpgradeCatalog`나 다른 ScriptableObject의 직렬화 값은 수정하지 않는다.
 
 ---
 

@@ -551,9 +551,7 @@ namespace Ouroboros.Tests.PlayMode
 
         private static T FindRented<T>(Transform root) where T : OSPoolableBehaviour
         {
-            var instances = Object.FindObjectsByType<T>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            var instances = Object.FindObjectsByType<T>(FindObjectsInactive.Include);
             for (var index = 0; index < instances.Length; index++)
             {
                 if (instances[index].IsRented && instances[index].transform.IsChildOf(root))

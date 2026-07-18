@@ -48,6 +48,7 @@ namespace Ouroboros.Runtime
         private float _testInterval = -1f;
         private float _testNormalDuration = -1f;
         private float _testEliteDuration = -1f;
+        private float _cooldownMultiplier = 1f;
 
         public event Action<OSControlFireFeedback> Fired;
         public event Action<OSDamageEvent> ControlApplied;
@@ -123,12 +124,24 @@ namespace Ouroboros.Runtime
             ControlApplied?.Invoke(controlEvent);
         }
 
+        public void ApplyUpgradeModifiers(OSUpgradeModifiers modifiers)
+        {
+            _cooldownMultiplier = Mathf.Clamp(modifiers.RoleCooldownMultiplier, 0.5f, 1f);
+            for (var index = 0; index < _stateCount; index++)
+            {
+                _cooldowns[index] = Mathf.Min(_cooldowns[index], EffectiveInterval);
+            }
+        }
+
         private float EffectiveRange => _testRange >= 0f
             ? _testRange
             : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Control)?.Range ?? DefaultRange;
         private float EffectiveInterval => _testInterval >= 0f
             ? _testInterval
-            : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Control)?.Interval ?? DefaultInterval;
+            : Mathf.Max(
+                0.15f,
+                (bodyBalance?.GetRoleDefinition(OSBodyRoleType.Control)?.Interval ?? DefaultInterval) *
+                _cooldownMultiplier);
         private float EffectiveNormalDuration => _testNormalDuration >= 0f
             ? _testNormalDuration
             : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Control)?.NormalControlDuration ??

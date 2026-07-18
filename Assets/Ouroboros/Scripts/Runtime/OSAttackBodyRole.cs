@@ -55,6 +55,7 @@ namespace Ouroboros.Runtime
         private float _testRange = -1f;
         private float _testDamage = -1f;
         private float _testInterval = -1f;
+        private float _cooldownMultiplier = 1f;
 
         public event Action<OSBodyAttackFireFeedback> Fired;
         public event Action<OSDamageEvent> HitConfirmed;
@@ -139,6 +140,15 @@ namespace Ouroboros.Runtime
             HitConfirmed?.Invoke(damageEvent);
         }
 
+        public void ApplyUpgradeModifiers(OSUpgradeModifiers modifiers)
+        {
+            _cooldownMultiplier = Mathf.Clamp(modifiers.RoleCooldownMultiplier, 0.5f, 1f);
+            for (var index = 0; index < _stateCount; index++)
+            {
+                _cooldowns[index] = Mathf.Min(_cooldowns[index], EffectiveInterval);
+            }
+        }
+
         private float EffectiveRange => _testRange >= 0f
             ? _testRange
             : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Attack)?.Range ?? DefaultRange;
@@ -147,7 +157,10 @@ namespace Ouroboros.Runtime
             : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Attack)?.Damage ?? DefaultDamage;
         private float EffectiveInterval => _testInterval >= 0f
             ? _testInterval
-            : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Attack)?.Interval ?? DefaultInterval;
+            : Mathf.Max(
+                0.15f,
+                (bodyBalance?.GetRoleDefinition(OSBodyRoleType.Attack)?.Interval ?? DefaultInterval) *
+                _cooldownMultiplier);
 
         private bool TryFire(int stateIndex)
         {

@@ -31,6 +31,9 @@ namespace Ouroboros.Runtime
         [SerializeField, Min(0.01f)] private float attackInterval = 1f;
         [SerializeField, Min(0)] private int fragmentDropAmount = 1;
         [SerializeField, Range(0f, 1f)] private float fragmentDropChance = 0.15f;
+        [SerializeField, Min(0)] private int experienceDropAmount = 1;
+        [SerializeField, Min(0)] private int healDropAmount = 10;
+        [SerializeField, Range(0f, 1f)] private float healDropChance = 0.02f;
         [SerializeField] private bool controlAffectsMovement = true;
         [SerializeField] private bool controlAffectsAttack;
 
@@ -59,6 +62,9 @@ namespace Ouroboros.Runtime
         public float AttackInterval => attackInterval;
         public int FragmentDropAmount => fragmentDropAmount;
         public float FragmentDropChance => fragmentDropChance;
+        public int ExperienceDropAmount => experienceDropAmount;
+        public int HealDropAmount => healDropAmount;
+        public float HealDropChance => healDropChance;
         public float AttackCooldown => _attackCooldown;
         public bool IsDeathConfirmed => _deathConfirmed;
         public bool HasContactTarget => _contactCount > 0;
@@ -249,6 +255,9 @@ namespace Ouroboros.Runtime
             attackInterval = Mathf.Max(0.01f, interval);
             fragmentDropAmount = 0;
             fragmentDropChance = 0f;
+            experienceDropAmount = 0;
+            healDropAmount = 0;
+            healDropChance = 0f;
             controlAffectsMovement = controlMovement;
             controlAffectsAttack = controlAttack;
             _archetype = archetype;
@@ -264,6 +273,20 @@ namespace Ouroboros.Runtime
         {
             fragmentDropAmount = Mathf.Max(0, amount);
             fragmentDropChance = Mathf.Clamp01(chance);
+        }
+
+        internal void ConfigureAllDropsForTesting(
+            int experienceAmount,
+            int fragmentAmount,
+            float fragmentChance,
+            int healAmount,
+            float healChance)
+        {
+            experienceDropAmount = Mathf.Max(0, experienceAmount);
+            fragmentDropAmount = Mathf.Max(0, fragmentAmount);
+            fragmentDropChance = Mathf.Clamp01(fragmentChance);
+            healDropAmount = Mathf.Max(0, healAmount);
+            healDropChance = Mathf.Clamp01(healChance);
         }
 
         protected override void OnRented()
@@ -435,6 +458,9 @@ namespace Ouroboros.Runtime
             attackInterval = definition.AttackInterval;
             fragmentDropAmount = definition.DropTable.FragmentAmount;
             fragmentDropChance = definition.DropTable.FragmentChance;
+            experienceDropAmount = definition.DropTable.ExperienceAmount;
+            healDropAmount = definition.DropTable.HealAmount;
+            healDropChance = definition.DropTable.HealChance;
             controlAffectsMovement = definition.ControlAffectsMovement;
             controlAffectsAttack = definition.ControlAffectsAttack;
             _definitionResolved = true;
@@ -451,6 +477,9 @@ namespace Ouroboros.Runtime
             attackInterval = Mathf.Max(0.01f, attackInterval);
             fragmentDropAmount = Mathf.Max(0, fragmentDropAmount);
             fragmentDropChance = Mathf.Clamp01(fragmentDropChance);
+            experienceDropAmount = Mathf.Max(0, experienceDropAmount);
+            healDropAmount = Mathf.Max(0, healDropAmount);
+            healDropChance = Mathf.Clamp01(healDropChance);
         }
     }
 }

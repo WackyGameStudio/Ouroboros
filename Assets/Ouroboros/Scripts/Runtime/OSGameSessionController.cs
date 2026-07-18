@@ -355,11 +355,7 @@ namespace Ouroboros.Runtime
 
         private void HandleSubmitRequested()
         {
-            if (State == OSSessionState.LevelUpSelection)
-            {
-                CompleteActiveSelection();
-            }
-            else if (State is OSSessionState.Dead or OSSessionState.Cleared)
+            if (State is OSSessionState.Dead or OSSessionState.Cleared)
             {
                 ConfirmResult();
             }

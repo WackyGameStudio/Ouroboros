@@ -45,7 +45,8 @@ namespace Ouroboros.Runtime
         public OSEnemyController FindNearestTarget(
             Vector2 origin,
             float range,
-            int currentTargetRuntimeId = 0)
+            int currentTargetRuntimeId = 0,
+            bool prioritizeEliteOrBoss = false)
         {
             if (!float.IsFinite(range) || range <= 0f)
             {
@@ -54,6 +55,7 @@ namespace Ouroboros.Runtime
 
             var rangeSquared = range * range;
             var bestDistanceSquared = float.PositiveInfinity;
+            var bestPriority = -1;
             OSEnemyController best = null;
             for (var index = 0; index < Count; index++)
             {
@@ -70,10 +72,25 @@ namespace Ouroboros.Runtime
                     continue;
                 }
 
+                var priority = prioritizeEliteOrBoss && candidate.IsEliteOrBoss ? 1 : 0;
+                if (priority < bestPriority)
+                {
+                    continue;
+                }
+
+                if (priority > bestPriority)
+                {
+                    best = candidate;
+                    bestDistanceSquared = distanceSquared;
+                    bestPriority = priority;
+                    continue;
+                }
+
                 if (distanceSquared < bestDistanceSquared - DistanceTieEpsilon)
                 {
                     best = candidate;
                     bestDistanceSquared = distanceSquared;
+                    bestPriority = priority;
                     continue;
                 }
 

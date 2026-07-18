@@ -87,6 +87,7 @@ namespace Ouroboros.Runtime
         private float _testInterval = -1f;
         private float _testWidth = -1f;
         private float _testTelegraph = -1f;
+        private float _cooldownMultiplier = 1f;
 
         public event Action<OSLaserSnapshot> TelegraphStarted;
         public event Action<OSLaserResolution> LaserResolved;
@@ -188,6 +189,15 @@ namespace Ouroboros.Runtime
             return true;
         }
 
+        public void ApplyUpgradeModifiers(OSUpgradeModifiers modifiers)
+        {
+            _cooldownMultiplier = Mathf.Clamp(modifiers.RoleCooldownMultiplier, 0.5f, 1f);
+            for (var index = 0; index < _stateCount; index++)
+            {
+                _cooldowns[index] = Mathf.Min(_cooldowns[index], EffectiveInterval);
+            }
+        }
+
         private float EffectiveLength => _testLength >= 0f
             ? _testLength
             : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Laser)?.Range ?? DefaultLength;
@@ -196,7 +206,10 @@ namespace Ouroboros.Runtime
             : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Laser)?.Damage ?? DefaultDamage;
         private float EffectiveInterval => _testInterval >= 0f
             ? _testInterval
-            : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Laser)?.Interval ?? DefaultInterval;
+            : Mathf.Max(
+                0.15f,
+                (bodyBalance?.GetRoleDefinition(OSBodyRoleType.Laser)?.Interval ?? DefaultInterval) *
+                _cooldownMultiplier);
         private float EffectiveWidth => _testWidth >= 0f
             ? _testWidth
             : bodyBalance?.GetRoleDefinition(OSBodyRoleType.Laser)?.BeamWidth ?? DefaultWidth;

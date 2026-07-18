@@ -31,6 +31,7 @@ namespace Ouroboros.Runtime
         private Vector2 _spawnPosition;
         private bool _spawnCaptured;
         private bool _subscribed;
+        private float _moveSpeedMultiplier = 1f;
 
         public event Action PositionReset;
 
@@ -38,7 +39,9 @@ namespace Ouroboros.Runtime
         public Vector2 LastDirection => _lastDirection;
         public Vector2 WorldMin => worldMin;
         public Vector2 WorldMax => worldMax;
-        public float MoveSpeed => playerBalance != null ? playerBalance.MoveSpeed : DefaultMoveSpeed;
+        public float MoveSpeed => OSUpgradeMath.CalculateMoveSpeed(
+            playerBalance != null ? playerBalance.MoveSpeed : DefaultMoveSpeed,
+            _moveSpeedMultiplier);
         public bool IsMovementAllowed => sessionController != null && sessionController.IsSimulationRunning &&
                                          inputRouter != null && inputRouter.CurrentMode == OSInputMode.Player;
 
@@ -115,6 +118,11 @@ namespace Ouroboros.Runtime
             }
 
             return NormalizeMoveInput(rawInput) * speed * deltaTime;
+        }
+
+        public void ApplyUpgradeModifiers(OSUpgradeModifiers modifiers)
+        {
+            _moveSpeedMultiplier = Mathf.Max(0.01f, modifiers.MoveSpeedMultiplier);
         }
 
         /// <summary>

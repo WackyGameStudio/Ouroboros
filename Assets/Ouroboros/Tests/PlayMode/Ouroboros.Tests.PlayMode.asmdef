@@ -6,7 +6,9 @@
     "Ouroboros.Runtime",
     "Ouroboros.UI",
     "Unity.InputSystem",
-    "Unity.InputSystem.TestFramework"
+    "Unity.InputSystem.TestFramework",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

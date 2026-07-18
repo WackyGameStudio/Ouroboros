@@ -52,6 +52,7 @@ namespace Ouroboros.Runtime
         private float _fireInterval = DefaultFireInterval;
         private float _range = DefaultRange;
         private float _bodyDamageRate = DefaultBodyDamageRate;
+        private OSUpgradeModifiers _upgradeModifiers = OSUpgradeModifiers.Default;
         private float _cooldown;
         private int _currentTargetRuntimeId;
         private bool _subscribed;
@@ -61,9 +62,12 @@ namespace Ouroboros.Runtime
 
         public float Cooldown => _cooldown;
         public float Damage => CalculateVolleyDamage();
-        public float FireInterval => _fireInterval;
+        public float FireInterval => OSUpgradeMath.CalculateHeadFireInterval(
+            _fireInterval,
+            _upgradeModifiers.HeadRateBonus);
         public float Range => _range;
-        public int Pierce => pierce;
+        public int Pierce => Mathf.Max(0, pierce + _upgradeModifiers.HeadPierceBonus);
+        public bool ElitePriority => _upgradeModifiers.ElitePriority;
         public int CurrentTargetRuntimeId => _currentTargetRuntimeId;
         public int ProjectileCountPerVolley => 1 + ((bodyChain != null ? bodyChain.ActiveCount : 0) / 5);
         public int LastVolleyProjectileCount { get; private set; }
@@ -138,8 +142,15 @@ namespace Ouroboros.Runtime
             _range = Mathf.Max(0.01f, range);
             _bodyDamageRate = Mathf.Max(0f, bodyDamageRate);
             pierce = Mathf.Max(0, projectilePierce);
+            _upgradeModifiers = OSUpgradeModifiers.Default;
             ResetWeaponState(returnProjectiles: false);
             Subscribe();
+        }
+
+        public void ApplyUpgradeModifiers(OSUpgradeModifiers modifiers)
+        {
+            _upgradeModifiers = modifiers;
+            _cooldown = Mathf.Min(_cooldown, FireInterval);
         }
 
         internal void SimulateStep(float deltaTime)
@@ -163,7 +174,11 @@ namespace Ouroboros.Runtime
         internal bool TryFireNow()
         {
             var origin = (Vector2)firePoint.position;
-            var target = enemyRegistry.FindNearestTarget(origin, _range, _currentTargetRuntimeId);
+            var target = enemyRegistry.FindNearestTarget(
+                origin,
+                _range,
+                _currentTargetRuntimeId,
+                _upgradeModifiers.ElitePriority);
             if (target == null)
             {
                 _currentTargetRuntimeId = 0;
@@ -198,7 +213,7 @@ namespace Ouroboros.Runtime
                 return false;
             }
 
-            _cooldown = _fireInterval;
+            _cooldown = FireInterval;
             LastVolleyProjectileCount = firedCount;
             ShotsFired += firedCount;
             return true;
@@ -256,7 +271,7 @@ namespace Ouroboros.Runtime
                 direction,
                 damage,
                 _range,
-                pierce,
+                Pierce,
                 this);
             if (!launchResult.IsAccepted)
             {
@@ -276,7 +291,9 @@ namespace Ouroboros.Runtime
         private float CalculateVolleyDamage()
         {
             var length = bodyChain != null ? bodyChain.ActiveCount : 0;
-            return _damage * (1f + (length * _bodyDamageRate));
+            var perSegmentRate = Mathf.Min(0.06f, _bodyDamageRate + _upgradeModifiers.BodyDamageRateBonus);
+            return _damage * _upgradeModifiers.HeadDamageMultiplier *
+                   (1f + (length * perSegmentRate));
         }
 
         private void Subscribe()

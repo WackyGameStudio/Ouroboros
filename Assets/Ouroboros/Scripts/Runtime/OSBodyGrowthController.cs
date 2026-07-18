@@ -151,6 +151,18 @@ namespace Ouroboros.Runtime
             return queued;
         }
 
+        public void ApplyUpgradeModifiers(OSUpgradeModifiers modifiers)
+        {
+            var baseRequirement = _testFragmentRequirement > 0
+                ? _testFragmentRequirement
+                : bodyBalance != null ? bodyBalance.FragmentRequirement : DefaultFragmentRequirement;
+            var requirement = OSUpgradeMath.CalculateFragmentRequirement(
+                baseRequirement,
+                modifiers.FragmentRequirementMultiplier);
+            Progress.SetFragmentRequirement(requirement);
+            FragmentProgressChanged?.Invoke(FragmentProgress, FragmentRequirement);
+        }
+
         internal void ConfigureForTesting(
             OSGameSessionController session,
             OSBodyChain chain,

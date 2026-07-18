@@ -11,7 +11,7 @@ namespace Ouroboros.Core
             TechnicalGuard = technicalGuard > 0 ? technicalGuard : 1;
         }
 
-        public int FragmentRequirement { get; }
+        public int FragmentRequirement { get; private set; }
         public int TechnicalGuard { get; }
         public int FragmentProgress { get; private set; }
         public bool HasDeferredRequest => FragmentProgress >= FragmentRequirement;
@@ -74,6 +74,20 @@ namespace Ouroboros.Core
         public void Reset()
         {
             FragmentProgress = 0;
+        }
+
+        public OSRuleResult<int> SetFragmentRequirement(int requirement)
+        {
+            if (requirement <= 0)
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedRequirement,
+                    "body.fragment.requirement.invalid",
+                    FragmentRequirement);
+            }
+
+            FragmentRequirement = requirement;
+            return OSRuleResult<int>.Accepted(FragmentRequirement, "body.fragment.requirement.updated");
         }
     }
 }

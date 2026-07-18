@@ -11,6 +11,7 @@ namespace Ouroboros.Runtime
     public sealed class OSPickup : OSPoolableBehaviour
     {
         [SerializeField] private Rigidbody2D body;
+        [SerializeField] private SpriteRenderer bodyRenderer;
         [SerializeField, Min(0.01f)] private float magnetSpeed = 8f;
 
         private OSPickupSpawner _spawner;
@@ -75,6 +76,12 @@ namespace Ouroboros.Runtime
             PickupType = pickupType;
             Amount = Mathf.Max(1, amount);
             _magnetRadius = Mathf.Max(0f, magnetRadius);
+            ApplyPickupVisual(pickupType);
+        }
+
+        internal void SetMagnetRadius(float radius)
+        {
+            _magnetRadius = Mathf.Max(0f, radius);
         }
 
         internal void SimulateStep(float deltaTime)
@@ -115,16 +122,36 @@ namespace Ouroboros.Runtime
             Amount = 0;
             _magnetRadius = 0f;
             RegistryIndex = -1;
+            if (bodyRenderer != null)
+            {
+                bodyRenderer.color = Color.white;
+            }
         }
 
         private void ResolveComponents()
         {
             body ??= GetComponent<Rigidbody2D>();
+            bodyRenderer ??= GetComponent<SpriteRenderer>();
             var collider = GetComponent<Collider2D>();
             if (collider != null)
             {
                 collider.isTrigger = true;
             }
+        }
+
+        private void ApplyPickupVisual(OSPickupType pickupType)
+        {
+            if (bodyRenderer == null)
+            {
+                return;
+            }
+
+            bodyRenderer.color = pickupType switch
+            {
+                OSPickupType.Experience => new Color32(255, 220, 76, 255),
+                OSPickupType.Heal => new Color32(76, 255, 176, 255),
+                _ => new Color32(109, 255, 211, 255)
+            };
         }
 
         private void OnValidate()

@@ -47,10 +47,20 @@ namespace Ouroboros.Runtime
         {
             if (enemy != null && pickupSpawner != null)
             {
+                pickupSpawner.TrySpawnDrop(
+                    Ouroboros.Core.OSPickupType.Experience,
+                    enemy.Position,
+                    enemy.ExperienceDropAmount,
+                    1f);
                 pickupSpawner.TrySpawnFragmentDrop(
                     enemy.Position,
                     enemy.FragmentDropAmount,
                     enemy.FragmentDropChance);
+                pickupSpawner.TrySpawnDrop(
+                    Ouroboros.Core.OSPickupType.Heal,
+                    enemy.Position,
+                    enemy.HealDropAmount,
+                    enemy.HealDropChance);
             }
         }
 

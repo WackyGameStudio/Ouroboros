@@ -14,8 +14,10 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSPlayerBalanceData playerBalance;
         [SerializeField] private OSGameSessionController sessionController;
 
+        private float _baseMaxHealth = DefaultMaxHealth;
         private float _maxHealth = DefaultMaxHealth;
         private float _hitInvulnerabilityDuration = DefaultHitInvulnerability;
+        private float _healMultiplier = 1f;
         private bool _subscribed;
 
         public event Action<float, float> HealthChanged;
@@ -25,6 +27,7 @@ namespace Ouroboros.Runtime
 
         public float CurrentHealth { get; private set; }
         public float MaxHealth => _maxHealth;
+        public float HealMultiplier => _healMultiplier;
         public float HitInvulnerabilityRemaining { get; private set; }
         public float ExplosionInvulnerabilityRemaining { get; private set; }
         public bool IsInvulnerable => HitInvulnerabilityRemaining > 0f ||
@@ -108,7 +111,7 @@ namespace Ouroboros.Runtime
             }
 
             var previous = CurrentHealth;
-            CurrentHealth = Mathf.Min(_maxHealth, CurrentHealth + amount);
+            CurrentHealth = Mathf.Min(_maxHealth, CurrentHealth + (amount * _healMultiplier));
             var applied = CurrentHealth - previous;
             if (applied <= 0f)
             {
@@ -121,6 +124,17 @@ namespace Ouroboros.Runtime
             HealthChanged?.Invoke(CurrentHealth, _maxHealth);
             Healed?.Invoke(applied);
             return OSRuleResult<float>.Accepted(CurrentHealth, "player_health.heal.accepted");
+        }
+
+        public void ApplyUpgradeModifiers(OSUpgradeModifiers modifiers)
+        {
+            var previousMax = _maxHealth;
+            _maxHealth = Mathf.Max(1f, _baseMaxHealth * modifiers.MaxHealthMultiplier);
+            _healMultiplier = Mathf.Max(0.01f, modifiers.HealMultiplier);
+            CurrentHealth = _maxHealth > previousMax
+                ? Mathf.Min(_maxHealth, CurrentHealth + (_maxHealth - previousMax))
+                : Mathf.Min(CurrentHealth, _maxHealth);
+            HealthChanged?.Invoke(CurrentHealth, _maxHealth);
         }
 
         public OSRuleResult<float> GrantExplosionInvulnerability(float duration)
@@ -147,7 +161,9 @@ namespace Ouroboros.Runtime
             Unsubscribe();
             playerBalance = null;
             sessionController = session;
-            _maxHealth = Mathf.Max(1f, maxHealth);
+            _baseMaxHealth = Mathf.Max(1f, maxHealth);
+            _maxHealth = _baseMaxHealth;
+            _healMultiplier = 1f;
             _hitInvulnerabilityDuration = Mathf.Max(0f, hitInvulnerability);
             ResetForNewSession();
             Subscribe();
@@ -160,9 +176,10 @@ namespace Ouroboros.Runtime
 
         private void ResolveBalance()
         {
-            _maxHealth = playerBalance != null
+            _baseMaxHealth = playerBalance != null
                 ? Mathf.Max(1, playerBalance.MaxHealth)
                 : DefaultMaxHealth;
+            _maxHealth = Mathf.Max(1f, _baseMaxHealth);
             _hitInvulnerabilityDuration = playerBalance != null
                 ? Mathf.Max(0f, playerBalance.HitInvulnerability)
                 : DefaultHitInvulnerability;

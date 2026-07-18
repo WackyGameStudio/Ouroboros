@@ -62,6 +62,7 @@ namespace Ouroboros.Runtime
         private float _telegraphRemaining;
         private bool _active;
         private bool _subscribed;
+        private OSUpgradeModifiers _upgradeModifiers = OSUpgradeModifiers.Default;
 
         private int _testMinimumSegments;
         private float _testConsumeRate = -1f;
@@ -83,6 +84,8 @@ namespace Ouroboros.Runtime
             : 0;
         public float TelegraphRemaining => _telegraphRemaining;
         public float Radius => EffectiveRadius;
+        public float ConsumeRate => EffectiveConsumeRate;
+        public float DamagePerSegment => EffectiveDamagePerSegment;
         public int LastHitCount { get; private set; }
         public int LastKillCount { get; private set; }
 
@@ -206,21 +209,30 @@ namespace Ouroboros.Runtime
             SimulateTelegraph(deltaTime);
         }
 
+        public void ApplyUpgradeModifiers(OSUpgradeModifiers modifiers)
+        {
+            _upgradeModifiers = modifiers;
+        }
+
         private int EffectiveMinimumSegments => _testMinimumSegments > 0
             ? _testMinimumSegments
             : bodyBalance != null ? bodyBalance.Explosion.MinimumSegments : DefaultMinimumSegments;
         private float EffectiveConsumeRate => _testConsumeRate >= 0f
             ? _testConsumeRate
-            : bodyBalance != null ? bodyBalance.Explosion.ConsumeRate : DefaultConsumeRate;
+            : OSUpgradeMath.CalculateExplosionConsumeRate(
+                bodyBalance != null ? bodyBalance.Explosion.ConsumeRate : DefaultConsumeRate,
+                _upgradeModifiers.ExplosionConsumeRateDelta);
         private float EffectiveTelegraphDuration => _testTelegraphDuration >= 0f
             ? _testTelegraphDuration
             : bodyBalance != null ? bodyBalance.Explosion.TelegraphDuration : DefaultTelegraphDuration;
         private float EffectiveRadius => _testRadius >= 0f
             ? _testRadius
-            : bodyBalance != null ? bodyBalance.Explosion.Radius : DefaultRadius;
+            : (bodyBalance != null ? bodyBalance.Explosion.Radius : DefaultRadius) *
+              _upgradeModifiers.ExplosionRadiusMultiplier;
         private float EffectiveDamagePerSegment => _testDamagePerSegment >= 0f
             ? _testDamagePerSegment
-            : bodyBalance != null ? bodyBalance.Explosion.DamagePerSegment : DefaultDamagePerSegment;
+            : (bodyBalance != null ? bodyBalance.Explosion.DamagePerSegment : DefaultDamagePerSegment) *
+              _upgradeModifiers.ExplosionDamageMultiplier;
         private float EffectiveHeadInvulnerability => _testHeadInvulnerability >= 0f
             ? _testHeadInvulnerability
             : bodyBalance != null ? bodyBalance.Explosion.HeadInvulnerability : DefaultHeadInvulnerability;
