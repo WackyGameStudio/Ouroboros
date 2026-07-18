@@ -42,8 +42,8 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(presenter, Is.Not.Null);
             Assert.That(health.CurrentHealth, Is.EqualTo(100f));
 
-            Assert.That(growth.ConfirmRole(OSBodyRoleType.Shield).IsAccepted, Is.True);
             Assert.That(growth.ConfirmRole(OSBodyRoleType.Attack).IsAccepted, Is.True);
+            Assert.That(growth.ConfirmRole(OSBodyRoleType.Laser).IsAccepted, Is.True);
             Assert.That(session.State, Is.EqualTo(OSSessionState.Combat));
             Assert.That(chain.ActiveCount, Is.EqualTo(2));
             Assert.That(registry.Count, Is.EqualTo(12));

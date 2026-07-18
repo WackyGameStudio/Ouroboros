@@ -960,7 +960,7 @@ public enum OSSessionState
 | `OSInputRouter` | MonoBehaviour | Input Action 구독과 Player/UI Map 전환, 입력 버퍼 제거 |
 | `OSSessionRuntimeState` | 순수 C# | HP, 레벨, 경험치, 조각, 업그레이드 단계, 통계 등 세션 가변값 소유 |
 | `OSCombatEventBuffer` | 순수 C# | 한 물리 틱의 전투 후보 수집·중복 제거·결정 정렬. Step 09에서는 적대 피해 배치를 우선 제공 |
-| `OSPlayerCombatResolver` | MonoBehaviour | 적대 피해 배치를 머리 우선으로 처리하고, 생존 시 머리에 가장 가까운 몸통 절단 후보 1건을 확정 |
+| `OSPlayerCombatResolver` | MonoBehaviour | 적대 피해 배치를 머리 우선으로 처리하고, 유효 피격의 실드 방어와 생존 시 머리에 가장 가까운 몸통 절단 후보 1건을 확정 |
 | `OSSelectionQueue` | 순수 C# | Body 요청과 LevelUp 요청을 Body 우선으로 직렬화 |
 | `OSRunRandom` | 순수 C# | 세션 시드와 규칙용 난수 제공 |
 
@@ -975,6 +975,7 @@ public enum OSSessionState
 | `OSBodyGrowthController` | MonoBehaviour | 조각 수집을 Body 선택 요청으로 변환하고 역할 확정·꼬리 추가·보류 재개를 연결 |
 | `OSBodyChain` | MonoBehaviour | 경로 버퍼, 세그먼트 순서, 생성·절단·예약·소비 |
 | `OSBodySegmentView` | MonoBehaviour | 세그먼트 Transform, 역할 시각, Hurtbox ID 전달 |
+| `OSBodyRoleRegistry` | MonoBehaviour | 몸통 추가·제거 이벤트를 역할별 고정 배열 런타임 목록과 안정 ID 참조로 반영 |
 | `OSShieldBodyRole` | MonoBehaviour | 실드 등록·범위·충전·재충전·방어 |
 | `OSAttackBodyRole` | MonoBehaviour | 공격 세그먼트별 표적·주기·발사 |
 | `OSLaserBodyRole` | MonoBehaviour | 레이저 예고 스냅샷·관통 판정 |
@@ -988,7 +989,8 @@ public enum OSSessionState
 | `OSEnemyRegistry` | MonoBehaviour | 활성 적의 비할당 목록과 안정 ID 조회 |
 | `OSEnemyController` | MonoBehaviour | 적 한 개의 이동·공격·피격·제어·사망 |
 | `OSWaveDirector` | MonoBehaviour | 시간대별 스폰 티켓, 조합, 정예·보스 등장, 상한 |
-| `OSProjectile` | MonoBehaviour | 이동, 수명, 페이로드, 고유 적 중복 명중 방지 |
+| `OSProjectile` | MonoBehaviour | 피해 투사체의 이동, 수명, 페이로드, 고유 적 중복 명중 방지 |
+| `OSControlProjectile` | MonoBehaviour | 피해 0 제어탄의 이동·첫 명중·제어 시간 적용·풀 반환 |
 | `OSPickup` | MonoBehaviour | 타입·수량, 자석 이동, 수집 후보 등록 |
 | `OSPickupCollector` | MonoBehaviour | 머리 전용 Trigger에서 픽업 수집을 확정 |
 | `OSPickupSpawner` | MonoBehaviour | 드롭 병합, 풀 대여, 총량 보존 |
@@ -1001,6 +1003,7 @@ public enum OSSessionState
 | `OSCombatHud` | MonoBehaviour | 확정 이벤트를 표시 모델에 반영하고 프레임 말 1회 갱신 |
 | `OSPlayerHealthPresenter` | MonoBehaviour | 머리 HP·무적 시간과 머리 피해·몸통 절단 피드백을 HUD에 표시 |
 | `OSBodyGrowthPresenter` | MonoBehaviour | 몸통 수·역할별 보유 수·조각 진행도를 HUD에 표시 |
+| `OSBodyRoleCombatPresenter` | MonoBehaviour | 역할별 보유 수·발동 수·실드 충전 상태를 HUD에 표시 |
 | `OSExplosionPresenter` | MonoBehaviour | 예약 원·소비 예상 수·예고 시간·폭발 결과를 사전 생성 View로 표시 |
 | `OSBodyRoleSelectionPanel` | MonoBehaviour | 고정 4택 표시와 요청 1회 확정 |
 | `OSLevelUpPanel` | MonoBehaviour | 후보 3개 표시와 업그레이드 1회 확정 |
@@ -1017,7 +1020,8 @@ flowchart LR
     Resolver --> Buffer[OSCombatEventBuffer]
     Session --> Queue[OSSelectionQueue]
     Player --> Chain[OSBodyChain]
-    Chain --> Roles[4 Role Managers]
+    Chain --> RoleRegistry[OSBodyRoleRegistry]
+    RoleRegistry --> Roles[4 Role Managers]
     Chain --> Explosion[OSExplosionController]
     Resolver --> Explosion
     Registry[OSEnemyRegistry] --> Head[OSHeadWeapon]
@@ -1059,7 +1063,8 @@ public enum OSResultCode
     Duplicate,
     CancelledMissingSource,
     CancelledNoReservedSegment,
-    ConfigurationError
+    ConfigurationError,
+    BlockedByShield
 }
 
 public readonly struct OSRuleResult<T>

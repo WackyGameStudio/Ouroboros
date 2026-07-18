@@ -15,6 +15,7 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSGameSessionController sessionController;
         [SerializeField] private OSPlayerHealth playerHealth;
         [SerializeField] private OSBodyChain bodyChain;
+        [SerializeField] private OSShieldBodyRole shieldBodyRole;
 
         private readonly OSCombatEventBuffer _eventBuffer = new();
         private readonly OSDamageEvent[] _drainBuffer = new OSDamageEvent[OSCombatEventBuffer.DefaultCapacity];
@@ -63,12 +64,14 @@ namespace Ouroboros.Runtime
         internal void ConfigureForTesting(
             OSGameSessionController session,
             OSPlayerHealth health,
-            OSBodyChain chain)
+            OSBodyChain chain,
+            OSShieldBodyRole shield = null)
         {
             Unsubscribe();
             sessionController = session;
             playerHealth = health;
             bodyChain = chain;
+            shieldBodyRole = shield;
             ResetBuffer();
             Subscribe();
         }
@@ -111,6 +114,13 @@ namespace Ouroboros.Runtime
                     continue;
                 }
 
+                if (!playerHealth.IsInvulnerable && shieldBodyRole != null &&
+                    shieldBodyRole.TryBlockDamage(damageEvent).IsAccepted)
+                {
+                    DamageResolved?.Invoke(damageEvent, OSResultCode.BlockedByShield);
+                    continue;
+                }
+
                 var result = playerHealth.TryApplyHeadDamage(damageEvent);
                 DamageResolved?.Invoke(damageEvent, result.Code);
                 if (playerHealth.CurrentHealth <= 0f ||
@@ -150,6 +160,13 @@ namespace Ouroboros.Runtime
 
             if (selectedIndex == int.MaxValue)
             {
+                return;
+            }
+
+            if (bodyChain.CutGuardRemaining <= 0f && shieldBodyRole != null &&
+                shieldBodyRole.TryBlockDamage(selectedEvent).IsAccepted)
+            {
+                DamageResolved?.Invoke(selectedEvent, OSResultCode.BlockedByShield);
                 return;
             }
 

@@ -14,6 +14,7 @@ namespace Ouroboros.Core
         Duplicate,
         CancelledMissingSource,
         CancelledNoReservedSegment,
-        ConfigurationError
+        ConfigurationError,
+        BlockedByShield
     }
 }

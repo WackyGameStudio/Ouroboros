@@ -46,6 +46,7 @@ namespace Ouroboros.Runtime
         private float _attackControlRemaining;
         private bool _deathConfirmed;
         private bool _definitionResolved;
+        private OSEnemyArchetype _archetype = OSEnemyArchetype.Chaser;
 
         public event Action<OSEnemyController> Died;
         public event Action<OSDamageEvent> ContactAttackRequested;
@@ -63,6 +64,13 @@ namespace Ouroboros.Runtime
         public bool HasContactTarget => _contactCount > 0;
         public int ContactTargetCount => _contactCount;
         public Vector2 Position => body != null ? body.position : (Vector2)transform.position;
+        public OSEnemyArchetype Archetype => _archetype;
+        public bool IsEliteOrBoss => _archetype is OSEnemyArchetype.EliteAccelerator or
+            OSEnemyArchetype.BossSwarmCore;
+        public float MovementControlRemaining => _movementControlRemaining;
+        public float AttackControlRemaining => _attackControlRemaining;
+        public bool ControlAffectsMovement => controlAffectsMovement;
+        public bool ControlAffectsAttack => controlAffectsAttack;
 
         private void Awake()
         {
@@ -229,7 +237,10 @@ namespace Ouroboros.Runtime
             float health = 18f,
             float speed = 2.1f,
             float damage = 8f,
-            float interval = 1f)
+            float interval = 1f,
+            OSEnemyArchetype archetype = OSEnemyArchetype.Chaser,
+            bool controlMovement = true,
+            bool controlAttack = false)
         {
             ConfigureRuntime(registry, session, target);
             maxHealth = Mathf.Max(0.01f, health);
@@ -238,8 +249,15 @@ namespace Ouroboros.Runtime
             attackInterval = Mathf.Max(0.01f, interval);
             fragmentDropAmount = 0;
             fragmentDropChance = 0f;
+            controlAffectsMovement = controlMovement;
+            controlAffectsAttack = controlAttack;
+            _archetype = archetype;
             encounterBalance = null;
             _definitionResolved = true;
+            if (IsRented)
+            {
+                CurrentHealth = maxHealth;
+            }
         }
 
         internal void ConfigureDropForTesting(int amount, float chance)
@@ -383,19 +401,43 @@ namespace Ouroboros.Runtime
                     continue;
                 }
 
-                maxHealth = definition.MaxHealth;
-                moveSpeed = definition.MoveSpeed;
-                contactDamage = definition.ContactDamage;
-                attackInterval = definition.AttackInterval;
-                fragmentDropAmount = definition.DropTable.FragmentAmount;
-                fragmentDropChance = definition.DropTable.FragmentChance;
-                controlAffectsMovement = definition.ControlAffectsMovement;
-                controlAffectsAttack = definition.ControlAffectsAttack;
-                _definitionResolved = true;
+                ApplyDefinition(definition);
+                return;
+            }
+
+            if (TryApplySpecialDefinition(encounterBalance.EliteDefinition) ||
+                TryApplySpecialDefinition(encounterBalance.BossDefinition))
+            {
                 return;
             }
 
             Debug.LogError($"[OUROBOROS][ENEMY] Definition '{definitionId}' was not found.", this);
+        }
+
+        private bool TryApplySpecialDefinition(OSEnemyDefinition definition)
+        {
+            if (definition == null ||
+                !string.Equals(definition.Id, definitionId, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            ApplyDefinition(definition);
+            return true;
+        }
+
+        private void ApplyDefinition(OSEnemyDefinition definition)
+        {
+            _archetype = definition.Archetype;
+            maxHealth = definition.MaxHealth;
+            moveSpeed = definition.MoveSpeed;
+            contactDamage = definition.ContactDamage;
+            attackInterval = definition.AttackInterval;
+            fragmentDropAmount = definition.DropTable.FragmentAmount;
+            fragmentDropChance = definition.DropTable.FragmentChance;
+            controlAffectsMovement = definition.ControlAffectsMovement;
+            controlAffectsAttack = definition.ControlAffectsAttack;
+            _definitionResolved = true;
         }
 
         private void OnValidate()

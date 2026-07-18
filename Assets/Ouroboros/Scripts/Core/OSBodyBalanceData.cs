@@ -172,6 +172,25 @@ namespace Ouroboros.Core
         public OSExplosionSettings Explosion => explosion;
         public string LastValidationMessage => _lastValidationReport?.Message ?? string.Empty;
 
+        public OSBodyRoleDefinition GetRoleDefinition(OSBodyRoleType role)
+        {
+            if (roleDefinitions == null)
+            {
+                return null;
+            }
+
+            for (var index = 0; index < roleDefinitions.Count; index++)
+            {
+                var definition = roleDefinitions[index];
+                if (definition != null && definition.RoleType == role)
+                {
+                    return definition;
+                }
+            }
+
+            return null;
+        }
+
         public OSDataValidationReport Validate()
         {
             var errors = new List<string>();

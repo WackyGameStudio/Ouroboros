@@ -37,6 +37,10 @@ namespace Ouroboros.Runtime
             {
                 projectile.ConfigureRuntime(sessionController);
             }
+            else if (instance is OSControlProjectile controlProjectile)
+            {
+                controlProjectile.ConfigureRuntime(sessionController);
+            }
         }
 
         private void HandleEnemyDied(OSEnemyController enemy)
