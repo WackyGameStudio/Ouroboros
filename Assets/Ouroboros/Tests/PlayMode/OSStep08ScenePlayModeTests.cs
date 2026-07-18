@@ -24,6 +24,8 @@ namespace Ouroboros.Tests.PlayMode
             var panel = Object.FindAnyObjectByType<OSBodyRoleSelectionPanel>(FindObjectsInactive.Include);
             var pool = Object.FindAnyObjectByType<OSPoolRegistry>();
             var spawner = Object.FindAnyObjectByType<OSPickupSpawner>();
+            var combatResolver = Object.FindAnyObjectByType<OSPlayerCombatResolver>();
+            var enemyRegistry = Object.FindAnyObjectByType<OSEnemyRegistry>();
 
             Assert.That(session, Is.Not.Null);
             Assert.That(chain, Is.Not.Null);
@@ -31,6 +33,10 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(panel, Is.Not.Null);
             Assert.That(pool, Is.Not.Null);
             Assert.That(spawner, Is.Not.Null);
+            Assert.That(combatResolver, Is.Not.Null);
+            Assert.That(enemyRegistry, Is.Not.Null);
+            combatResolver.enabled = false;
+            enemyRegistry.ReturnAll();
             Assert.That(session.State, Is.EqualTo(OSSessionState.StartBodySelection));
             Assert.That(chain.ActiveCount, Is.Zero);
             Assert.That(pool.GetCapacity("body_fragment_pickup"), Is.EqualTo(256));
@@ -84,8 +90,8 @@ namespace Ouroboros.Tests.PlayMode
                 var add = growth.AddFragments(12);
                 Assert.That(add.IsAccepted, Is.True, add.ReasonKey);
                 Assert.That(session.State, Is.EqualTo(OSSessionState.BodyRoleSelection));
-                panel.SelectLaser();
-                yield return null;
+                var confirmed = growth.ConfirmRole(OSBodyRoleType.Laser);
+                Assert.That(confirmed.IsAccepted, Is.True, confirmed.ReasonKey);
             }
 
             Assert.That(chain.ActiveCount, Is.EqualTo(21));

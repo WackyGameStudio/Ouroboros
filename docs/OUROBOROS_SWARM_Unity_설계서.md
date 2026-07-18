@@ -955,10 +955,11 @@ public enum OSSessionState
 
 | 클래스 | 형태 | 단일 책임 |
 | --- | --- | --- |
-| `OSGameSessionController` | MonoBehaviour | 세션 상태, 시간, FixedUpdate 이벤트 우선순위, 사망/클리어, 재시작을 확정 |
+| `OSGameSessionController` | MonoBehaviour | 세션 상태, 시간, 사망/클리어, 재시작을 확정 |
 | `OSInputRouter` | MonoBehaviour | Input Action 구독과 Player/UI Map 전환, 입력 버퍼 제거 |
 | `OSSessionRuntimeState` | 순수 C# | HP, 레벨, 경험치, 조각, 업그레이드 단계, 통계 등 세션 가변값 소유 |
-| `OSCombatEventBuffer` | 순수 C# | 한 물리 틱의 공격·피격·픽업·폭발 완료 후보 수집과 중복 제거 |
+| `OSCombatEventBuffer` | 순수 C# | 한 물리 틱의 전투 후보 수집·중복 제거·결정 정렬. Step 09에서는 적대 피해 배치를 우선 제공 |
+| `OSPlayerCombatResolver` | MonoBehaviour | 적대 피해 배치를 머리 우선으로 처리하고, 생존 시 머리에 가장 가까운 몸통 절단 후보 1건을 확정 |
 | `OSSelectionQueue` | 순수 C# | Body 요청과 LevelUp 요청을 Body 우선으로 직렬화 |
 | `OSRunRandom` | 순수 C# | 세션 시드와 규칙용 난수 제공 |
 
@@ -967,7 +968,7 @@ public enum OSSessionState
 | 클래스 | 형태 | 단일 책임 |
 | --- | --- | --- |
 | `OSPlayerController` | MonoBehaviour | 머리 이동, 장애물 Cast, 마지막 방향 |
-| `OSPlayerHealth` | MonoBehaviour | `OSSessionRuntimeState`의 HP에 회복·피격/폭발 무적 규칙을 적용하고 사망 요청 |
+| `OSPlayerHealth` | MonoBehaviour | 플레이어 HP에 회복·피격/폭발 무적 규칙을 적용하고 사망 요청·새 세션 초기화를 확정 |
 | `OSHeadWeapon` | MonoBehaviour | 머리 표적, 발사 주기, 길이 배율과 보조탄 |
 | `OSBodyGrowthProgress` | 순수 C# | 조각 진행도, 다중 생성 요청, 활성+대기 64 기술 가드와 보류 상태 계산 |
 | `OSBodyGrowthController` | MonoBehaviour | 조각 수집을 Body 선택 요청으로 변환하고 역할 확정·꼬리 추가·보류 재개를 연결 |
@@ -997,6 +998,7 @@ public enum OSSessionState
 | 클래스 | 형태 | 단일 책임 |
 | --- | --- | --- |
 | `OSCombatHud` | MonoBehaviour | 확정 이벤트를 표시 모델에 반영하고 프레임 말 1회 갱신 |
+| `OSPlayerHealthPresenter` | MonoBehaviour | 머리 HP·무적 시간과 머리 피해·몸통 절단 피드백을 HUD에 표시 |
 | `OSBodyGrowthPresenter` | MonoBehaviour | 몸통 수·역할별 보유 수·조각 진행도를 HUD에 표시 |
 | `OSBodyRoleSelectionPanel` | MonoBehaviour | 고정 4택 표시와 요청 1회 확정 |
 | `OSLevelUpPanel` | MonoBehaviour | 후보 3개 표시와 업그레이드 1회 확정 |
@@ -1009,7 +1011,8 @@ public enum OSSessionState
 flowchart LR
     Input[OSInputRouter] --> Session[OSGameSessionController]
     Session --> Player[OSPlayerController]
-    Session --> Buffer[OSCombatEventBuffer]
+    Session --> Resolver[OSPlayerCombatResolver]
+    Resolver --> Buffer[OSCombatEventBuffer]
     Session --> Queue[OSSelectionQueue]
     Player --> Chain[OSBodyChain]
     Chain --> Roles[4 Role Managers]
@@ -1018,10 +1021,14 @@ flowchart LR
     Registry --> Roles
     Wave[OSWaveDirector] --> Pool[OSPoolRegistry]
     Pool --> Enemy[OSEnemyController]
-    Enemy --> Buffer
+    Enemy --> Resolver
     Pickup[OSPickup] --> Buffer
-    Buffer --> Session
+    Resolver --> Health[OSPlayerHealth]
+    Resolver --> Chain
+    Health --> Session
     Runtime[OSSessionRuntimeState] --> HUD[OSCombatHud]
+    Health --> HealthHUD[OSPlayerHealthPresenter]
+    Chain --> HealthHUD
     Session --> HUD
     Queue --> BodyUI[OSBodyRoleSelectionPanel]
     Queue --> LevelUI[OSLevelUpPanel]

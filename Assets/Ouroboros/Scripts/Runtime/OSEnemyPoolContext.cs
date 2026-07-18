@@ -9,17 +9,20 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSGameSessionController sessionController;
         [SerializeField] private Transform target;
         [SerializeField] private OSPickupSpawner pickupSpawner;
+        [SerializeField] private OSPlayerCombatResolver playerCombatResolver;
 
         public void Configure(
             OSEnemyRegistry registry,
             OSGameSessionController session,
             Transform enemyTarget,
-            OSPickupSpawner pickups = null)
+            OSPickupSpawner pickups = null,
+            OSPlayerCombatResolver combatResolver = null)
         {
             enemyRegistry = registry;
             sessionController = session;
             target = enemyTarget;
             pickupSpawner = pickups;
+            playerCombatResolver = combatResolver;
         }
 
         public void PrepareForRent(OSPoolableBehaviour instance)
@@ -28,6 +31,7 @@ namespace Ouroboros.Runtime
             {
                 enemy.ConfigureRuntime(enemyRegistry, sessionController, target);
                 enemy.Died += HandleEnemyDied;
+                enemy.ContactAttackRequested += HandleContactAttackRequested;
             }
             else if (instance is OSProjectile projectile)
             {
@@ -44,6 +48,11 @@ namespace Ouroboros.Runtime
                     enemy.FragmentDropAmount,
                     enemy.FragmentDropChance);
             }
+        }
+
+        private void HandleContactAttackRequested(Ouroboros.Core.OSDamageEvent damageEvent)
+        {
+            playerCombatResolver?.EnqueueDamage(damageEvent);
         }
     }
 }

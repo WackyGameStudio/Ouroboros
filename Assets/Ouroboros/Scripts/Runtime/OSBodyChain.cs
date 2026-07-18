@@ -1,9 +1,44 @@
 using System;
+using System.Collections.Generic;
 using Ouroboros.Core;
 using UnityEngine;
 
 namespace Ouroboros.Runtime
 {
+    public enum OSBodyRemovalCause
+    {
+        Cut,
+        Tail,
+        Explosion
+    }
+
+    public readonly struct OSBodyRemovalEvent
+    {
+        public OSBodyRemovalEvent(
+            OSBodyRemovalCause cause,
+            int startIndex,
+            int previousCount,
+            int remainingCount,
+            Vector2 hitPosition,
+            int[] removedStableIds)
+        {
+            Cause = cause;
+            StartIndex = startIndex;
+            PreviousCount = previousCount;
+            RemainingCount = remainingCount;
+            HitPosition = hitPosition;
+            RemovedStableIds = removedStableIds ?? Array.Empty<int>();
+        }
+
+        public OSBodyRemovalCause Cause { get; }
+        public int StartIndex { get; }
+        public int PreviousCount { get; }
+        public int RemainingCount { get; }
+        public int RemovedCount => PreviousCount - RemainingCount;
+        public Vector2 HitPosition { get; }
+        public IReadOnlyList<int> RemovedStableIds { get; }
+    }
+
     [DefaultExecutionOrder(-50)]
     [DisallowMultipleComponent]
     public sealed class OSBodyChain : MonoBehaviour
@@ -29,11 +64,15 @@ namespace Ouroboros.Runtime
         private Vector2 _lastHeadPosition;
         private Vector2 _lastForward = Vector2.right;
         private float _headCumulativeDistance;
+        private float _cutGuardRemaining;
         private int _nextStableId = 1;
         private bool _subscribed;
         private bool _started;
 
         public event Action<int, int, OSBodyRoleType> SegmentAppended;
+        public event Action<OSBodyRemovalEvent> SegmentsRemoving;
+        public event Action<OSBodyRemovalEvent> SegmentsRemoved;
+        public event Action<OSBodyRemovalEvent> SegmentsCut;
         public event Action<int> SegmentCountChanged;
         public event Action ChainOrderChanged;
 
@@ -41,6 +80,7 @@ namespace Ouroboros.Runtime
         public int PoolCapacity => _poolViews.Length;
         public int PathCapacity => _path?.Capacity ?? 0;
         public int PathSampleCount => _path?.Count ?? 0;
+        public float CutGuardRemaining => _cutGuardRemaining;
         public float SegmentSpacing => bodyBalance != null
             ? bodyBalance.SegmentSpacing
             : DefaultSegmentSpacing;
@@ -69,7 +109,13 @@ namespace Ouroboros.Runtime
 
         private void FixedUpdate()
         {
-            if (head == null || sessionController != null && !sessionController.IsSimulationRunning)
+            if (sessionController != null && !sessionController.IsSimulationRunning)
+            {
+                return;
+            }
+
+            SimulateCutGuard(Time.fixedDeltaTime);
+            if (head == null)
             {
                 return;
             }
@@ -175,18 +221,62 @@ namespace Ouroboros.Runtime
                     ActiveCount);
             }
 
-            var newCount = ActiveCount - removeCount;
-            for (var index = ActiveCount - 1; index >= newCount; index--)
+            RemoveFrom(ActiveCount - removeCount, OSBodyRemovalCause.Tail, Vector2.zero);
+            return OSRuleResult<int>.Accepted(ActiveCount, "body.remove_tail.accepted");
+        }
+
+        /// <summary>
+        /// Cuts the hit segment and every segment behind it. Removed stable IDs are published
+        /// in their original head-to-tail order while pool deactivation runs tail-first.
+        /// </summary>
+        public OSRuleResult<int> TryCutFrom(int chainIndex, Vector2 hitPosition)
+        {
+            if (sessionController != null && !sessionController.IsSimulationRunning)
             {
-                _poolViews[index]?.Deactivate();
-                _runtimeSlots[index]?.Deactivate();
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedState,
+                    "body.cut.invalid_state",
+                    ActiveCount);
             }
 
-            ActiveCount = newCount;
-            ApplySegmentPoses();
-            SegmentCountChanged?.Invoke(ActiveCount);
-            ChainOrderChanged?.Invoke();
-            return OSRuleResult<int>.Accepted(ActiveCount, "body.remove_tail.accepted");
+            if ((uint)chainIndex >= (uint)ActiveCount)
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedRequirement,
+                    "body.cut.invalid_index",
+                    ActiveCount);
+            }
+
+            if (_cutGuardRemaining > 0f)
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedCutGuard,
+                    "body.cut.guard_active",
+                    ActiveCount);
+            }
+
+            var removal = RemoveFrom(chainIndex, OSBodyRemovalCause.Cut, hitPosition);
+            _cutGuardRemaining = EffectiveCutGuardDuration;
+            SegmentsCut?.Invoke(removal);
+            return OSRuleResult<int>.Accepted(removal.RemovedCount, "body.cut.accepted");
+        }
+
+        public int FindChainIndexByStableId(int stableId)
+        {
+            if (stableId <= 0)
+            {
+                return -1;
+            }
+
+            for (var index = 0; index < ActiveCount; index++)
+            {
+                if (_runtimeSlots[index].StableId == stableId)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
 
         /// <summary>
@@ -237,7 +327,8 @@ namespace Ouroboros.Runtime
             int maximumSegments = DefaultTechnicalGuard,
             float spacing = DefaultSegmentSpacing,
             float sampleInterval = DefaultSampleInterval,
-            float reserveDistance = DefaultReserveDistance)
+            float reserveDistance = DefaultReserveDistance,
+            float cutGuardDuration = 0.35f)
         {
             head = headTransform;
             playerController = null;
@@ -250,6 +341,7 @@ namespace Ouroboros.Runtime
             _testSegmentSpacing = spacing;
             _testSampleInterval = sampleInterval;
             _testReserveDistance = reserveDistance;
+            _testCutGuardDuration = Mathf.Max(0f, cutGuardDuration);
             DestroyPool();
             BuildPool();
             InitializePath();
@@ -271,10 +363,16 @@ namespace Ouroboros.Runtime
             ApplySegmentPoses();
         }
 
+        internal void SimulateCutGuardForTesting(float deltaTime)
+        {
+            SimulateCutGuard(deltaTime);
+        }
+
         private int _testTechnicalGuard;
         private float _testSegmentSpacing;
         private float _testSampleInterval;
         private float _testReserveDistance;
+        private float _testCutGuardDuration = -1f;
 
         private int EffectiveTechnicalGuard => _testTechnicalGuard > 0
             ? _testTechnicalGuard
@@ -288,6 +386,9 @@ namespace Ouroboros.Runtime
         private float EffectiveReserveDistance => _testReserveDistance >= 0f && _testTechnicalGuard > 0
             ? _testReserveDistance
             : bodyBalance != null ? bodyBalance.PathReserveDistance : DefaultReserveDistance;
+        private float EffectiveCutGuardDuration => _testCutGuardDuration >= 0f
+            ? _testCutGuardDuration
+            : bodyBalance != null ? bodyBalance.CutGuardDuration : 0.35f;
 
         private void ResetDebugChain()
         {
@@ -310,12 +411,58 @@ namespace Ouroboros.Runtime
 
             var hadSegments = ActiveCount > 0;
             ActiveCount = 0;
+            _cutGuardRemaining = 0f;
             _nextStableId = 1;
             if (hadSegments)
             {
                 SegmentCountChanged?.Invoke(0);
                 ChainOrderChanged?.Invoke();
             }
+        }
+
+        private OSBodyRemovalEvent RemoveFrom(
+            int startIndex,
+            OSBodyRemovalCause cause,
+            Vector2 hitPosition)
+        {
+            var previousCount = ActiveCount;
+            var removedStableIds = new int[previousCount - startIndex];
+            for (var index = startIndex; index < previousCount; index++)
+            {
+                removedStableIds[index - startIndex] = _runtimeSlots[index].StableId;
+            }
+
+            var removal = new OSBodyRemovalEvent(
+                cause,
+                startIndex,
+                previousCount,
+                startIndex,
+                hitPosition,
+                removedStableIds);
+            SegmentsRemoving?.Invoke(removal);
+
+            for (var index = previousCount - 1; index >= startIndex; index--)
+            {
+                _poolViews[index]?.Deactivate();
+                _runtimeSlots[index]?.Deactivate();
+            }
+
+            ActiveCount = startIndex;
+            ApplySegmentPoses();
+            SegmentCountChanged?.Invoke(ActiveCount);
+            ChainOrderChanged?.Invoke();
+            SegmentsRemoved?.Invoke(removal);
+            return removal;
+        }
+
+        private void SimulateCutGuard(float deltaTime)
+        {
+            if (!float.IsFinite(deltaTime) || deltaTime <= 0f || _cutGuardRemaining <= 0f)
+            {
+                return;
+            }
+
+            _cutGuardRemaining = Mathf.Max(0f, _cutGuardRemaining - deltaTime);
         }
 
         private void BuildPool()

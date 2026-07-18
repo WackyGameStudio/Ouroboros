@@ -168,7 +168,7 @@ namespace Ouroboros.UI
             var requestText = request.HasValue
                 ? $"  REQUEST {request.Value.RequestId}: {request.Value.Kind}"
                 : string.Empty;
-            stateLabel.text = $"STEP 03  |  {sessionController.State}{requestText}";
+            stateLabel.text = $"SESSION  |  {sessionController.State}{requestText}";
         }
 
         private static void SetActive(GameObject target, bool active)

@@ -7,7 +7,6 @@ namespace Ouroboros.Runtime
     public sealed class OSEnemyContactHitbox : MonoBehaviour
     {
         [SerializeField] private OSEnemyController owner;
-        private OSCombatTargetIdentity _contactTarget;
 
         public void Configure(OSEnemyController controller)
         {
@@ -16,7 +15,7 @@ namespace Ouroboros.Runtime
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (_contactTarget != null || owner == null)
+            if (owner == null)
             {
                 return;
             }
@@ -27,24 +26,25 @@ namespace Ouroboros.Runtime
                 return;
             }
 
-            _contactTarget = identity;
             owner.BeginContact(identity.RuntimeId, identity.TargetKind, identity.transform);
         }
 
         private void OnTriggerExit2D(Collider2D other)
         {
-            if (_contactTarget == null || other.GetComponentInParent<OSCombatTargetIdentity>() != _contactTarget)
+            if (owner == null)
             {
                 return;
             }
 
-            _contactTarget = null;
-            owner?.EndContact();
+            var identity = other.GetComponentInParent<OSCombatTargetIdentity>();
+            if (identity != null)
+            {
+                owner.EndContact(identity.RuntimeId, identity.TargetKind);
+            }
         }
 
         private void OnDisable()
         {
-            _contactTarget = null;
             owner?.EndContact();
         }
     }

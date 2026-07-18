@@ -9,6 +9,7 @@ namespace Ouroboros.Runtime
     public sealed class OSEnemyController : OSPoolableBehaviour
     {
         private const float MinimumDistanceSquared = 0.000001f;
+        private const int MaxContactTargets = 65;
 
         [Header("Definition")]
         [SerializeField] private OSEncounterBalanceData encounterBalance;
@@ -36,13 +37,13 @@ namespace Ouroboros.Runtime
         private OSEnemyRegistry _registry;
         private OSGameSessionController _session;
         private Transform _target;
-        private Transform _contactTransform;
-        private int _contactRuntimeId;
-        private OSTargetKind _contactTargetKind;
+        private readonly Transform[] _contactTransforms = new Transform[MaxContactTargets];
+        private readonly int[] _contactRuntimeIds = new int[MaxContactTargets];
+        private readonly OSTargetKind[] _contactTargetKinds = new OSTargetKind[MaxContactTargets];
+        private int _contactCount;
         private float _attackCooldown;
         private float _movementControlRemaining;
         private float _attackControlRemaining;
-        private bool _hasContact;
         private bool _deathConfirmed;
         private bool _definitionResolved;
 
@@ -59,7 +60,8 @@ namespace Ouroboros.Runtime
         public float FragmentDropChance => fragmentDropChance;
         public float AttackCooldown => _attackCooldown;
         public bool IsDeathConfirmed => _deathConfirmed;
-        public bool HasContactTarget => _hasContact;
+        public bool HasContactTarget => _contactCount > 0;
+        public int ContactTargetCount => _contactCount;
         public Vector2 Position => body != null ? body.position : (Vector2)transform.position;
 
         private void Awake()
@@ -90,17 +92,56 @@ namespace Ouroboros.Runtime
                 return;
             }
 
-            _contactRuntimeId = targetRuntimeId;
-            _contactTargetKind = targetKind;
-            _contactTransform = contactTransform;
-            _hasContact = true;
+            for (var index = 0; index < _contactCount; index++)
+            {
+                if (_contactRuntimeIds[index] != targetRuntimeId ||
+                    _contactTargetKinds[index] != targetKind)
+                {
+                    continue;
+                }
+
+                _contactTransforms[index] = contactTransform;
+                return;
+            }
+
+            if (_contactCount >= MaxContactTargets)
+            {
+                return;
+            }
+
+            _contactRuntimeIds[_contactCount] = targetRuntimeId;
+            _contactTargetKinds[_contactCount] = targetKind;
+            _contactTransforms[_contactCount] = contactTransform;
+            _contactCount++;
         }
 
         public void EndContact()
         {
-            _contactRuntimeId = 0;
-            _contactTransform = null;
-            _hasContact = false;
+            Array.Clear(_contactRuntimeIds, 0, _contactCount);
+            Array.Clear(_contactTargetKinds, 0, _contactCount);
+            Array.Clear(_contactTransforms, 0, _contactCount);
+            _contactCount = 0;
+        }
+
+        public void EndContact(int targetRuntimeId, OSTargetKind targetKind)
+        {
+            for (var index = 0; index < _contactCount; index++)
+            {
+                if (_contactRuntimeIds[index] != targetRuntimeId ||
+                    _contactTargetKinds[index] != targetKind)
+                {
+                    continue;
+                }
+
+                var last = --_contactCount;
+                _contactRuntimeIds[index] = _contactRuntimeIds[last];
+                _contactTargetKinds[index] = _contactTargetKinds[last];
+                _contactTransforms[index] = _contactTransforms[last];
+                _contactRuntimeIds[last] = 0;
+                _contactTargetKinds[last] = default;
+                _contactTransforms[last] = null;
+                return;
+            }
         }
 
         public OSRuleResult<float> TryApplyDamage(float damage)
@@ -279,7 +320,7 @@ namespace Ouroboros.Runtime
             }
 
             _attackCooldown = Mathf.Max(0f, _attackCooldown - deltaTime);
-            if (!_hasContact || _contactRuntimeId <= 0 || _attackCooldown > 0f || contactDamage <= 0f)
+            if (_contactCount <= 0 || _attackCooldown > 0f || contactDamage <= 0f)
             {
                 return;
             }
@@ -290,17 +331,21 @@ namespace Ouroboros.Runtime
                 return;
             }
 
-            var hitPosition = _contactTransform != null
-                ? (Vector2)_contactTransform.position
-                : Position;
-            ContactAttackRequested?.Invoke(new OSDamageEvent(
-                idResult.Value.Payload,
-                Time.frameCount,
-                RuntimeId,
-                _contactRuntimeId,
-                _contactTargetKind,
-                contactDamage,
-                hitPosition));
+            for (var index = 0; index < _contactCount; index++)
+            {
+                var hitPosition = _contactTransforms[index] != null
+                    ? (Vector2)_contactTransforms[index].position
+                    : Position;
+                ContactAttackRequested?.Invoke(new OSDamageEvent(
+                    idResult.Value.Payload,
+                    Time.frameCount,
+                    RuntimeId,
+                    _contactRuntimeIds[index],
+                    _contactTargetKinds[index],
+                    contactDamage,
+                    hitPosition));
+            }
+
             _attackCooldown = attackInterval;
         }
 

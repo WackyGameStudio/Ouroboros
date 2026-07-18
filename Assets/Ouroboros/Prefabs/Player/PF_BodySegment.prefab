@@ -52,6 +52,7 @@ MonoBehaviour:
   bodyRenderer: {fileID: 7545072890265863413}
   roleIconRenderer: {fileID: 5330495336439344683}
   bodyHurtbox: {fileID: 2947905691960821627}
+  targetIdentity: {fileID: 6634219456443996527}
   roleSprites:
   - {fileID: 21300000, guid: ed7dcbf96ef9a53419f8d77d169f148c, type: 3}
   - {fileID: 21300000, guid: c2a6a444aad7d5848b38fc1435351931, type: 3}
@@ -221,6 +222,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4925992634992311333}
   - component: {fileID: 2947905691960821627}
+  - component: {fileID: 6634219456443996527}
   m_Layer: 10
   m_Name: BodyHurtbox
   m_TagString: Untagged
@@ -279,6 +281,20 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.43
+--- !u!114 &6634219456443996527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5671748449979795171}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8eaf4c95fd514364e9851f40e91d330d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Ouroboros.Runtime::Ouroboros.Runtime.OSCombatTargetIdentity
+  runtimeId: 1
+  targetKind: 1
 --- !u!1 &8191227342427646403
 GameObject:
   m_ObjectHideFlags: 0

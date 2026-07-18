@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using NUnit.Framework;
 using Ouroboros.Core;
@@ -174,6 +175,25 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(secondAttackId, Is.GreaterThan(firstAttackId));
             Assert.That(firstAttackCount, Is.EqualTo(1));
             Assert.That(first.AttackCooldown, Is.EqualTo(0.75f).Within(0.001f));
+        }
+
+        [Test]
+        public void ContactAttack_MultipleTargetsShareOneAttackEventId()
+        {
+            _rig = CreateRig(1);
+            var enemy = RentEnemy(_rig, Vector3.zero);
+            var events = new List<OSDamageEvent>();
+            enemy.ContactAttackRequested += events.Add;
+            enemy.BeginContact(1, OSTargetKind.PlayerHead, _rig.TargetObject.transform);
+            enemy.BeginContact(22, OSTargetKind.PlayerBody, _rig.TargetObject.transform);
+
+            enemy.SimulateStep(0.01f);
+
+            Assert.That(events.Count, Is.EqualTo(2));
+            Assert.That(events[0].AttackEventId, Is.EqualTo(events[1].AttackEventId));
+            Assert.That(events[0].TargetKind, Is.EqualTo(OSTargetKind.PlayerHead));
+            Assert.That(events[1].TargetKind, Is.EqualTo(OSTargetKind.PlayerBody));
+            Assert.That(enemy.ContactTargetCount, Is.EqualTo(2));
         }
 
         [UnityTest]

@@ -9,6 +9,7 @@ namespace Ouroboros.Runtime
         [SerializeField] private SpriteRenderer bodyRenderer;
         [SerializeField] private SpriteRenderer roleIconRenderer;
         [SerializeField] private Collider2D bodyHurtbox;
+        [SerializeField] private OSCombatTargetIdentity targetIdentity;
         [SerializeField] private Sprite[] roleSprites = new Sprite[4];
 
         public int StableId { get; private set; }
@@ -41,6 +42,8 @@ namespace Ouroboros.Runtime
                 bodyHurtbox.enabled = true;
             }
 
+            targetIdentity?.Configure(stableId, OSTargetKind.PlayerBody);
+
             gameObject.SetActive(true);
         }
 
@@ -66,6 +69,7 @@ namespace Ouroboros.Runtime
             StableId = 0;
             ChainIndex = -1;
             Role = default;
+            targetIdentity?.Configure(1, OSTargetKind.PlayerBody);
             gameObject.SetActive(false);
         }
 
@@ -73,6 +77,7 @@ namespace Ouroboros.Runtime
         {
             bodyRenderer ??= GetComponentInChildren<SpriteRenderer>(true);
             bodyHurtbox ??= GetComponentInChildren<Collider2D>(true);
+            targetIdentity ??= GetComponentInChildren<OSCombatTargetIdentity>(true);
         }
 
         private static Color32 RoleColor(OSBodyRoleType role)
