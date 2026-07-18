@@ -50,9 +50,19 @@ namespace Ouroboros.Editor
 
             var encounter = LoadRequired<OSEncounterBalanceData>(EncounterPath);
             var waves = LoadRequired<OSWaveScheduleData>(WavePath);
-            var enemyHitboxLayer = RequireLayer("EnemyHitbox");
+            var enemyProjectileLayer = EnsureLayer("EnemyProjectile");
+            var playerHeadHurtboxLayer = RequireLayer("PlayerHeadHurtbox");
+            var playerBodyHurtboxLayer = RequireLayer("PlayerBodyHurtbox");
+            var worldBlockerLayer = RequireLayer("WorldBlocker");
+            ConfigureEnemyProjectileCollisionMatrix(
+                enemyProjectileLayer,
+                playerHeadHurtboxLayer,
+                playerBodyHurtboxLayer,
+                worldBlockerLayer);
             var prefabs = CreateEnemyPrefabs(encounter);
-            var enemyProjectile = CreateEnemyProjectilePrefab(enemyHitboxLayer);
+            var enemyProjectile = CreateEnemyProjectilePrefab(
+                enemyProjectileLayer,
+                worldBlockerLayer);
             ConfigureEncounterPrefabs(encounter, prefabs);
             ConfigureScene(encounter, waves, prefabs, enemyProjectile);
 
@@ -205,7 +215,9 @@ namespace Ouroboros.Editor
             }
         }
 
-        private static OSEnemyProjectile CreateEnemyProjectilePrefab(int layer)
+        private static OSEnemyProjectile CreateEnemyProjectilePrefab(
+            int layer,
+            int worldBlockerLayer)
         {
             var sprite = LoadRequired<Sprite>(ProjectileSpritePath);
             var root = new GameObject(
@@ -228,6 +240,7 @@ namespace Ouroboros.Editor
                 body.freezeRotation = true;
                 body.useFullKinematicContacts = true;
                 body.interpolation = RigidbodyInterpolation2D.Interpolate;
+                body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
                 var collider = root.GetComponent<CircleCollider2D>();
                 collider.isTrigger = true;
                 collider.radius = 0.34f;
@@ -235,6 +248,8 @@ namespace Ouroboros.Editor
                 var projectile = root.GetComponent<OSEnemyProjectile>();
                 var serialized = new SerializedObject(projectile);
                 serialized.FindProperty("body").objectReferenceValue = body;
+                serialized.FindProperty("projectileCollider").objectReferenceValue = collider;
+                serialized.FindProperty("worldBlockerMask").intValue = 1 << worldBlockerLayer;
                 serialized.FindProperty("moveSpeed").floatValue = 6f;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
@@ -548,6 +563,56 @@ namespace Ouroboros.Editor
             return layer >= 0
                 ? layer
                 : throw new InvalidOperationException($"Required layer '{name}' is missing.");
+        }
+
+        private static int EnsureLayer(string layerName)
+        {
+            var existing = LayerMask.NameToLayer(layerName);
+            if (existing >= 0)
+            {
+                return existing;
+            }
+
+            var tagManagerAssets = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset");
+            if (tagManagerAssets.Length == 0)
+            {
+                throw new InvalidOperationException("Unable to load ProjectSettings/TagManager.asset.");
+            }
+
+            var serialized = new SerializedObject(tagManagerAssets[0]);
+            var layers = serialized.FindProperty("layers")
+                         ?? throw new InvalidOperationException("TagManager layers property is missing.");
+            for (var index = 8; index < layers.arraySize; index++)
+            {
+                var layer = layers.GetArrayElementAtIndex(index);
+                if (!string.IsNullOrEmpty(layer.stringValue))
+                {
+                    continue;
+                }
+
+                layer.stringValue = layerName;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                AssetDatabase.SaveAssets();
+                return index;
+            }
+
+            throw new InvalidOperationException($"No free user layer is available for '{layerName}'.");
+        }
+
+        private static void ConfigureEnemyProjectileCollisionMatrix(
+            int projectileLayer,
+            int playerHeadHurtboxLayer,
+            int playerBodyHurtboxLayer,
+            int worldBlockerLayer)
+        {
+            for (var other = 0; other < 32; other++)
+            {
+                Physics2D.IgnoreLayerCollision(projectileLayer, other, true);
+            }
+
+            Physics2D.IgnoreLayerCollision(projectileLayer, playerHeadHurtboxLayer, false);
+            Physics2D.IgnoreLayerCollision(projectileLayer, playerBodyHurtboxLayer, false);
+            Physics2D.IgnoreLayerCollision(projectileLayer, worldBlockerLayer, false);
         }
 
         private static void AssignObject(UnityEngine.Object target, string property, UnityEngine.Object value)

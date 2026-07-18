@@ -11,8 +11,8 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSPlayerController playerController;
         [SerializeField, Range(0.08f, 0.15f)] private float smoothTime = 0.1f;
         [SerializeField, Min(0f)] private float edgePadding = 0.35f;
-        [SerializeField] private Vector2 worldMin = new(-14f, -9f);
-        [SerializeField] private Vector2 worldMax = new(14f, 9f);
+        [SerializeField] private Vector2 worldMin = new(-24f, -15f);
+        [SerializeField] private Vector2 worldMax = new(24f, 15f);
 
         private Vector3 _velocity;
         private float _depth;

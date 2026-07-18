@@ -23,7 +23,7 @@ TagManager:
   - PlayerProjectile
   - Pickup
   - PickupCollector
-  - 
+  - EnemyProjectile
   - 
   - 
   - 

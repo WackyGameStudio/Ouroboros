@@ -23,8 +23,9 @@ namespace Ouroboros.Editor
         public static void ApplyStep07HeadWeapon()
         {
             var enemyHurtboxLayer = RequireLayer("EnemyHurtbox");
+            var worldBlockerLayer = RequireLayer("WorldBlocker");
             var projectileLayer = EnsureLayer("PlayerProjectile");
-            ConfigureCollisionMatrix(projectileLayer, enemyHurtboxLayer);
+            ConfigureCollisionMatrix(projectileLayer, enemyHurtboxLayer, worldBlockerLayer);
 
             var playerBalance = AssetDatabase.LoadAssetAtPath<OSPlayerBalanceData>(PlayerBalancePath)
                                 ?? throw new InvalidOperationException(
@@ -77,6 +78,9 @@ namespace Ouroboros.Editor
                 var projectile = root.GetComponent<OSProjectile>();
                 var serialized = new SerializedObject(projectile);
                 serialized.FindProperty("body").objectReferenceValue = body;
+                serialized.FindProperty("projectileCollider").objectReferenceValue = collider;
+                serialized.FindProperty("worldBlockerMask").intValue =
+                    1 << RequireLayer("WorldBlocker");
                 serialized.FindProperty("moveSpeed").floatValue = 12f;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
@@ -193,7 +197,10 @@ namespace Ouroboros.Editor
             entry.FindPropertyRelative("capacity").intValue = Mathf.Max(1, capacity);
         }
 
-        private static void ConfigureCollisionMatrix(int projectileLayer, int enemyHurtboxLayer)
+        private static void ConfigureCollisionMatrix(
+            int projectileLayer,
+            int enemyHurtboxLayer,
+            int worldBlockerLayer)
         {
             for (var other = 0; other < 32; other++)
             {
@@ -201,6 +208,7 @@ namespace Ouroboros.Editor
             }
 
             Physics2D.IgnoreLayerCollision(projectileLayer, enemyHurtboxLayer, false);
+            Physics2D.IgnoreLayerCollision(projectileLayer, worldBlockerLayer, false);
         }
 
         private static int EnsureLayer(string layerName)

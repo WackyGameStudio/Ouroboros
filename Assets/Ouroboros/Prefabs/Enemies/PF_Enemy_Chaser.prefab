@@ -488,7 +488,7 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 1
   m_SleepingMode: 1
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
   m_Constraints: 4
 --- !u!58 &1983123910221988377
 CircleCollider2D:
@@ -541,10 +541,14 @@ MonoBehaviour:
   encounterBalance: {fileID: 11400000, guid: 15066c12ad0c5be4fbf986eeaa6d6f6a, type: 2}
   definitionId: enemy_chaser
   body: {fileID: 1611508506899512840}
+  bodyCollider: {fileID: 1983123910221988377}
   bodyRenderer: {fileID: 9210367959331369989}
   telegraphLine: {fileID: 0}
   controlStatusRing: {fileID: 9145205043112746748}
-  reclaimDistance: 32
+  worldBlockerMask:
+    serializedVersion: 2
+    m_Bits: 256
+  reclaimDistance: 60
   separationRadius: 0.72
   separationStrength: 0.55
   maxHealth: 18

@@ -29,8 +29,11 @@ namespace Ouroboros.Editor
         {
             OSStep10ExplosionSetup.ApplyStep10EncirclementExplosion();
             var projectileLayer = RequireLayer("PlayerProjectile");
+            var worldBlockerLayer = RequireLayer("WorldBlocker");
             var bodyBalance = LoadRequired<OSBodyBalanceData>(BodyBalancePath);
-            var controlProjectile = CreateOrUpdateControlProjectilePrefab(projectileLayer);
+            var controlProjectile = CreateOrUpdateControlProjectilePrefab(
+                projectileLayer,
+                worldBlockerLayer);
             ConfigureScene(bodyBalance, controlProjectile);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -73,7 +76,9 @@ namespace Ouroboros.Editor
                 $"size {summary.totalSize} bytes.");
         }
 
-        private static OSControlProjectile CreateOrUpdateControlProjectilePrefab(int projectileLayer)
+        private static OSControlProjectile CreateOrUpdateControlProjectilePrefab(
+            int projectileLayer,
+            int worldBlockerLayer)
         {
             var sprite = LoadRequired<Sprite>(ProjectileSpritePath);
             var root = new GameObject(
@@ -107,6 +112,8 @@ namespace Ouroboros.Editor
 
                 var projectile = root.GetComponent<OSControlProjectile>();
                 Assign(projectile, "body", body);
+                Assign(projectile, "projectileCollider", collider);
+                AssignLayerMask(projectile, "worldBlockerMask", 1 << worldBlockerLayer);
                 AssignFloat(projectile, "moveSpeed", 9f);
 
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root, ControlProjectilePrefabPath)
@@ -451,6 +458,17 @@ namespace Ouroboros.Editor
                            ?? throw new InvalidOperationException(
                                $"Serialized property '{propertyName}' is missing from '{target.name}'.");
             property.floatValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
+        private static void AssignLayerMask(UnityEngine.Object target, string propertyName, int value)
+        {
+            var serialized = new SerializedObject(target);
+            var property = serialized.FindProperty(propertyName)
+                           ?? throw new InvalidOperationException(
+                               $"Serialized property '{propertyName}' is missing from '{target.name}'.");
+            property.intValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(target);
         }

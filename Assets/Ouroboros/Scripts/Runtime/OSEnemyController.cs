@@ -26,12 +26,14 @@ namespace Ouroboros.Runtime
 
         [Header("References")]
         [SerializeField] private Rigidbody2D body;
+        [SerializeField] private CircleCollider2D bodyCollider;
         [SerializeField] private SpriteRenderer bodyRenderer;
         [SerializeField] private LineRenderer telegraphLine;
         [SerializeField] private LineRenderer controlStatusRing;
 
         [Header("World safety")]
-        [SerializeField, Min(1f)] private float reclaimDistance = 32f;
+        [SerializeField] private LayerMask worldBlockerMask;
+        [SerializeField, Min(1f)] private float reclaimDistance = 60f;
         [SerializeField, Min(0f)] private float separationRadius = 0.72f;
         [SerializeField, Min(0f)] private float separationStrength = 0.55f;
 
@@ -54,6 +56,8 @@ namespace Ouroboros.Runtime
         private readonly Transform[] _contactTransforms = new Transform[MaxContactTargets];
         private readonly int[] _contactRuntimeIds = new int[MaxContactTargets];
         private readonly OSTargetKind[] _contactTargetKinds = new OSTargetKind[MaxContactTargets];
+        private readonly RaycastHit2D[] _worldBlockerHits = new RaycastHit2D[4];
+        private ContactFilter2D _worldBlockerFilter;
         private int _contactCount;
         private float _attackCooldown;
         private float _movementControlRemaining;
@@ -457,7 +461,7 @@ namespace Ouroboros.Runtime
                 direction = Vector2.ClampMagnitude(direction + separation * separationStrength, 1f);
             }
 
-            body.MovePosition(Position + direction * (speed * deltaTime));
+            MoveWithWorldBlockers(direction * (speed * deltaTime));
             if (bodyRenderer != null && Mathf.Abs(direction.x) > 0.001f)
             {
                 bodyRenderer.flipX = direction.x < 0f;
@@ -752,9 +756,59 @@ namespace Ouroboros.Runtime
         private void ResolveComponents()
         {
             body ??= GetComponent<Rigidbody2D>();
+            bodyCollider ??= GetComponent<CircleCollider2D>();
             bodyRenderer ??= GetComponent<SpriteRenderer>();
             _bossController ??= GetComponent<OSBossController>();
             controlStatusRing ??= transform.Find("ControlStatusRing")?.GetComponent<LineRenderer>();
+            _worldBlockerFilter = OSWorldBlockerMotion.CreateFilter(worldBlockerMask);
+        }
+
+        private void MoveWithWorldBlockers(Vector2 displacement)
+        {
+            var remaining = displacement;
+            for (var iteration = 0; iteration < 2; iteration++)
+            {
+                var distance = remaining.magnitude;
+                if (distance <= MinimumDistanceSquared)
+                {
+                    break;
+                }
+
+                var direction = remaining / distance;
+                if (!OSWorldBlockerMotion.TryGetClosestHit(
+                        bodyCollider,
+                        direction,
+                        distance,
+                        _worldBlockerFilter,
+                        _worldBlockerHits,
+                        out var blockerHit))
+                {
+                    body.position += remaining;
+                    break;
+                }
+
+                var safeDistance = Mathf.Clamp(
+                    blockerHit.distance - OSWorldBlockerMotion.SkinWidth,
+                    0f,
+                    distance);
+                var safeMove = direction * safeDistance;
+                body.position += safeMove;
+
+                var unresolved = remaining - safeMove;
+                var intoSurface = Vector2.Dot(unresolved, blockerHit.normal);
+                if (intoSurface < 0f)
+                {
+                    unresolved -= blockerHit.normal * intoSurface;
+                }
+
+                if (safeDistance <= MinimumDistanceSquared &&
+                    unresolved.sqrMagnitude >= remaining.sqrMagnitude - MinimumDistanceSquared)
+                {
+                    break;
+                }
+
+                remaining = unresolved;
+            }
         }
 
         private void ResolveDefinition()
@@ -830,6 +884,7 @@ namespace Ouroboros.Runtime
             experienceDropAmount = Mathf.Max(0, experienceDropAmount);
             healDropAmount = Mathf.Max(0, healDropAmount);
             healDropChance = Mathf.Clamp01(healDropChance);
+            ResolveComponents();
         }
     }
 }

@@ -19,8 +19,8 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSGameSessionController sessionController;
         [SerializeField] private OSPlayerBalanceData playerBalance;
         [SerializeField] private LayerMask worldBlockerMask;
-        [SerializeField] private Vector2 worldMin = new(-14f, -9f);
-        [SerializeField] private Vector2 worldMax = new(14f, 9f);
+        [SerializeField] private Vector2 worldMin = new(-24f, -15f);
+        [SerializeField] private Vector2 worldMax = new(24f, 15f);
         [SerializeField, Min(0.001f)] private float skinWidth = 0.02f;
         [SerializeField, Range(1, 5)] private int maxSlideIterations = 3;
 

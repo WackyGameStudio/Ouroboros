@@ -17,9 +17,13 @@ namespace Ouroboros.Runtime
         private const float MinimumDirectionSquared = 0.000001f;
 
         [SerializeField] private Rigidbody2D body;
+        [SerializeField] private Collider2D projectileCollider;
+        [SerializeField] private LayerMask worldBlockerMask;
         [SerializeField, Min(0.01f)] private float moveSpeed = 12f;
 
         private readonly int[] _hitRuntimeIds = new int[MaximumRecordedTargets];
+        private readonly RaycastHit2D[] _blockerHits = new RaycastHit2D[4];
+        private ContactFilter2D _blockerFilter;
         private OSGameSessionController _session;
         private IOSProjectileFeedbackSink _feedbackSink;
         private Vector2 _direction;
@@ -97,6 +101,28 @@ namespace Ouroboros.Runtime
             var stepDistance = Mathf.Min(moveSpeed * deltaTime, remainingDistance);
             if (stepDistance > 0f)
             {
+                if (OSWorldBlockerMotion.TryGetClosestHit(
+                        projectileCollider,
+                        _direction,
+                        stepDistance,
+                        _blockerFilter,
+                        _blockerHits,
+                        out var blockerHit))
+                {
+                    var safeDistance = Mathf.Clamp(
+                        blockerHit.distance - OSWorldBlockerMotion.SkinWidth,
+                        0f,
+                        stepDistance);
+                    if (safeDistance > 0f)
+                    {
+                        body.position = Position + _direction * safeDistance;
+                        _travelledDistance += safeDistance;
+                    }
+
+                    ReturnToPool();
+                    return;
+                }
+
                 body.MovePosition(Position + _direction * stepDistance);
                 _travelledDistance += stepDistance;
             }
@@ -186,6 +212,12 @@ namespace Ouroboros.Runtime
 
         private void OnTriggerEnter2D(Collider2D other)
         {
+            if (other != null && OSWorldBlockerMotion.ContainsLayer(worldBlockerMask, other.gameObject.layer))
+            {
+                ReturnToPool();
+                return;
+            }
+
             var enemy = other.GetComponentInParent<OSEnemyController>();
             if (enemy != null)
             {
@@ -209,11 +241,14 @@ namespace Ouroboros.Runtime
         private void ResolveComponents()
         {
             body ??= GetComponent<Rigidbody2D>();
+            projectileCollider ??= GetComponent<Collider2D>();
+            _blockerFilter = OSWorldBlockerMotion.CreateFilter(worldBlockerMask);
         }
 
         private void OnValidate()
         {
             moveSpeed = Mathf.Max(0.01f, moveSpeed);
+            ResolveComponents();
         }
     }
 }

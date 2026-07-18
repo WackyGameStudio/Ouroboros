@@ -18,8 +18,8 @@ namespace Ouroboros.Editor
         private const string DirectionSpritePath = "Assets/Ouroboros/Art/Placeholders/Projectile.png";
         private const string WorldBlockerLayerName = "WorldBlocker";
         private const string PlayerHeadLayerName = "PlayerHeadSolid";
-        private static readonly Vector2 WorldMinimum = new(-14f, -9f);
-        private static readonly Vector2 WorldMaximum = new(14f, 9f);
+        private static readonly Vector2 WorldMinimum = new(-24f, -15f);
+        private static readonly Vector2 WorldMaximum = new(24f, 15f);
 
         [MenuItem("Ouroboros/Setup/Apply Step 04 Movement Foundation")]
         public static void ApplyStep04MovementFoundation()
@@ -40,7 +40,8 @@ namespace Ouroboros.Editor
             {
                 var gameRoot = FindRoot(scene, "GameRoot");
                 var head = RequireTransform(gameRoot.transform, "PlayerRoot/Head");
-                var obstacles = RequireTransform(gameRoot.transform, "World/Obstacles");
+                var world = RequireTransform(gameRoot.transform, "World");
+                var obstacles = RequireTransform(world, "Obstacles");
                 var router = RequireComponent<OSInputRouter>(gameRoot.transform, "Systems/OSInputRouter");
                 var session = RequireComponent<OSGameSessionController>(
                     gameRoot.transform,
@@ -62,6 +63,8 @@ namespace Ouroboros.Editor
                 ConfigurePlayerVisual(head, playerController, session);
                 ConfigureCamera(cameraTransform, camera, head, playerController);
                 ConfigureArena(obstacles, obstacleSprite, worldBlockerLayer);
+                RemoveLegacyMapPlaceholder(world, "Enemy_Chaser");
+                RemoveLegacyMapPlaceholder(world, "Pickup");
 
                 var foundationLabel = RequireComponent<TMP_Text>(gameRoot.transform, "Canvas/FoundationLabel");
                 foundationLabel.text = "STEP 04 MOVEMENT + CAMERA FOUNDATION";
@@ -135,7 +138,7 @@ namespace Ouroboros.Editor
                               ?? throw new InvalidOperationException(
                                   $"Direction sprite is missing at '{DirectionSpritePath}'.");
             renderer.color = new Color32(255, 235, 84, 255);
-            renderer.sortingOrder = 2;
+            renderer.sortingOrder = Mathf.Max(renderer.sortingOrder, 2);
             indicator.localPosition = new Vector3(0.72f, 0f, 0f);
             indicator.localRotation = Quaternion.identity;
             indicator.localScale = new Vector3(0.28f, 0.16f, 1f);
@@ -170,33 +173,74 @@ namespace Ouroboros.Editor
             EnsureObstacle(
                 obstacles,
                 "Obstacle_Wide",
-                new Vector2(-4.5f, 2.4f),
-                new Vector2(3.6f, 1.1f),
+                new Vector2(-8f, 4f),
+                new Vector2(4f, 1.2f),
                 new Color32(93, 111, 145, 255),
                 obstacleSprite,
                 blockerLayer);
             EnsureObstacle(
                 obstacles,
                 "Obstacle_Tall",
-                new Vector2(4.4f, -1.2f),
-                new Vector2(1.2f, 3.8f),
+                new Vector2(8f, -3f),
+                new Vector2(1.2f, 4f),
                 new Color32(118, 87, 145, 255),
                 obstacleSprite,
                 blockerLayer);
             EnsureObstacle(
                 obstacles,
                 "Obstacle_Block",
-                new Vector2(1.4f, 4.25f),
-                new Vector2(2.7f, 1.35f),
+                new Vector2(3f, 8f),
+                new Vector2(2.8f, 1.4f),
                 new Color32(70, 132, 132, 255),
+                obstacleSprite,
+                blockerLayer);
+            EnsureObstacle(
+                obstacles,
+                "Obstacle_West",
+                new Vector2(-15f, -4f),
+                new Vector2(3f, 1.3f),
+                new Color32(84, 123, 151, 255),
+                obstacleSprite,
+                blockerLayer);
+            EnsureObstacle(
+                obstacles,
+                "Obstacle_East",
+                new Vector2(15f, 4f),
+                new Vector2(3.3f, 1.2f),
+                new Color32(131, 91, 147, 255),
+                obstacleSprite,
+                blockerLayer);
+            EnsureObstacle(
+                obstacles,
+                "Obstacle_South",
+                new Vector2(-4f, -9f),
+                new Vector2(4f, 1.2f),
+                new Color32(67, 130, 137, 255),
+                obstacleSprite,
+                blockerLayer);
+            EnsureObstacle(
+                obstacles,
+                "Obstacle_North",
+                new Vector2(12f, 10f),
+                new Vector2(1.3f, 3.8f),
+                new Color32(105, 112, 153, 255),
                 obstacleSprite,
                 blockerLayer);
 
             var bounds = GetOrCreateChild(obstacles, "WorldBounds");
-            EnsureBoundary(bounds, "Boundary_Left", new Vector2(-14.25f, 0f), new Vector2(0.5f, 18f), blockerLayer);
-            EnsureBoundary(bounds, "Boundary_Right", new Vector2(14.25f, 0f), new Vector2(0.5f, 18f), blockerLayer);
-            EnsureBoundary(bounds, "Boundary_Top", new Vector2(0f, 9.25f), new Vector2(28f, 0.5f), blockerLayer);
-            EnsureBoundary(bounds, "Boundary_Bottom", new Vector2(0f, -9.25f), new Vector2(28f, 0.5f), blockerLayer);
+            EnsureBoundary(bounds, "Boundary_Left", new Vector2(-24.25f, 0f), new Vector2(0.5f, 30f), blockerLayer);
+            EnsureBoundary(bounds, "Boundary_Right", new Vector2(24.25f, 0f), new Vector2(0.5f, 30f), blockerLayer);
+            EnsureBoundary(bounds, "Boundary_Top", new Vector2(0f, 15.25f), new Vector2(48f, 0.5f), blockerLayer);
+            EnsureBoundary(bounds, "Boundary_Bottom", new Vector2(0f, -15.25f), new Vector2(48f, 0.5f), blockerLayer);
+        }
+
+        private static void RemoveLegacyMapPlaceholder(Transform world, string name)
+        {
+            var placeholder = world.Find(name);
+            if (placeholder != null)
+            {
+                UnityEngine.Object.DestroyImmediate(placeholder.gameObject);
+            }
         }
 
         private static void EnsureObstacle(

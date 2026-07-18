@@ -307,7 +307,7 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 1
   m_SleepingMode: 1
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
   m_Constraints: 4
 --- !u!58 &1519030004316129725
 CircleCollider2D:
@@ -360,10 +360,14 @@ MonoBehaviour:
   encounterBalance: {fileID: 11400000, guid: 15066c12ad0c5be4fbf986eeaa6d6f6a, type: 2}
   definitionId: enemy_elite_accelerator
   body: {fileID: 5613977396401596455}
+  bodyCollider: {fileID: 1519030004316129725}
   bodyRenderer: {fileID: 9135656051507687819}
   telegraphLine: {fileID: 0}
   controlStatusRing: {fileID: 8509105715594946878}
-  reclaimDistance: 32
+  worldBlockerMask:
+    serializedVersion: 2
+    m_Bits: 256
+  reclaimDistance: 60
   separationRadius: 0.72
   separationStrength: 0.55
   maxHealth: 18

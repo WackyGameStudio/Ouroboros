@@ -42,6 +42,7 @@ namespace Ouroboros.Editor
                                 $"Encounter balance is missing at '{EncounterPath}'.");
             var chaserPrefab = CreateOrUpdateChaserPrefab(
                 encounter,
+                worldBlockerLayer,
                 enemyBodyLayer,
                 enemyHurtboxLayer,
                 enemyHitboxLayer);
@@ -55,6 +56,7 @@ namespace Ouroboros.Editor
 
         private static OSEnemyController CreateOrUpdateChaserPrefab(
             OSEncounterBalanceData encounter,
+            int worldBlockerLayer,
             int enemyBodyLayer,
             int enemyHurtboxLayer,
             int enemyHitboxLayer)
@@ -85,6 +87,7 @@ namespace Ouroboros.Editor
                 body.freezeRotation = true;
                 body.useFullKinematicContacts = true;
                 body.interpolation = RigidbodyInterpolation2D.Interpolate;
+                body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
                 var bodyCollider = root.GetComponent<CircleCollider2D>();
                 bodyCollider.isTrigger = false;
@@ -102,8 +105,10 @@ namespace Ouroboros.Editor
                 serialized.FindProperty("encounterBalance").objectReferenceValue = encounter;
                 serialized.FindProperty("definitionId").stringValue = ChaserKey;
                 serialized.FindProperty("body").objectReferenceValue = body;
+                serialized.FindProperty("bodyCollider").objectReferenceValue = bodyCollider;
                 serialized.FindProperty("bodyRenderer").objectReferenceValue = renderer;
-                serialized.FindProperty("reclaimDistance").floatValue = 32f;
+                serialized.FindProperty("worldBlockerMask").intValue = 1 << worldBlockerLayer;
+                serialized.FindProperty("reclaimDistance").floatValue = 60f;
                 serialized.FindProperty("separationRadius").floatValue = 0.72f;
                 serialized.FindProperty("separationStrength").floatValue = 0.55f;
                 serialized.ApplyModifiedPropertiesWithoutUndo();

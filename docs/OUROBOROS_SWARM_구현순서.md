@@ -365,8 +365,8 @@ PC/Web에서 동일한 이동 감각과 장애물 처리를 완성한다.
 ### 구현 현황
 
 - 상태: 완료
-- 최근 갱신: 2026-07-18
-- 완료: `Assets/Ouroboros/Scripts/Runtime/OSPlayerController.cs`에 입력 크기 제한·5.5/s 이동·Kinematic `Collider2D.Cast`·접선 슬라이드·마지막 방향·월드 경계·선택/사망 상태 차단·재시작 위치 초기화를 구현했다. `OSCameraFollower.cs`는 고정 줌·무회전·0.1초 지연·카메라 여백 경계를 적용하고, `OSPlayerHeadVisual.cs`와 `Assets/Ouroboros/Art/Placeholders/Obstacle.png`로 머리 펄스/방향 표시와 장애물 3종을 구성했다. `Assets/Ouroboros/Scenes/20_Game.unity`에 `WorldBlocker`/`PlayerHeadSolid` 레이어, 4면 경계, 플레이어 물리와 카메라 참조를 연결하고 Step 04 재적용 메뉴를 추가했다.
+- 최근 갱신: 2026-07-19
+- 완료: `Assets/Ouroboros/Scripts/Runtime/OSPlayerController.cs`에 입력 크기 제한·5.5/s 이동·Kinematic `Collider2D.Cast`·접선 슬라이드·마지막 방향·월드 경계·선택/사망 상태 차단·재시작 위치 초기화를 구현했다. `OSCameraFollower.cs`는 고정 줌·무회전·0.1초 지연·카메라 여백 경계를 적용하고, `OSPlayerHeadVisual.cs`와 `Assets/Ouroboros/Art/Placeholders/Obstacle.png`로 머리 펄스/방향 표시를 구성했다. Step 15.1에서 플레이 가능 범위를 28×18에서 48×30으로 확장하고 장애물을 드문 7종 배치로 재구성했으며, `Assets/Ouroboros/Scenes/20_Game.unity`의 정적 `Enemy_Chaser`/`Pickup` 표시용 오브젝트를 제거했다. `WorldBlocker`/`PlayerHeadSolid` 레이어, 확장된 4면 경계, 플레이어 물리와 카메라 참조는 Step 04 재적용 메뉴에도 반영했다.
 - 남음: 없음. Step 05 몸통 경로 추종 구현을 시작할 수 있다.
 - 검증: Unity 컴파일 및 최종 Console Error/Exception 0. EditMode 전체 19/19 통과, `Ouroboros.Tests.PlayMode` 12/12 통과(WASD/방향키 일치, 직선/대각선 속도, 0 입력 정지·마지막 방향, Cast 슬라이드, 코너 6,000틱·2분 등가 안정성, 30/60fps 거리, 선택 중 정지, 씬/카메라 여백). Windows Development Build `Builds/Step04/Windows/OuroborosSwarm.exe` 성공(errors 0, warnings 0). WebGL 첫 시도는 Unity 생성 `UnityAnalyticsModule` C 오브젝트의 진단문 없는 Bee ExitCode 3으로 종료됐으나 동일 소스 증분 재빌드가 `Builds/Step04/WebGL/index.html`로 성공(errors 0, warnings 4)했다.
 
@@ -388,7 +388,7 @@ PC/Web에서 동일한 이동 감각과 장애물 처리를 완성한다.
 ### 아트·UI 작업
 
 - [x] 머리 코어 임시 애니메이션/방향 표현
-- [x] 장애물 3종 임시 리소스
+- [x] 장애물 7종 임시 배치와 48×30 전장
 - [x] 화면 가장자리 여백 검수
 
 ### 테스트
@@ -535,8 +535,8 @@ OSBodySegmentView
 ### 구현 현황
 
 - 상태: 완료
-- 최근 갱신: 2026-07-18
-- 완료: `OSEnemyRegistry.FindNearestTarget`에 사거리 안 생존 적 비할당 순회, 거리 동률 기존 표적 유지, 기존 표적이 없을 때 작은 Runtime ID 우선 규칙을 구현했다. `OSHeadWeapon`은 피해 10·주기 0.5초·사거리 6·관통 0을 `OSPlayerBalanceData`에서 읽고, 유효 표적과 `head_projectile` 풀 대여가 모두 성공한 경우에만 주기를 소비한다. `OSProjectile`은 Kinematic 이동·사거리 수명·단일/관통 페이로드·안정 공격 이벤트 ID·고유 적 중복 명중 방지·피해 적용과 풀 반환을 소유하며 발사/피격 피드백 이벤트를 연결했다. `PF_HeadProjectile.prefab`과 `PlayerProjectile` 레이어를 추가하고 120개를 세션 전에 사전 생성했으며, 투사체는 `EnemyHurtbox`에만 판정되고 월드 장애물을 통과한다. `20_Game.unity`의 머리에 자동 무기와 발사점을 연결했고 재적용 메뉴는 `Ouroboros/Setup/Apply Step 07 Head Weapon`이다.
+- 최근 갱신: 2026-07-19
+- 완료: `OSEnemyRegistry.FindNearestTarget`에 사거리 안 생존 적 비할당 순회, 거리 동률 기존 표적 유지, 기존 표적이 없을 때 작은 Runtime ID 우선 규칙을 구현했다. `OSHeadWeapon`은 피해 10·주기 0.5초·사거리 6·관통 0을 `OSPlayerBalanceData`에서 읽고, 유효 표적과 `head_projectile` 풀 대여가 모두 성공한 경우에만 주기를 소비한다. `OSProjectile`은 Kinematic 이동·사거리 수명·단일/관통 페이로드·안정 공격 이벤트 ID·고유 적 중복 명중 방지·피해 적용과 풀 반환을 소유하며 발사/피격 피드백 이벤트를 연결했다. `PF_HeadProjectile.prefab`과 `PlayerProjectile` 레이어를 추가하고 120개를 세션 전에 사전 생성했으며, Step 15.1부터 투사체는 `EnemyHurtbox`에 피해를 주되 첫 `WorldBlocker`에서 피해·관통 없이 풀로 반환한다. `20_Game.unity`의 머리에 자동 무기와 발사점을 연결했고 재적용 메뉴는 `Ouroboros/Setup/Apply Step 07 Head Weapon`이다.
 - 남음: 없음. Step 08 조각·몸통 생성 요청·역할 4택 구현을 시작할 수 있다.
 - 검증: Unity 컴파일 및 최종 Console Error/Exception 0. `Ouroboros.Tests.EditMode` 22/22 통과(job `59bbd8a2ee9f4e53b6c835b7d8725d4b`), `Ouroboros.Tests.PlayMode` 34/34 통과(job `ec475d12cd2944329d1335998f3da1f3`, 180개 후보 탐색 GC gate 포함). 가장 가까운 적, 동률 표적 유지/작은 Runtime ID, 사거리 밖 미발사, 무대상 3초 후 즉시 발사, 풀 포화 시 주기·피해 불변, 동일 투사체 중복 Collider 1회 피해, 투사체 2발의 적 사망 1회, 실제 씬 자동 처치를 검증했다. WebGL Development Build `Builds/Step07/WebGL/index.html` 성공(job `build-ca5d6f27ca`, 128.75MB, 641.95초, errors 0, warnings 3). `Tools/Serve-WebGL.ps1`로 `http://127.0.0.1:8077/`을 실행해 index/loader/WASM HTTP 200, WASM MIME `application/wasm`, Canvas 960×540, MainMenu→Game→두 선택→Combat 전환, 노란 투사체와 100개 적 무리의 처치 감소를 확인했다. 브라우저 error는 0건이며 WebGL에서 지원되지 않는 URP FSR 후처리 warning 1건만 남았다. Windows 빌드는 WebGL 전용 반복 검증 규칙에 따라 실행하지 않았다.
 
@@ -786,8 +786,8 @@ G0를 통과하기 전에는 적 종류, 보스, 실제 ComfyUI API를 늘리지
 ### 구현 현황
 
 - 상태: 완료
-- 최근 갱신: 2026-07-18
-- 완료: `OSBodyRoleRegistry`가 `OSBodyChain`의 추가·절단·폭발 소비 이벤트를 고정 배열 기반 역할별 런타임 목록으로 반영한다. Attack은 세그먼트별 최근접 표적·독립 주기와 기존 `head_projectile` 풀을 재사용하고, Laser는 발사 시점 시작점·방향 스냅샷과 0.2초 예고 뒤 고유 적 관통 판정을 적용한다. Control은 64개 사전 생성 `body_control_projectile` 풀에서 피해 0 제어탄을 발사해 일반 1초·정예/보스 0.5초의 이동/공격 정지를 큰 잔여 시간 기준으로 적용한다. Shield는 세그먼트별 1충전·반경 1.5·전투 시간 6초 재충전과 피격점 최근접/머리 쪽 동률 규칙으로 유효 머리·몸통 피격만 막는다. 역할 원본이 제거되면 신규 Attack/Control 발사, Laser 예고, Shield 상태는 즉시 폐기하고 이미 발사된 투사체만 독립적으로 끝까지 처리한다. 64개 Laser 예고선과 Shield 링을 사전 생성했고 `OSBodyRoleCombatPresenter`가 역할별 보유 수·발동 수·실드 충전을 HUD에 표시한다. `20_Game.unity`, `PF_ControlProjectile.prefab`, 풀 설정과 피해 Resolver 실드 연결을 완료했으며 재적용 메뉴는 `Ouroboros/Setup/Apply Step 11 Body Roles`다.
+- 최근 갱신: 2026-07-19
+- 완료: `OSBodyRoleRegistry`가 `OSBodyChain`의 추가·절단·폭발 소비 이벤트를 고정 배열 기반 역할별 런타임 목록으로 반영한다. Attack은 세그먼트별 최근접 표적·독립 주기와 기존 `head_projectile` 풀을 재사용하고, Laser는 발사 시점 시작점·방향 스냅샷과 0.2초 예고 뒤 고유 적 관통 판정을 적용한다. Control은 64개 사전 생성 `body_control_projectile` 풀에서 피해 0 제어탄을 발사해 일반 1초·정예/보스 0.5초의 이동/공격 정지를 큰 잔여 시간 기준으로 적용하며 Step 15.1부터 제어탄도 첫 `WorldBlocker`에서 풀로 반환한다. Shield는 세그먼트별 1충전·반경 1.5·전투 시간 6초 재충전과 피격점 최근접/머리 쪽 동률 규칙으로 유효 머리·몸통 피격만 막는다. 역할 원본이 제거되면 신규 Attack/Control 발사, Laser 예고, Shield 상태는 즉시 폐기하고 이미 발사된 투사체만 독립적으로 끝까지 처리한다. 64개 Laser 예고선과 Shield 링을 사전 생성했고 `OSBodyRoleCombatPresenter`가 역할별 보유 수·발동 수·실드 충전을 HUD에 표시한다. `20_Game.unity`, `PF_ControlProjectile.prefab`, 풀 설정과 피해 Resolver 실드 연결을 완료했으며 재적용 메뉴는 `Ouroboros/Setup/Apply Step 11 Body Roles`다.
 - 남음: 없음. Step 12 경험치·레벨업·업그레이드까지 완료됐으며 다음 단계는 Step 13이다.
 - 검증: Unity 6000.5.1f1 컴파일 및 최종 Console Error/Exception 0. EditMode 43/43, PlayMode 78/78 통과. `OSBodyRoleMathEditModeTests`, `OSBodyRolesPlayModeTests`, `OSStep11ScenePlayModeTests`로 역할 목록·안정 ID, Attack 독립 발사와 풀 포화, Laser 좌표·관통·다중 Collider·독립 피해·제거 취소, Control HP 불변·비합산·선택 정지·보스 캐스팅 유지, Shield 머리/몸통 방어·최근접/동률·유효하지 않은 피격 미소비·재충전·제거, 절단·폭발 후 역할과 길이 화력 감소를 자동 검증했다. 최종 WebGL Development Build `Builds/Step11/WebGL/index.html` 성공(129.07 MiB, errors 0, warnings 6). `http://127.0.0.1:8111/`에서 index/WASM HTTP 200, WASM MIME `application/wasm`, MainMenu→Laser/Shield 선택→Combat의 역할 HUD·실드 범위 표시와 브라우저 error 0건을 확인했다. Windows 빌드는 실행하지 않았다.
 
@@ -955,7 +955,7 @@ G0를 통과하기 전에는 적 종류, 보스, 실제 ComfyUI API를 늘리지
 
 - 상태: 완료
 - 최근 갱신: 2026-07-19
-- 완료: `OSWaveScheduleRuntime`이 `OSWaveScheduleData`를 세션별로 복사하고 런 시드 13013의 가중 추출, 0~10분 구간, HP `1.12^(elapsed/60)`, 생성률 `1.15^(elapsed/60)`, 목표 활성 수와 180 하드캡을 원본 SO 변경 없이 계산한다. `OSWaveDirector`가 전투 시간과 누적 스폰 티켓을 소유해 카메라 밖·머리 거리 7 이상·월드 경계 안·`WorldBlocker` 밖 후보를 최대 8회 검사하고 실패/상한 시 티켓을 보류하며, 선택 중 시간 정지와 재시작 초기화, 3·6분 정예 각 1회, 9분 보스 경고 1회, Step 14까지 10분 보스 생성을 연기한다. `OSEnemyDebugSpawner`는 비활성화했다. 추적체 분리 조향, 돌진체 0.65초 직선 예고→돌진→회복과 제어 중 상태 정지, 사격체 5~7 거리 유지·0.45초 예고·합산 투사체 120 포화 시 주기 보존, 분열체 사망당 소형 최대 2개와 재분열 금지, 정예 4.5 오라 링·영향 색·이동 ×1.2/공격 주기 ×0.9 비중첩을 구현했다. 6종 적 프리팹과 적 투사체 64개 풀, 시간/활성 수/다음 해금/특수 경고 HUD, 재적용 메뉴 `Ouroboros/Setup/Apply Step 13 Timed Waves`와 WebGL 빌드 메뉴를 `20_Game.unity`에 연결했다.
+- 완료: `OSWaveScheduleRuntime`이 `OSWaveScheduleData`를 세션별로 복사하고 런 시드 13013의 가중 추출, 0~10분 구간, HP `1.12^(elapsed/60)`, 생성률 `1.15^(elapsed/60)`, 목표 활성 수와 180 하드캡을 원본 SO 변경 없이 계산한다. `OSWaveDirector`가 전투 시간과 누적 스폰 티켓을 소유해 카메라 밖·머리 거리 7 이상·월드 경계 안·`WorldBlocker` 밖 후보를 최대 8회 검사하고 실패/상한 시 티켓을 보류하며, 선택 중 시간 정지와 재시작 초기화, 3·6분 정예 각 1회, 9분 보스 경고 1회, Step 14까지 10분 보스 생성을 연기한다. `OSEnemyDebugSpawner`는 비활성화했다. 추적체 분리 조향, 돌진체 0.65초 직선 예고→돌진→회복과 제어 중 상태 정지, 사격체 5~7 거리 유지·0.45초 예고·합산 투사체 120 포화 시 주기 보존, 분열체 사망당 소형 최대 2개와 재분열 금지, 정예 4.5 오라 링·영향 색·이동 ×1.2/공격 주기 ×0.9 비중첩을 구현했다. 6종 적 프리팹과 `EnemyProjectile` 전용 레이어의 적 투사체 64개 풀을 연결했으며 Step 15.1부터 모든 적 이동과 적 투사체는 `WorldBlocker`를 통과하지 않는다. 시간/활성 수/다음 해금/특수 경고 HUD, 재적용 메뉴 `Ouroboros/Setup/Apply Step 13 Timed Waves`와 WebGL 빌드 메뉴를 `20_Game.unity`에 연결했다.
 - 남음: 없음. 10:00 실제 보스 생성·클리어·결과 통계는 Step 14 범위다.
 - 검증: Unity 6000.5.1f1 컴파일 오류 0. `Ouroboros.Tests.EditMode` 54/54, `Ouroboros.Tests.PlayMode` 88/88 통과. 신규 `OSWaveScheduleEditModeTests`와 `OSStep13ScenePlayModeTests`로 0~10분 연속 시간표, 결정적 4종 가중 추출, 연속 배율과 SO 불변, 3·6·9분 특수 이벤트, 카메라 밖·장애물/경계 검사, 180 상한 티켓 보류, 선택 정지, 재시작 초기화, 돌진/사격/분열/정예 행동과 오라 비중첩을 검증했다. G1 0~7분 가속 테스트의 평균 활성 적 84.1, 최대 150과 일반 적 4종·정예 2회를 기록했다. WebGL Development Build `Builds/Step13/WebGL/index.html` 성공(135,512,377 bytes, errors 0, warnings 0). `http://127.0.0.1:8113/`에서 index/WASM HTTP 200, WASM MIME `application/wasm`, MainMenu→Shield/Attack→Combat, 시간·활성/목표·CAP 180·다음 해금 HUD와 실제 웨이브 적 스폰, 브라우저 error 0건을 확인했다. Windows 빌드는 실행하지 않았다.
 
@@ -1172,6 +1172,45 @@ G0를 통과하기 전에는 적 종류, 보스, 실제 ComfyUI API를 늘리지
 
 ---
 
+## 16.1 맵·장애물 충돌 마감 — Step 15.1
+
+### 목표
+
+Step 16 성능 측정 전에 전장 크기와 `WorldBlocker`의 공통 이동·투사체 계약을 확정한다.
+
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-19
+- 완료: 플레이 가능 범위를 28×18에서 48×30으로 확장하고 4면 `WorldBlocker` 경계를 함께 이동했다. 좁은 미로가 되지 않도록 장애물 7개를 전장 전체에 분산했으며, 실제 런타임 오브젝트로 오해되던 정적 `World/Enemy_Chaser`와 `World/Pickup` 표시용 오브젝트를 삭제했다. `OSEnemyController`는 `EnemyBody`의 고정 배열 Cast와 최대 2회 접선 잔여 이동으로 큰 물리 틱·돌진 관통을 막는다. `OSProjectile`, `OSControlProjectile`, `OSEnemyProjectile`은 첫 `WorldBlocker`를 비할당 Cast/Trigger로 감지해 피해·관통 처리 없이 풀로 반환한다. 적 원거리탄은 기존 공용 `EnemyHitbox`에서 전용 `EnemyProjectile` 레이어로 분리했다. 모든 기존 적·투사체 프리팹과 Step 04/06/07/11/13 재적용 경로를 같은 계약으로 보정했고, 재적용 메뉴 `Ouroboros/Setup/Apply Step 15.1 Arena Collision`과 WebGL 빌드 메뉴를 추가했다.
+- 남음: 없음. Step 16 성능 최적화·WebGL 프로파일 단계로 진행할 수 있다.
+- 검증: Unity 6000.5.1f1 컴파일 및 최종 Console Error/Exception 0. `Ouroboros.Tests.EditMode` 64/64 통과(job `52288fd4eb0f4ab4833705da177029eb`), `Ouroboros.Tests.PlayMode` 108/108 통과(job `d960498e4da745e08179c62ef9f365ca`). 신규 `OSStep15ArenaCollisionPlayModeTests` 4/4로 48×30 경계·장애물 7개·정적 표시 오브젝트 제거, 충돌 매트릭스, 큰 틱 적 이동 차단, 머리 피해탄·Control탄·적 투사체의 첫 장애물 반환을 확인했다. WebGL Development Build `Builds/Step15_1/WebGL/index.html` 성공(135,657,887 bytes, errors 0, warnings 3). `Tools/Serve-WebGL.ps1`로 `http://127.0.0.1:8116/`을 실행해 index/WASM HTTP 200, WASM MIME `application/wasm`, 960×540 Canvas, MainMenu→역할 2회 선택→Combat, 확장 전장의 장애물 렌더링과 브라우저 Console level Error/Exception 0을 확인했다. WebGL 고유 URP FSR 비지원 warning은 1건이며 Windows 빌드는 실행하지 않았다.
+
+### 선행 조건
+
+- Step 15 전체 런과 판독성 우선순위 확정
+
+### 프로그래머 체크
+
+- [x] 전장 48×30과 카메라·플레이어 경계 동기화
+- [x] 드문 장애물 7개 배치와 4면 경계 확장
+- [x] 정적 `Enemy_Chaser`/`Pickup` 표시용 오브젝트 제거
+- [x] `EnemyBody` 비할당 Cast·접선 잔여 이동
+- [x] `PlayerProjectile`·Control탄의 첫 `WorldBlocker` 반환
+- [x] `EnemyProjectile` 전용 레이어와 첫 `WorldBlocker` 반환
+- [x] Step 04/06/07/11/13 재적용 경로 회귀 방지
+- [x] EditMode/PlayMode 전체 회귀
+- [x] WebGL HTTP·Canvas·Console 검증
+
+### 완료 기준
+
+- 플레이어가 통과하지 못하는 모든 장애물을 적과 양 진영 투사체도 통과하지 못한다.
+- 장애물 충돌은 피해·관통 수를 만들지 않고 해당 투사체를 풀로 반환한다.
+- 전장 범위가 48×30이고 장애물은 7개이며 정적 적·픽업 표시용 오브젝트가 남지 않는다.
+- WebGL에서 확장 전장과 장애물이 렌더링되고 브라우저 Error/Exception이 없다.
+
+---
+
 ## 17. 성능 최적화·WebGL — Step 16
 
 ### 목표
@@ -1180,7 +1219,7 @@ G0를 통과하기 전에는 적 종류, 보스, 실제 ComfyUI API를 늘리지
 
 ### 선행 조건
 
-- Step 15 전체 런과 UI 우선순위 확정
+- Step 15.1 전장·장애물 충돌 계약과 전체 런 확정
 
 ### 측정 순서
 

@@ -230,6 +230,7 @@ Unity **New Input System**만 사용한다.
 - 머리 코어는 입력 방향으로 초당 **[가설] 5.5** 이동한다.
 - `Move`가 0이면 정지하고 마지막 유효 이동 방향을 유지한다.
 - 머리 이동은 `Rigidbody2D.Cast` 또는 `Collider2D.Cast`로 장애물을 검사한 뒤 접선 방향으로 미끄러지게 한다.
+- 적 이동도 `EnemyBody`의 비할당 Cast로 `WorldBlocker`를 선검사하고 접선 방향 잔여 이동만 허용한다. 큰 물리 틱과 돌진 중에도 장애물을 관통하지 않는다.
 - 적과 플레이어는 물리적으로 서로 밀지 않는다. 접촉 피해는 Trigger 이벤트로만 수집한다.
 - 머리와 몸통, 몸통끼리는 충돌하지 않는다.
 - 몸통의 사격 조준은 이동 방향과 독립적이다.
@@ -244,8 +245,9 @@ Unity **New Input System**만 사용한다.
 
 ## 3.4 전장
 
-- 단일 넓은 필드, 드문 장애물 6~10개를 사용한다.
-- 장애물은 좁은 미로를 만들지 않고, 플레이어 머리와 적만 막으며 투사체는 통과한다.
+- MVP 전장은 중심 `(0, 0)`, 플레이 가능 범위 **48×30**(`x=-24~24`, `y=-15~15`)인 단일 넓은 필드로 고정한다.
+- 드문 장애물 7개를 사용하고 좁은 미로를 만들지 않는다.
+- 장애물과 월드 경계는 플레이어 머리, 적, `PlayerProjectile`, `EnemyProjectile`을 모두 막는다. 투사체는 첫 `WorldBlocker` Cast/Trigger에서 피해·관통 처리를 만들지 않고 즉시 풀로 반환한다.
 - 통로 최소 폭은 머리 지름의 **[가설] 3배 이상**으로 유지한다.
 - 화면 중앙을 장기간 가리는 대형 장애물은 배치하지 않는다.
 - 월드 경계는 카메라보다 충분히 넓게 두고, 머리가 경계를 넘지 못하도록 이동을 제한한다.
@@ -1008,10 +1010,11 @@ public enum OSSessionState
 | 클래스 | 형태 | 단일 책임 |
 | --- | --- | --- |
 | `OSEnemyRegistry` | MonoBehaviour | 활성 적의 비할당 목록과 안정 ID 조회, 머리 강화 시 정예·보스 우선 표적군 제공 |
-| `OSEnemyController` | MonoBehaviour | 적 한 개의 이동·공격·피격·제어·사망 |
+| `OSEnemyController` | MonoBehaviour | 적 한 개의 장애물 Cast 이동·공격·피격·제어·사망 |
 | `OSWaveDirector` | MonoBehaviour | 시간대별 스폰 티켓, 조합, 정예·보스 등장, 상한 |
-| `OSProjectile` | MonoBehaviour | 피해 투사체의 이동, 수명, 페이로드, 고유 적 중복 명중 방지 |
-| `OSControlProjectile` | MonoBehaviour | 피해 0 제어탄의 이동·첫 명중·제어 시간 적용·풀 반환 |
+| `OSProjectile` | MonoBehaviour | 피해 투사체의 이동, 월드 차단, 수명, 페이로드, 고유 적 중복 명중 방지 |
+| `OSControlProjectile` | MonoBehaviour | 피해 0 제어탄의 이동·월드 차단·첫 명중·제어 시간 적용·풀 반환 |
+| `OSEnemyProjectile` | MonoBehaviour | 적 원거리탄의 이동·월드 차단·플레이어 피해 후보 등록·풀 반환 |
 | `OSPickup` | MonoBehaviour | 타입·수량, 자석 이동, 수집 후보 등록 |
 | `OSPickupCollector` | MonoBehaviour | 머리 전용 Trigger에서 픽업 수집을 확정 |
 | `OSPickupSpawner` | MonoBehaviour | 경험치·조각·회복의 타입별 병합, 공용 풀 대여, 총량 보존과 수집 효과 전달 |
@@ -1147,11 +1150,14 @@ public readonly struct OSRuleResult<T>
 | PlayerHeadHurtbox | EnemyHitbox/Projectile | Trigger 후보 등록 |
 | PlayerBodyHurtbox | EnemyHitbox/Projectile | Trigger 후보 등록 |
 | PlayerProjectile | EnemyHurtbox | Trigger 피해 |
+| PlayerProjectile | WorldBlocker | 비할당 Cast/Trigger 후 즉시 풀 반환 |
+| EnemyProjectile | PlayerHeadHurtbox/PlayerBodyHurtbox | Trigger 피해 후보 등록 |
+| EnemyProjectile | WorldBlocker | 비할당 Cast/Trigger 후 즉시 풀 반환 |
 | EnemyBody | EnemyBody | 물리 충돌 Off |
 | EnemyBody | PlayerHead/Body | 물리 충돌 Off |
+| EnemyBody | WorldBlocker | 비할당 Cast 기반 이동 차단·접선 슬라이드 |
 | Pickup | PickupCollector | Trigger 수집 |
 | PlayerBodyHurtbox | WorldBlocker | Off |
-| Projectile | WorldBlocker | 기본 Off; 필요 시 데이터 선택 |
 
 ## 10.3 공격 이벤트 ID
 

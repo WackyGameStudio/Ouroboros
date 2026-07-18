@@ -34,7 +34,7 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(session, Is.Not.Null);
             Assert.That(pool.GetCapacity("head_projectile"), Is.EqualTo(120));
             Assert.That(Physics2D.GetIgnoreLayerCollision(projectileLayer, enemyHurtboxLayer), Is.False);
-            Assert.That(Physics2D.GetIgnoreLayerCollision(projectileLayer, worldBlockerLayer), Is.True);
+            Assert.That(Physics2D.GetIgnoreLayerCollision(projectileLayer, worldBlockerLayer), Is.False);
             Assert.That(session.CompleteActiveSelection().IsAccepted, Is.True);
             Assert.That(session.CompleteActiveSelection().IsAccepted, Is.True);
             var head = Object.FindAnyObjectByType<OSPlayerController>().transform;

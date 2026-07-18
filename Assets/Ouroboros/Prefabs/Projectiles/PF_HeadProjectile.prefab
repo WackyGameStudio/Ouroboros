@@ -171,4 +171,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Ouroboros.Runtime::Ouroboros.Runtime.OSProjectile
   body: {fileID: 22890611361307443}
+  projectileCollider: {fileID: 8204058272290474977}
+  worldBlockerMask:
+    serializedVersion: 2
+    m_Bits: 256
   moveSpeed: 12

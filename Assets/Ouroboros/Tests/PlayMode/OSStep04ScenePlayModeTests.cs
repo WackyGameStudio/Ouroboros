@@ -44,6 +44,12 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(obstacles.transform.Find("Obstacle_Wide"), Is.Not.Null);
             Assert.That(obstacles.transform.Find("Obstacle_Tall"), Is.Not.Null);
             Assert.That(obstacles.transform.Find("Obstacle_Block"), Is.Not.Null);
+            Assert.That(obstacles.transform.Find("Obstacle_West"), Is.Not.Null);
+            Assert.That(obstacles.transform.Find("Obstacle_East"), Is.Not.Null);
+            Assert.That(obstacles.transform.Find("Obstacle_South"), Is.Not.Null);
+            Assert.That(obstacles.transform.Find("Obstacle_North"), Is.Not.Null);
+            Assert.That(player.WorldMin, Is.EqualTo(new Vector2(-24f, -15f)));
+            Assert.That(player.WorldMax, Is.EqualTo(new Vector2(24f, 15f)));
             Assert.That(player.transform.Find("DirectionIndicator"), Is.Not.Null);
             Assert.That(follower.Target, Is.EqualTo(player.transform));
 
