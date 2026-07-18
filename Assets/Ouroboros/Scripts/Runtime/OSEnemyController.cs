@@ -66,6 +66,7 @@ namespace Ouroboros.Runtime
         private float _specialAttackCooldown;
         private float _baseMaxHealth;
         private Color _baseColor = Color.white;
+        private OSBossController _bossController;
 
         public event Action<OSEnemyController> Died;
         public event Action<OSDamageEvent> ContactAttackRequested;
@@ -214,7 +215,17 @@ namespace Ouroboros.Runtime
                     CurrentHealth);
             }
 
-            CurrentHealth = Mathf.Max(0f, CurrentHealth - damage);
+            var healthDamage = _bossController != null
+                ? _bossController.AbsorbIncomingDamage(damage)
+                : damage;
+            if (healthDamage <= 0f)
+            {
+                return OSRuleResult<float>.Accepted(
+                    CurrentHealth,
+                    "enemy.damage.absorbed_by_shield");
+            }
+
+            CurrentHealth = Mathf.Max(0f, CurrentHealth - healthDamage);
             if (CurrentHealth <= 0f)
             {
                 ConfirmDeath();
@@ -365,6 +376,7 @@ namespace Ouroboros.Runtime
                 _baseColor = bodyRenderer.color;
             }
             SetTelegraphVisible(false);
+            _bossController?.HandleRented();
 
             var registration = _registry?.Register(this);
             if (registration.HasValue && !registration.Value.IsAccepted)
@@ -395,6 +407,7 @@ namespace Ouroboros.Runtime
             _specialAttackCooldown = 0f;
             IsAuraAccelerated = false;
             SetTelegraphVisible(false);
+            _bossController?.HandleReturning();
             RegistryIndex = -1;
             Died = null;
             ContactAttackRequested = null;
@@ -687,6 +700,7 @@ namespace Ouroboros.Runtime
         {
             body ??= GetComponent<Rigidbody2D>();
             bodyRenderer ??= GetComponent<SpriteRenderer>();
+            _bossController ??= GetComponent<OSBossController>();
         }
 
         private void ResolveDefinition()

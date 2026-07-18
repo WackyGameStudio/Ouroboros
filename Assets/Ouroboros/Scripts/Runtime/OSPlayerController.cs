@@ -144,6 +144,22 @@ namespace Ouroboros.Runtime
             PositionReset?.Invoke();
         }
 
+        /// <summary>
+        /// Applies boss-forced movement through the same kinematic cast and world bounds as player input.
+        /// </summary>
+        public bool ApplyExternalDisplacement(Vector2 displacement)
+        {
+            if (sessionController == null || !sessionController.IsSimulationRunning || body == null ||
+                solidCollider == null || !float.IsFinite(displacement.x) ||
+                !float.IsFinite(displacement.y) || displacement.sqrMagnitude <= MinimumMoveDistance)
+            {
+                return false;
+            }
+
+            MoveWithSlide(displacement);
+            return true;
+        }
+
         internal void SimulateMovementStep(Vector2 rawInput, float deltaTime)
         {
             if (!IsMovementAllowed || body == null || solidCollider == null)

@@ -70,7 +70,7 @@ namespace Ouroboros.UI
             {
                 OSWaveSpecialEvent.EliteAccelerator => "ELITE ACCELERATOR INBOUND  |  AURA 4.5m",
                 OSWaveSpecialEvent.BossWarning => "WARNING  |  SWARM CORE SIGNAL DETECTED  |  60s",
-                OSWaveSpecialEvent.BossSwarmCore => "SWARM CORE ARRIVAL DEFERRED TO STEP 14",
+                OSWaveSpecialEvent.BossSwarmCore => "SWARM CORE HAS ENTERED THE ARENA",
                 _ => string.Empty
             };
             _eventVisibleUntil = Time.unscaledTime + (specialEvent == OSWaveSpecialEvent.BossWarning ? 8f : 4f);
@@ -110,7 +110,7 @@ namespace Ouroboros.UI
 
             return elapsed < 600f
                 ? $"CORE SIGNAL IN {Mathf.CeilToInt(600f - elapsed)}s"
-                : "10:00 SURVIVAL WINDOW COMPLETE";
+                : "SWARM CORE ACTIVE";
         }
 
         private void Subscribe()

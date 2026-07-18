@@ -32,6 +32,7 @@ namespace Ouroboros.Runtime
         public float ExplosionInvulnerabilityRemaining { get; private set; }
         public bool IsInvulnerable => HitInvulnerabilityRemaining > 0f ||
                                       ExplosionInvulnerabilityRemaining > 0f;
+        public float LastAppliedDamage { get; private set; }
 
         private void Awake()
         {
@@ -86,7 +87,9 @@ namespace Ouroboros.Runtime
                     CurrentHealth);
             }
 
+            var previousHealth = CurrentHealth;
             CurrentHealth = Mathf.Max(0f, CurrentHealth - damageEvent.Damage);
+            LastAppliedDamage = previousHealth - CurrentHealth;
             HitInvulnerabilityRemaining = _hitInvulnerabilityDuration;
             HealthChanged?.Invoke(CurrentHealth, _maxHealth);
             HeadDamaged?.Invoke(damageEvent, CurrentHealth);
@@ -191,6 +194,7 @@ namespace Ouroboros.Runtime
             CurrentHealth = _maxHealth;
             HitInvulnerabilityRemaining = 0f;
             ExplosionInvulnerabilityRemaining = 0f;
+            LastAppliedDamage = 0f;
             HealthChanged?.Invoke(CurrentHealth, _maxHealth);
         }
 

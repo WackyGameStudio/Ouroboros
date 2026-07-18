@@ -29,6 +29,7 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSPlayerController playerController;
         [SerializeField] private Camera gameplayCamera;
         [SerializeField] private LayerMask worldBlockerMask;
+        [SerializeField] private OSBossEncounterController bossEncounter;
 
         private OSWaveScheduleRuntime _runtimeSchedule;
         private OSRunRandom _random;
@@ -41,13 +42,14 @@ namespace Ouroboros.Runtime
         public event Action<OSEnemyController> EnemySpawned;
 
         public float ElapsedSeconds => _elapsedSeconds;
-        public int ActiveEnemyCount => enemyRegistry != null ? enemyRegistry.Count : 0;
+        public int ActiveEnemyCount => enemyRegistry != null ? enemyRegistry.NormalEnemyCount : 0;
         public int ActiveEnemyLimit => encounterBalance != null ? encounterBalance.ActiveEnemyLimit : 180;
         public int CurrentTargetActiveEnemies { get; private set; }
         public string CurrentWaveEnemyId { get; private set; } = string.Empty;
         public int EliteSpawnCount { get; private set; }
         public int BossWarningCount { get; private set; }
         public int DeferredBossEventCount { get; private set; }
+        public int BossSpawnCount => bossEncounter != null ? bossEncounter.BossSpawnCount : 0;
         public int RejectedSpawnCandidateCount { get; private set; }
         public int DeferredSpawnTicketCount => Mathf.Max(0, Mathf.FloorToInt(_spawnBudget));
         public Vector2 LastSpawnPosition { get; private set; }
@@ -85,7 +87,7 @@ namespace Ouroboros.Runtime
                 return;
             }
 
-            var projectedCount = Mathf.Max(0, enemyRegistry.Count - 1);
+            var projectedCount = Mathf.Max(0, enemyRegistry.NormalEnemyCount - 1);
             for (var childIndex = 0; childIndex < 2 && projectedCount < ActiveEnemyLimit; childIndex++)
             {
                 var offset = childIndex == 0 ? Vector2.left * 0.32f : Vector2.right * 0.32f;
@@ -146,7 +148,8 @@ namespace Ouroboros.Runtime
             Transform target,
             OSPlayerController player = null,
             Camera camera = null,
-            int seed = 13013)
+            int seed = 13013,
+            OSBossEncounterController boss = null)
         {
             Unsubscribe();
             _runtimeSchedule = runtimeSchedule;
@@ -157,6 +160,7 @@ namespace Ouroboros.Runtime
             playerTarget = target;
             playerController = player;
             gameplayCamera = camera;
+            bossEncounter = boss;
             runSeed = seed;
             ResetRun();
             Subscribe();
@@ -170,6 +174,14 @@ namespace Ouroboros.Runtime
         internal bool TrySpawnForTesting(string enemyId, Vector2 position, out OSEnemyController enemy)
         {
             return TrySpawnAt(enemyId, position, out enemy);
+        }
+
+        public bool TrySpawnBossSummon(string enemyId, out OSEnemyController enemy)
+        {
+            enemy = null;
+            return ActiveEnemyCount < ActiveEnemyLimit &&
+                   TryFindSpawnPosition(out var position) &&
+                   TrySpawnAt(enemyId, position, out enemy);
         }
 
         private void Advance(float deltaTime, bool spawnNormalEnemies)
@@ -263,7 +275,7 @@ namespace Ouroboros.Runtime
         {
             enemy = null;
             if (poolRegistry == null || enemyRegistry == null ||
-                enemyRegistry.Count >= ActiveEnemyLimit)
+                enemyRegistry.NormalEnemyCount >= ActiveEnemyLimit)
             {
                 return false;
             }
@@ -308,7 +320,11 @@ namespace Ouroboros.Runtime
                         SpecialEventTriggered?.Invoke(OSWaveSpecialEvent.BossWarning);
                         break;
                     case OSWaveSpecialEvent.BossSwarmCore:
-                        DeferredBossEventCount++;
+                        var spawn = bossEncounter?.RequestBossSpawn();
+                        if (!spawn.HasValue || !spawn.Value.IsAccepted)
+                        {
+                            DeferredBossEventCount++;
+                        }
                         SpecialEventTriggered?.Invoke(OSWaveSpecialEvent.BossSwarmCore);
                         break;
                 }

@@ -22,6 +22,7 @@ namespace Ouroboros.Runtime
         public event Action ExplosionRequested;
 
         public OSSessionState State { get; private set; } = OSSessionState.Boot;
+        public OSSessionResultKind ResultKind { get; private set; }
         public float SessionElapsedTime { get; private set; }
         public float UiElapsedTime { get; private set; }
         public OSSelectionRequest? ActiveSelection => _activeSelection;
@@ -107,6 +108,7 @@ namespace Ouroboros.Runtime
             _nextCreatedTick = 0;
             SessionElapsedTime = 0f;
             UiElapsedTime = 0f;
+            ResultKind = OSSessionResultKind.None;
             ActiveSelectionChanged?.Invoke(null);
 
             QueueInternal(OSSelectionKind.StartBody);
@@ -216,6 +218,7 @@ namespace Ouroboros.Runtime
                 return RejectState("session.death.invalid_state");
             }
 
+            ResultKind = OSSessionResultKind.PlayerDefeated;
             CancelPendingSelections();
             return SetState(OSSessionState.Dead);
         }
@@ -230,8 +233,24 @@ namespace Ouroboros.Runtime
                 return RejectState("session.clear.invalid_state");
             }
 
+            ResultKind = OSSessionResultKind.BossDefeated;
             CancelPendingSelections();
             return SetState(OSSessionState.Cleared);
+        }
+
+        /// <summary>
+        /// Ends the boss encounter as a timeout failure while preserving a distinct result reason.
+        /// </summary>
+        public OSRuleResult<OSSessionState> RequestBossTimeout()
+        {
+            if (State is not OSSessionState.Combat and not OSSessionState.ExplosionTelegraph)
+            {
+                return RejectState("session.boss_timeout.invalid_state");
+            }
+
+            ResultKind = OSSessionResultKind.BossTimeout;
+            CancelPendingSelections();
+            return SetState(OSSessionState.Dead);
         }
 
         /// <summary>

@@ -15,6 +15,24 @@ namespace Ouroboros.Runtime
 
         public int Count { get; private set; }
         public int Capacity => _activeEnemies?.Length ?? Mathf.Max(1, capacity);
+        public int NormalEnemyCount
+        {
+            get
+            {
+                var count = 0;
+                for (var index = 0; index < Count; index++)
+                {
+                    var enemy = _activeEnemies[index];
+                    if (enemy != null && enemy.IsRented &&
+                        enemy.Archetype != OSEnemyArchetype.BossSwarmCore)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
 
         public bool IsInsideEliteAccelerationAura(OSEnemyController enemy)
         {

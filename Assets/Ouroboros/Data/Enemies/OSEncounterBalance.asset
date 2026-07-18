@@ -114,7 +114,7 @@ MonoBehaviour:
   bossDefinition:
     id: boss_swarm_core
     archetype: 6
-    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    prefab: {fileID: 1057009327199791747, guid: 2b726b84ca5fa5441a1a68558bea0295, type: 3}
     maxHealth: 6000
     moveSpeed: 1.2
     contactDamage: 20

@@ -11,6 +11,9 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSPickupSpawner pickupSpawner;
         [SerializeField] private OSPlayerCombatResolver playerCombatResolver;
         [SerializeField] private OSWaveDirector waveDirector;
+        [SerializeField] private OSBossEncounterController bossEncounter;
+        [SerializeField] private OSPlayerController playerController;
+        [SerializeField] private OSRunSummaryController runSummary;
 
         public void Configure(
             OSEnemyRegistry registry,
@@ -18,7 +21,10 @@ namespace Ouroboros.Runtime
             Transform enemyTarget,
             OSPickupSpawner pickups = null,
             OSPlayerCombatResolver combatResolver = null,
-            OSWaveDirector waves = null)
+            OSWaveDirector waves = null,
+            OSBossEncounterController boss = null,
+            OSPlayerController player = null,
+            OSRunSummaryController summary = null)
         {
             enemyRegistry = registry;
             sessionController = session;
@@ -26,6 +32,9 @@ namespace Ouroboros.Runtime
             pickupSpawner = pickups;
             playerCombatResolver = combatResolver;
             waveDirector = waves;
+            bossEncounter = boss;
+            playerController = player;
+            runSummary = summary;
         }
 
         public void PrepareForRent(OSPoolableBehaviour instance)
@@ -33,6 +42,11 @@ namespace Ouroboros.Runtime
             if (instance is OSEnemyController enemy)
             {
                 enemy.ConfigureRuntime(enemyRegistry, sessionController, target);
+                enemy.GetComponent<OSBossController>()?.ConfigureRuntime(
+                    sessionController,
+                    enemy.PoolOwner,
+                    waveDirector,
+                    playerController);
                 enemy.Died += HandleEnemyDied;
                 enemy.ContactAttackRequested += HandleContactAttackRequested;
             }
@@ -52,7 +66,9 @@ namespace Ouroboros.Runtime
 
         private void HandleEnemyDied(OSEnemyController enemy)
         {
+            runSummary?.RecordEnemyDefeated(enemy);
             waveDirector?.HandleEnemyDied(enemy);
+            bossEncounter?.HandleBossDied(enemy);
             if (enemy != null && pickupSpawner != null)
             {
                 pickupSpawner.TrySpawnDrop(
