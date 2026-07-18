@@ -33,6 +33,7 @@ namespace Ouroboros.UI
         private bool _subscribed;
         private int _committedRequestId;
         private int _lastCommitFrame = -1;
+        private bool _tailConsumptionHintShown;
 
         public int DisplayedRoleCount => FixedRoles.Length;
 
@@ -143,7 +144,15 @@ namespace Ouroboros.UI
                 var prefix = sessionController.State == OSSessionState.StartBodySelection
                     ? "START BODY"
                     : "BODY GROWTH";
-                titleLabel.text = $"{prefix}  |  CHOOSE A ROLE\nOne segment is added to the tail";
+                var hint = sessionController.State == OSSessionState.BodyRoleSelection &&
+                           !_tailConsumptionHintShown
+                    ? "  |  BLAST CONSUMES THE TAIL FIRST"
+                    : string.Empty;
+                titleLabel.text = $"{prefix}  |  CHOOSE A ROLE{hint}\nOne patterned segment is added to the tail";
+                if (sessionController.State == OSSessionState.BodyRoleSelection)
+                {
+                    _tailConsumptionHintShown = true;
+                }
             }
 
             for (var index = 0; index < FixedRoles.Length; index++)
@@ -170,7 +179,19 @@ namespace Ouroboros.UI
                 OSBodyRoleType.Control => $"Stops movement\n{definition?.NormalControlDuration ?? 1f:0.0}s / {definition?.Interval ?? 4f:0.0}s",
                 _ => string.Empty
             };
-            return $"{role.ToString().ToUpperInvariant()}\n{detail}\nOWNED {count}\n[ ADD TO TAIL ]";
+            return $"{RoleGlyph(role)}  {role.ToString().ToUpperInvariant()}\n{detail}\nOWNED {count}\n[ ADD TO TAIL ]";
+        }
+
+        private static string RoleGlyph(OSBodyRoleType role)
+        {
+            return role switch
+            {
+                OSBodyRoleType.Shield => "[O]",
+                OSBodyRoleType.Attack => "[>]",
+                OSBodyRoleType.Laser => "[=]",
+                OSBodyRoleType.Control => "[+]",
+                _ => "[?]"
+            };
         }
 
         private OSBodyRoleDefinition FindDefinition(OSBodyRoleType role)

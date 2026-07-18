@@ -41,12 +41,14 @@ namespace Ouroboros.Runtime
 
         public int GetCount(OSBodyRoleType role)
         {
+            EnsureStorage();
             var roleIndex = (int)role;
             return (uint)roleIndex < RoleCount ? _counts[roleIndex] : 0;
         }
 
         public OSBodySegmentRuntime GetSegment(OSBodyRoleType role, int index)
         {
+            EnsureStorage();
             var roleIndex = (int)role;
             if ((uint)roleIndex >= RoleCount || index < 0 || index >= _counts[roleIndex])
             {
@@ -58,6 +60,7 @@ namespace Ouroboros.Runtime
 
         public OSBodySegmentRuntime FindByStableId(OSBodyRoleType role, int stableId)
         {
+            EnsureStorage();
             var roleIndex = (int)role;
             if ((uint)roleIndex >= RoleCount || stableId <= 0)
             {

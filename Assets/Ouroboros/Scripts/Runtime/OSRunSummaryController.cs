@@ -29,9 +29,13 @@ namespace Ouroboros.Runtime
         private OSRoleCountSnapshot _maxRoleCounts;
 
         public event Action<OSSessionSummary> SummaryBuilt;
+        public event Action<int> EnemyDefeated;
 
         public bool HasSummary { get; private set; }
         public OSSessionSummary Summary { get; private set; }
+        public int TotalKills => _totalKills;
+        public int EliteKills => _eliteKills;
+        public int ExplosionKills => _explosionKills;
 
         private void OnEnable()
         {
@@ -83,6 +87,8 @@ namespace Ouroboros.Runtime
             {
                 _eliteKills++;
             }
+
+            EnemyDefeated?.Invoke(_totalKills);
         }
 
         internal void BuildSummaryForTesting()

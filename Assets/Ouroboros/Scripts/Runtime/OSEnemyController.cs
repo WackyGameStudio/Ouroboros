@@ -28,6 +28,7 @@ namespace Ouroboros.Runtime
         [SerializeField] private Rigidbody2D body;
         [SerializeField] private SpriteRenderer bodyRenderer;
         [SerializeField] private LineRenderer telegraphLine;
+        [SerializeField] private LineRenderer controlStatusRing;
 
         [Header("World safety")]
         [SerializeField, Min(1f)] private float reclaimDistance = 32f;
@@ -67,6 +68,7 @@ namespace Ouroboros.Runtime
         private float _baseMaxHealth;
         private Color _baseColor = Color.white;
         private OSBossController _bossController;
+        private float _controlVisualDuration;
 
         public event Action<OSEnemyController> Died;
         public event Action<OSDamageEvent> ContactAttackRequested;
@@ -101,6 +103,7 @@ namespace Ouroboros.Runtime
         public bool IsAuraAccelerated { get; private set; }
         public float EffectiveMoveSpeed => moveSpeed * (IsAuraAccelerated ? 1.2f : 1f);
         public float EffectiveAttackInterval => attackInterval * (IsAuraAccelerated ? 0.9f : 1f);
+        public bool ControlStatusVisible => controlStatusRing != null && controlStatusRing.enabled;
 
         private void Awake()
         {
@@ -253,7 +256,16 @@ namespace Ouroboros.Runtime
                 _attackControlRemaining = Mathf.Max(_attackControlRemaining, duration);
             }
 
+            _controlVisualDuration = Mathf.Max(_controlVisualDuration, duration);
+            UpdateControlVisual();
+
             return OSRuleResult<float>.Accepted(duration, "enemy.control.accepted");
+        }
+
+        public void ConfigureReadability(LineRenderer controlRing)
+        {
+            controlStatusRing = controlRing;
+            UpdateControlVisual();
         }
 
         internal void SimulateStep(float deltaTime)
@@ -270,6 +282,7 @@ namespace Ouroboros.Runtime
 
             IsAuraAccelerated = _registry != null && _registry.IsInsideEliteAccelerationAura(this);
             UpdateAuraVisual();
+            UpdateControlVisual();
 
             if (behaviorWasControlled)
             {
@@ -359,6 +372,7 @@ namespace Ouroboros.Runtime
             _attackCooldown = 0f;
             _movementControlRemaining = 0f;
             _attackControlRemaining = 0f;
+            _controlVisualDuration = 0f;
             _deathConfirmed = false;
             _behaviorState = _archetype == OSEnemyArchetype.Shooter
                 ? OSEnemyBehaviorState.RangedHold
@@ -376,6 +390,7 @@ namespace Ouroboros.Runtime
                 _baseColor = bodyRenderer.color;
             }
             SetTelegraphVisible(false);
+            UpdateControlVisual();
             _bossController?.HandleRented();
 
             var registration = _registry?.Register(this);
@@ -401,12 +416,18 @@ namespace Ouroboros.Runtime
             _attackCooldown = 0f;
             _movementControlRemaining = 0f;
             _attackControlRemaining = 0f;
+            _controlVisualDuration = 0f;
             _deathConfirmed = false;
             _behaviorState = OSEnemyBehaviorState.Pursuit;
             _behaviorTimer = 0f;
             _specialAttackCooldown = 0f;
             IsAuraAccelerated = false;
             SetTelegraphVisible(false);
+            UpdateControlVisual();
+            if (bodyRenderer != null)
+            {
+                bodyRenderer.color = _baseColor;
+            }
             _bossController?.HandleReturning();
             RegistryIndex = -1;
             Died = null;
@@ -668,7 +689,39 @@ namespace Ouroboros.Runtime
 
             bodyRenderer.color = IsAuraAccelerated
                 ? Color.Lerp(_baseColor, new Color(1f, 0.78f, 0.12f, 1f), 0.38f)
-                : _baseColor;
+                : Mathf.Max(_movementControlRemaining, _attackControlRemaining) > 0f
+                    ? Color.Lerp(_baseColor, new Color(0.12f, 0.95f, 1f, 1f), 0.42f)
+                    : _baseColor;
+        }
+
+        private void UpdateControlVisual()
+        {
+            if (controlStatusRing == null)
+            {
+                return;
+            }
+
+            var remaining = Mathf.Max(_movementControlRemaining, _attackControlRemaining);
+            if (remaining <= 0f || _controlVisualDuration <= 0f)
+            {
+                controlStatusRing.enabled = false;
+                return;
+            }
+
+            const int maxSegments = 25;
+            var normalized = Mathf.Clamp01(remaining / _controlVisualDuration);
+            var segmentCount = Mathf.Clamp(Mathf.CeilToInt(normalized * (maxSegments - 1)) + 1, 2, maxSegments);
+            controlStatusRing.positionCount = segmentCount;
+            for (var index = 0; index < segmentCount; index++)
+            {
+                var normalizedIndex = index / (float)(maxSegments - 1);
+                var angle = (Mathf.PI * 0.5f) - (normalizedIndex * Mathf.PI * 2f);
+                controlStatusRing.SetPosition(
+                    index,
+                    new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * 0.72f);
+            }
+
+            controlStatusRing.enabled = true;
         }
 
         private void UpdateTelegraphLine()
@@ -701,6 +754,7 @@ namespace Ouroboros.Runtime
             body ??= GetComponent<Rigidbody2D>();
             bodyRenderer ??= GetComponent<SpriteRenderer>();
             _bossController ??= GetComponent<OSBossController>();
+            controlStatusRing ??= transform.Find("ControlStatusRing")?.GetComponent<LineRenderer>();
         }
 
         private void ResolveDefinition()
