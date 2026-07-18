@@ -32,7 +32,7 @@ MonoBehaviour:
     poolCapacity: 200
   - id: enemy_charger
     archetype: 1
-    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    prefab: {fileID: 5771073089641726755, guid: 9f89c9720a8821245bac2d915cb01f08, type: 3}
     maxHealth: 42
     moveSpeed: 1.6
     contactDamage: 14
@@ -48,7 +48,7 @@ MonoBehaviour:
     poolCapacity: 32
   - id: enemy_shooter
     archetype: 2
-    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    prefab: {fileID: 5639630046074057969, guid: b2580c98526f88044818aaee7c111157, type: 3}
     maxHealth: 32
     moveSpeed: 1.4
     contactDamage: 10
@@ -64,7 +64,7 @@ MonoBehaviour:
     poolCapacity: 32
   - id: enemy_splitter
     archetype: 3
-    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    prefab: {fileID: 3627324009188691352, guid: a19994187aaba6f45883a939d6d10db7, type: 3}
     maxHealth: 36
     moveSpeed: 1.5
     contactDamage: 7
@@ -80,7 +80,7 @@ MonoBehaviour:
     poolCapacity: 32
   - id: enemy_splitter_spawn
     archetype: 4
-    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    prefab: {fileID: 5415902916538575959, guid: 0c548916b6c95054d957f9850e64a659, type: 3}
     maxHealth: 12
     moveSpeed: 2.4
     contactDamage: 4
@@ -97,7 +97,7 @@ MonoBehaviour:
   eliteDefinition:
     id: enemy_elite_accelerator
     archetype: 5
-    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    prefab: {fileID: 3650156553380692349, guid: 60fae8ec9d2a3534284470c77ae8db8d, type: 3}
     maxHealth: 650
     moveSpeed: 1.8
     contactDamage: 16

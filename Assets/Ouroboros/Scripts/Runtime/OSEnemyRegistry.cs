@@ -16,6 +16,32 @@ namespace Ouroboros.Runtime
         public int Count { get; private set; }
         public int Capacity => _activeEnemies?.Length ?? Mathf.Max(1, capacity);
 
+        public bool IsInsideEliteAccelerationAura(OSEnemyController enemy)
+        {
+            if (enemy == null || enemy.IsEliteOrBoss)
+            {
+                return false;
+            }
+
+            const float auraRadiusSquared = 4.5f * 4.5f;
+            for (var index = 0; index < Count; index++)
+            {
+                var candidate = _activeEnemies[index];
+                if (candidate == null || !candidate.IsRented || candidate.IsDeathConfirmed ||
+                    candidate.Archetype != OSEnemyArchetype.EliteAccelerator)
+                {
+                    continue;
+                }
+
+                if ((candidate.Position - enemy.Position).sqrMagnitude <= auraRadiusSquared)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void Awake()
         {
             EnsureStorage();

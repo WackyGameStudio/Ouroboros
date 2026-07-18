@@ -10,19 +10,22 @@ namespace Ouroboros.Runtime
         [SerializeField] private Transform target;
         [SerializeField] private OSPickupSpawner pickupSpawner;
         [SerializeField] private OSPlayerCombatResolver playerCombatResolver;
+        [SerializeField] private OSWaveDirector waveDirector;
 
         public void Configure(
             OSEnemyRegistry registry,
             OSGameSessionController session,
             Transform enemyTarget,
             OSPickupSpawner pickups = null,
-            OSPlayerCombatResolver combatResolver = null)
+            OSPlayerCombatResolver combatResolver = null,
+            OSWaveDirector waves = null)
         {
             enemyRegistry = registry;
             sessionController = session;
             target = enemyTarget;
             pickupSpawner = pickups;
             playerCombatResolver = combatResolver;
+            waveDirector = waves;
         }
 
         public void PrepareForRent(OSPoolableBehaviour instance)
@@ -41,10 +44,15 @@ namespace Ouroboros.Runtime
             {
                 controlProjectile.ConfigureRuntime(sessionController);
             }
+            else if (instance is OSEnemyProjectile enemyProjectile)
+            {
+                enemyProjectile.ConfigureRuntime(sessionController, playerCombatResolver);
+            }
         }
 
         private void HandleEnemyDied(OSEnemyController enemy)
         {
+            waveDirector?.HandleEnemyDied(enemy);
             if (enemy != null && pickupSpawner != null)
             {
                 pickupSpawner.TrySpawnDrop(

@@ -103,6 +103,15 @@ namespace Ouroboros.Core
         BossSwarmCore
     }
 
+    public enum OSEnemyBehaviorState
+    {
+        Pursuit,
+        Telegraph,
+        Charge,
+        Recovery,
+        RangedHold
+    }
+
     public readonly struct OSDamageEvent
     {
         public OSDamageEvent(

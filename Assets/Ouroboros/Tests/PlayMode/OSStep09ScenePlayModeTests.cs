@@ -30,6 +30,7 @@ namespace Ouroboros.Tests.PlayMode
             var growth = Object.FindAnyObjectByType<OSBodyGrowthController>();
             var chain = Object.FindAnyObjectByType<OSBodyChain>();
             var registry = Object.FindAnyObjectByType<OSEnemyRegistry>();
+            var pool = Object.FindAnyObjectByType<OSPoolRegistry>();
             var hud = GameObject.Find("Canvas")?.transform.Find("CombatHUD/PlayerHealthHUD");
             var presenter = hud != null ? hud.GetComponent<OSPlayerHealthPresenter>() : null;
 
@@ -39,6 +40,7 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(growth, Is.Not.Null);
             Assert.That(chain, Is.Not.Null);
             Assert.That(registry, Is.Not.Null);
+            Assert.That(pool, Is.Not.Null);
             Assert.That(presenter, Is.Not.Null);
             Assert.That(health.CurrentHealth, Is.EqualTo(100f));
 
@@ -46,13 +48,15 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(growth.ConfirmRole(OSBodyRoleType.Laser).IsAccepted, Is.True);
             Assert.That(session.State, Is.EqualTo(OSSessionState.Combat));
             Assert.That(chain.ActiveCount, Is.EqualTo(2));
-            Assert.That(registry.Count, Is.EqualTo(12));
 
-            var enemy = registry.GetAt(0);
             var head = GameObject.Find("Head").transform;
+            var rent = pool.Rent("enemy_chaser", head.position + Vector3.right * 2f, Quaternion.identity);
+            Assert.That(rent.IsAccepted, Is.True);
+            var enemy = rent.Payload as OSEnemyController;
             var body = chain.GetActiveSegment(1);
             var bodyIdentity = body.View.BodyHurtbox.GetComponent<OSCombatTargetIdentity>();
             Assert.That(enemy, Is.Not.Null);
+            Assert.That(registry.Count, Is.EqualTo(1));
             Assert.That(bodyIdentity, Is.Not.Null);
             Assert.That(bodyIdentity.RuntimeId, Is.EqualTo(body.StableId));
             Assert.That(bodyIdentity.TargetKind, Is.EqualTo(OSTargetKind.PlayerBody));

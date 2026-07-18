@@ -10,6 +10,15 @@ namespace Ouroboros.Runtime
     {
         private const float MinimumDistanceSquared = 0.000001f;
         private const int MaxContactTargets = 65;
+        private const float ChargerTelegraphSeconds = 0.65f;
+        private const float ChargerChargeSeconds = 0.55f;
+        private const float ChargerRecoverySeconds = 0.55f;
+        private const float ChargerSpeedMultiplier = 4.5f;
+        private const float ShooterTelegraphSeconds = 0.45f;
+        private const float ShooterMinimumRange = 5f;
+        private const float ShooterMaximumRange = 7f;
+        private const float ShooterProjectileRange = 13f;
+        private const string EnemyProjectilePoolKey = "enemy_projectile";
 
         [Header("Definition")]
         [SerializeField] private OSEncounterBalanceData encounterBalance;
@@ -18,6 +27,7 @@ namespace Ouroboros.Runtime
         [Header("References")]
         [SerializeField] private Rigidbody2D body;
         [SerializeField] private SpriteRenderer bodyRenderer;
+        [SerializeField] private LineRenderer telegraphLine;
 
         [Header("World safety")]
         [SerializeField, Min(1f)] private float reclaimDistance = 32f;
@@ -50,6 +60,12 @@ namespace Ouroboros.Runtime
         private bool _deathConfirmed;
         private bool _definitionResolved;
         private OSEnemyArchetype _archetype = OSEnemyArchetype.Chaser;
+        private OSEnemyBehaviorState _behaviorState = OSEnemyBehaviorState.Pursuit;
+        private Vector2 _behaviorDirection = Vector2.right;
+        private float _behaviorTimer;
+        private float _specialAttackCooldown;
+        private float _baseMaxHealth;
+        private Color _baseColor = Color.white;
 
         public event Action<OSEnemyController> Died;
         public event Action<OSDamageEvent> ContactAttackRequested;
@@ -77,6 +93,13 @@ namespace Ouroboros.Runtime
         public float AttackControlRemaining => _attackControlRemaining;
         public bool ControlAffectsMovement => controlAffectsMovement;
         public bool ControlAffectsAttack => controlAffectsAttack;
+        public string DefinitionId => definitionId;
+        public OSEnemyBehaviorState BehaviorState => _behaviorState;
+        public Vector2 TelegraphDirection => _behaviorDirection;
+        public float BehaviorTimer => _behaviorTimer;
+        public bool IsAuraAccelerated { get; private set; }
+        public float EffectiveMoveSpeed => moveSpeed * (IsAuraAccelerated ? 1.2f : 1f);
+        public float EffectiveAttackInterval => attackInterval * (IsAuraAccelerated ? 0.9f : 1f);
 
         private void Awake()
         {
@@ -97,6 +120,21 @@ namespace Ouroboros.Runtime
             _registry = registry;
             _session = session;
             _target = target;
+        }
+
+        public OSRuleResult<float> ApplyWaveHealthMultiplier(float multiplier)
+        {
+            if (!IsRented || !float.IsFinite(multiplier) || multiplier < 1f)
+            {
+                return OSRuleResult<float>.Rejected(
+                    OSResultCode.RejectedRequirement,
+                    "enemy.wave_health.invalid_multiplier",
+                    CurrentHealth);
+            }
+
+            maxHealth = Mathf.Max(0.01f, _baseMaxHealth * multiplier);
+            CurrentHealth = maxHealth;
+            return OSRuleResult<float>.Accepted(CurrentHealth, "enemy.wave_health.applied");
         }
 
         public void BeginContact(int targetRuntimeId, OSTargetKind targetKind, Transform contactTransform)
@@ -215,8 +253,17 @@ namespace Ouroboros.Runtime
                 return;
             }
 
+            var behaviorWasControlled = _movementControlRemaining > 0f;
             _movementControlRemaining = Mathf.Max(0f, _movementControlRemaining - deltaTime);
             _attackControlRemaining = Mathf.Max(0f, _attackControlRemaining - deltaTime);
+
+            IsAuraAccelerated = _registry != null && _registry.IsInsideEliteAccelerationAura(this);
+            UpdateAuraVisual();
+
+            if (behaviorWasControlled)
+            {
+                return;
+            }
 
             if (_target != null)
             {
@@ -227,13 +274,14 @@ namespace Ouroboros.Runtime
                     return;
                 }
 
-                if (_movementControlRemaining <= 0f)
-                {
-                    MoveTowardTarget(targetOffset, deltaTime);
-                }
+                SimulateBehavior(targetOffset, deltaTime);
             }
 
-            SimulateContactAttack(deltaTime);
+            if (_archetype != OSEnemyArchetype.Shooter &&
+                (_archetype != OSEnemyArchetype.Charger || _behaviorState == OSEnemyBehaviorState.Charge))
+            {
+                SimulateContactAttack(deltaTime);
+            }
         }
 
         internal void ConfigureForTesting(
@@ -261,6 +309,7 @@ namespace Ouroboros.Runtime
             controlAffectsMovement = controlMovement;
             controlAffectsAttack = controlAttack;
             _archetype = archetype;
+            _baseMaxHealth = maxHealth;
             encounterBalance = null;
             _definitionResolved = true;
             if (IsRented)
@@ -293,15 +342,29 @@ namespace Ouroboros.Runtime
         {
             ResolveComponents();
             ResolveDefinition();
+            _baseMaxHealth = Mathf.Max(0.01f, _baseMaxHealth > 0f ? _baseMaxHealth : maxHealth);
+            maxHealth = _baseMaxHealth;
             CurrentHealth = maxHealth;
             _attackCooldown = 0f;
             _movementControlRemaining = 0f;
             _attackControlRemaining = 0f;
             _deathConfirmed = false;
+            _behaviorState = _archetype == OSEnemyArchetype.Shooter
+                ? OSEnemyBehaviorState.RangedHold
+                : OSEnemyBehaviorState.Pursuit;
+            _behaviorDirection = Vector2.right;
+            _behaviorTimer = 0f;
+            _specialAttackCooldown = _archetype == OSEnemyArchetype.Charger ? 0.8f : 0.35f;
+            IsAuraAccelerated = false;
             EndContact();
             body.linearVelocity = Vector2.zero;
             body.angularVelocity = 0f;
             RegistryIndex = -1;
+            if (bodyRenderer != null)
+            {
+                _baseColor = bodyRenderer.color;
+            }
+            SetTelegraphVisible(false);
 
             var registration = _registry?.Register(this);
             if (registration.HasValue && !registration.Value.IsAccepted)
@@ -327,6 +390,11 @@ namespace Ouroboros.Runtime
             _movementControlRemaining = 0f;
             _attackControlRemaining = 0f;
             _deathConfirmed = false;
+            _behaviorState = OSEnemyBehaviorState.Pursuit;
+            _behaviorTimer = 0f;
+            _specialAttackCooldown = 0f;
+            IsAuraAccelerated = false;
+            SetTelegraphVisible(false);
             RegistryIndex = -1;
             Died = null;
             ContactAttackRequested = null;
@@ -334,19 +402,28 @@ namespace Ouroboros.Runtime
 
         private void MoveTowardTarget(Vector2 targetOffset, float deltaTime)
         {
-            if (targetOffset.sqrMagnitude <= MinimumDistanceSquared || moveSpeed <= 0f)
+            MoveInDirection(targetOffset, EffectiveMoveSpeed, deltaTime, true);
+        }
+
+        private void MoveInDirection(
+            Vector2 desiredDirection,
+            float speed,
+            float deltaTime,
+            bool applySeparation)
+        {
+            if (desiredDirection.sqrMagnitude <= MinimumDistanceSquared || speed <= 0f)
             {
                 return;
             }
 
-            var direction = targetOffset.normalized;
-            if (_registry != null && separationRadius > 0f && separationStrength > 0f)
+            var direction = desiredDirection.normalized;
+            if (applySeparation && _registry != null && separationRadius > 0f && separationStrength > 0f)
             {
                 var separation = _registry.CalculateSeparation(this, Position, separationRadius);
                 direction = Vector2.ClampMagnitude(direction + separation * separationStrength, 1f);
             }
 
-            body.MovePosition(Position + direction * (moveSpeed * deltaTime));
+            body.MovePosition(Position + direction * (speed * deltaTime));
             if (bodyRenderer != null && Mathf.Abs(direction.x) > 0.001f)
             {
                 bodyRenderer.flipX = direction.x < 0f;
@@ -387,7 +464,211 @@ namespace Ouroboros.Runtime
                     hitPosition));
             }
 
-            _attackCooldown = attackInterval;
+            _attackCooldown = EffectiveAttackInterval;
+        }
+
+        private void SimulateBehavior(Vector2 targetOffset, float deltaTime)
+        {
+            switch (_archetype)
+            {
+                case OSEnemyArchetype.Charger:
+                    SimulateCharger(targetOffset, deltaTime);
+                    break;
+                case OSEnemyArchetype.Shooter:
+                    SimulateShooter(targetOffset, deltaTime);
+                    break;
+                default:
+                    _behaviorState = OSEnemyBehaviorState.Pursuit;
+                    MoveTowardTarget(targetOffset, deltaTime);
+                    break;
+            }
+        }
+
+        private void SimulateCharger(Vector2 targetOffset, float deltaTime)
+        {
+            if (_behaviorState == OSEnemyBehaviorState.Telegraph)
+            {
+                _behaviorTimer = Mathf.Max(0f, _behaviorTimer - deltaTime);
+                UpdateTelegraphLine();
+                if (_behaviorTimer <= 0f)
+                {
+                    _behaviorState = OSEnemyBehaviorState.Charge;
+                    _behaviorTimer = ChargerChargeSeconds;
+                    SetTelegraphVisible(false);
+                }
+
+                return;
+            }
+
+            if (_behaviorState == OSEnemyBehaviorState.Charge)
+            {
+                MoveInDirection(_behaviorDirection, moveSpeed * ChargerSpeedMultiplier, deltaTime, false);
+                _behaviorTimer = Mathf.Max(0f, _behaviorTimer - deltaTime);
+                if (_behaviorTimer <= 0f)
+                {
+                    _behaviorState = OSEnemyBehaviorState.Recovery;
+                    _behaviorTimer = ChargerRecoverySeconds;
+                }
+
+                return;
+            }
+
+            if (_behaviorState == OSEnemyBehaviorState.Recovery)
+            {
+                _behaviorTimer = Mathf.Max(0f, _behaviorTimer - deltaTime);
+                if (_behaviorTimer <= 0f)
+                {
+                    _behaviorState = OSEnemyBehaviorState.Pursuit;
+                    _specialAttackCooldown = EffectiveAttackInterval;
+                }
+
+                return;
+            }
+
+            _behaviorState = OSEnemyBehaviorState.Pursuit;
+            _specialAttackCooldown = Mathf.Max(0f, _specialAttackCooldown - deltaTime);
+            if (_attackControlRemaining <= 0f && _specialAttackCooldown <= 0f &&
+                targetOffset.sqrMagnitude <= 8f * 8f &&
+                targetOffset.sqrMagnitude > MinimumDistanceSquared)
+            {
+                _behaviorDirection = targetOffset.normalized;
+                _behaviorState = OSEnemyBehaviorState.Telegraph;
+                _behaviorTimer = ChargerTelegraphSeconds;
+                SetTelegraphVisible(true);
+                UpdateTelegraphLine();
+                return;
+            }
+
+            MoveTowardTarget(targetOffset, deltaTime);
+        }
+
+        private void SimulateShooter(Vector2 targetOffset, float deltaTime)
+        {
+            if (_behaviorState == OSEnemyBehaviorState.Telegraph)
+            {
+                _behaviorTimer = Mathf.Max(0f, _behaviorTimer - deltaTime);
+                UpdateTelegraphLine();
+                if (_behaviorTimer <= 0f)
+                {
+                    var launched = TryLaunchEnemyProjectile();
+                    _behaviorState = OSEnemyBehaviorState.RangedHold;
+                    SetTelegraphVisible(false);
+                    if (launched)
+                    {
+                        _specialAttackCooldown = EffectiveAttackInterval;
+                    }
+                }
+
+                return;
+            }
+
+            _behaviorState = OSEnemyBehaviorState.RangedHold;
+            var distance = targetOffset.magnitude;
+            if (distance > ShooterMaximumRange)
+            {
+                MoveTowardTarget(targetOffset, deltaTime);
+            }
+            else if (distance < ShooterMinimumRange)
+            {
+                MoveInDirection(-targetOffset, EffectiveMoveSpeed, deltaTime, true);
+            }
+            else if (targetOffset.sqrMagnitude > MinimumDistanceSquared)
+            {
+                var tangent = new Vector2(-targetOffset.y, targetOffset.x);
+                MoveInDirection(tangent, EffectiveMoveSpeed * 0.35f, deltaTime, true);
+            }
+
+            if (_attackControlRemaining > 0f)
+            {
+                return;
+            }
+
+            _specialAttackCooldown = Mathf.Max(0f, _specialAttackCooldown - deltaTime);
+            if (_specialAttackCooldown <= 0f && distance <= ShooterProjectileRange &&
+                targetOffset.sqrMagnitude > MinimumDistanceSquared)
+            {
+                _behaviorDirection = targetOffset.normalized;
+                _behaviorState = OSEnemyBehaviorState.Telegraph;
+                _behaviorTimer = ShooterTelegraphSeconds;
+                SetTelegraphVisible(true);
+                UpdateTelegraphLine();
+            }
+        }
+
+        private bool TryLaunchEnemyProjectile()
+        {
+            var projectileLimit = encounterBalance != null ? encounterBalance.ProjectileLimit : 120;
+            if (PoolOwner == null ||
+                PoolOwner.GetActiveCount("head_projectile") +
+                PoolOwner.GetActiveCount("body_control_projectile") +
+                PoolOwner.GetActiveCount(EnemyProjectilePoolKey) >= projectileLimit)
+            {
+                return false;
+            }
+
+            var idResult = PoolOwner.NextAttackEventId();
+            if (!idResult.IsAccepted)
+            {
+                return false;
+            }
+
+            var rent = PoolOwner.Rent(EnemyProjectilePoolKey, Position, Quaternion.identity);
+            if (!rent.IsAccepted || rent.Payload is not OSEnemyProjectile projectile)
+            {
+                return false;
+            }
+
+            var launch = projectile.Launch(
+                idResult.Payload,
+                RuntimeId,
+                _behaviorDirection,
+                contactDamage,
+                ShooterProjectileRange);
+            if (launch.IsAccepted)
+            {
+                return true;
+            }
+
+            projectile.ReturnToPool();
+            return false;
+        }
+
+        private void SetTelegraphVisible(bool visible)
+        {
+            if (telegraphLine != null)
+            {
+                telegraphLine.enabled = visible;
+            }
+
+            if (bodyRenderer != null)
+            {
+                bodyRenderer.color = visible ? Color.white : _baseColor;
+            }
+        }
+
+        private void UpdateAuraVisual()
+        {
+            if (bodyRenderer == null || _behaviorState == OSEnemyBehaviorState.Telegraph)
+            {
+                return;
+            }
+
+            bodyRenderer.color = IsAuraAccelerated
+                ? Color.Lerp(_baseColor, new Color(1f, 0.78f, 0.12f, 1f), 0.38f)
+                : _baseColor;
+        }
+
+        private void UpdateTelegraphLine()
+        {
+            if (telegraphLine == null || !telegraphLine.enabled)
+            {
+                return;
+            }
+
+            telegraphLine.positionCount = 2;
+            telegraphLine.SetPosition(0, Position);
+            telegraphLine.SetPosition(1, Position + (_behaviorDirection *
+                (_archetype == OSEnemyArchetype.Charger ? 5.5f : ShooterProjectileRange)));
         }
 
         private void ConfirmDeath()
@@ -463,6 +744,7 @@ namespace Ouroboros.Runtime
             healDropChance = definition.DropTable.HealChance;
             controlAffectsMovement = definition.ControlAffectsMovement;
             controlAffectsAttack = definition.ControlAffectsAttack;
+            _baseMaxHealth = maxHealth;
             _definitionResolved = true;
         }
 

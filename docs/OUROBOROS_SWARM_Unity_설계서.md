@@ -617,7 +617,7 @@ RequiredXP(next) = ceil(previous × 1.18)
 - 모든 공격은 안정 공격 이벤트 ID를 갖는다.
 - 적 사망은 한 번만 확정하고 드롭·풀 반환 이벤트를 중복 발행하지 않는다.
 - 화면 밖 적도 규칙상 존재하지만, 너무 멀어진 적은 스폰 디렉터가 안전 위치로 재배치하거나 풀 반환한다.
-- **[가설]** Step 10 G0의 웨이브 디렉터 이전 세로 슬라이스는 `enemy_chaser` 12개를 활성 유지하고 사망 후 1.5초 간격으로 보충하며 몸통 조각 드롭 확률을 25%로 둔다. Step 12에서 실제 웨이브 스케줄로 교체하되 조각 확률은 플레이테스트 결론 전까지 유지한다.
+- **[확정]** Step 13에서 실제 `OSWaveDirector`가 시간표와 스폰 티켓을 소유하며 Step 10 G0의 고정 12마리 `OSEnemyDebugSpawner`는 비활성화한다. 추적체 몸통 조각 드롭 확률 25% 가설은 플레이테스트 결론 전까지 유지한다.
 
 ## 7.2 일반 적 4종 초기 가설
 
@@ -658,7 +658,7 @@ EnemyHealthMultiplier(minute) = 1.12 ^ minute
 SpawnRateMultiplier(minute) = 1.15 ^ minute
 ```
 
-정확한 결과는 분 단위 계단 또는 SO 곡선으로 조정하되 런타임에서 ScriptableObject 원본을 수정하지 않는다.
+**[확정]** Step 13 런타임은 `elapsedSeconds / 60`을 지수로 사용해 두 배율을 연속 적용한다. `OSWaveScheduleData`와 `OSEncounterBalanceData` 원본은 수정하지 않고 세션별 런타임 복사본과 스폰 시점 HP에만 반영한다.
 
 ### 스폰 위치
 
@@ -667,6 +667,7 @@ SpawnRateMultiplier(minute) = 1.15 ^ minute
 - 장애물 내부와 월드 경계 밖은 거부한다.
 - 최대 8회 후보를 시도하고 실패하면 해당 스폰 티켓을 다음 틱으로 넘긴다.
 - 보스·정예는 전용 예고 위치를 사용한다.
+- Step 13 정예는 카메라 밖 검증을 통과한 위치와 전용 HUD 경고를 함께 사용하며, 10:00 보스 실제 생성은 Step 14까지 연기한다.
 
 ### 활성 상한
 

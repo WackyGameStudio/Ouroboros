@@ -37,6 +37,9 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(Physics2D.GetIgnoreLayerCollision(projectileLayer, worldBlockerLayer), Is.True);
             Assert.That(session.CompleteActiveSelection().IsAccepted, Is.True);
             Assert.That(session.CompleteActiveSelection().IsAccepted, Is.True);
+            var head = Object.FindAnyObjectByType<OSPlayerController>().transform;
+            var enemy = pool.Rent("enemy_chaser", head.position + Vector3.right * 3f, Quaternion.identity);
+            Assert.That(enemy.IsAccepted, Is.True);
 
             var timeout = 5f;
             while (weapon.DefeatsConfirmed == 0 && timeout > 0f)
@@ -45,10 +48,10 @@ namespace Ouroboros.Tests.PlayMode
                 yield return null;
             }
 
-            Assert.That(weapon.ShotsFired, Is.GreaterThanOrEqualTo(2));
-            Assert.That(weapon.HitsConfirmed, Is.GreaterThanOrEqualTo(2));
+            Assert.That(weapon.ShotsFired, Is.GreaterThanOrEqualTo(1));
+            Assert.That(weapon.HitsConfirmed, Is.GreaterThanOrEqualTo(1));
             Assert.That(weapon.DefeatsConfirmed, Is.GreaterThanOrEqualTo(1));
-            Assert.That(registry.Count, Is.LessThan(12));
+            Assert.That(registry.Count, Is.LessThanOrEqualTo(25));
         }
     }
 }
