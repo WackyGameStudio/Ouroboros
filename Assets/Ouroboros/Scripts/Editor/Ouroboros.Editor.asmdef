@@ -1,0 +1,25 @@
+{
+  "name": "Ouroboros.Editor",
+  "rootNamespace": "Ouroboros.Editor",
+  "references": [
+    "Ouroboros.Core",
+    "Ouroboros.Runtime",
+    "Ouroboros.UI",
+    "Unity.InputSystem",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.RenderPipelines.Universal.2D.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

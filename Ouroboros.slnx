@@ -1,2 +1,8 @@
 ﻿<Solution>
+  <Project Path="Ouroboros.Runtime.csproj" />
+  <Project Path="Ouroboros.Core.csproj" />
+  <Project Path="Ouroboros.Editor.csproj" />
+  <Project Path="Ouroboros.UI.csproj" />
+  <Project Path="Ouroboros.Tests.EditMode.csproj" />
+  <Project Path="Ouroboros.Tests.PlayMode.csproj" />
 </Solution>

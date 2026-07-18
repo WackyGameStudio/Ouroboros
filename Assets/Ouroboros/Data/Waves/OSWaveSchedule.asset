@@ -1,0 +1,150 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e754a2f5c965094fb0ba4eb398c72d0, type: 3}
+  m_Name: OSWaveSchedule
+  m_EditorClassIdentifier: Ouroboros.Core::Ouroboros.Core.OSWaveScheduleData
+  dataVersion: step02-v1
+  entries:
+  - startSeconds: 0
+    endSeconds: 60
+    enemyWeights:
+    - enemyId: enemy_chaser
+      weight: 1
+    spawnRate: 0.5
+    specialEvent: 0
+    targetActiveEnemies: 25
+  - startSeconds: 60
+    endSeconds: 120
+    enemyWeights:
+    - enemyId: enemy_chaser
+      weight: 0.8
+    - enemyId: enemy_charger
+      weight: 0.2
+    spawnRate: 0.75
+    specialEvent: 0
+    targetActiveEnemies: 45
+  - startSeconds: 120
+    endSeconds: 180
+    enemyWeights:
+    - enemyId: enemy_chaser
+      weight: 0.65
+    - enemyId: enemy_charger
+      weight: 0.2
+    - enemyId: enemy_shooter
+      weight: 0.15
+    spawnRate: 1
+    specialEvent: 0
+    targetActiveEnemies: 65
+  - startSeconds: 180
+    endSeconds: 181
+    enemyWeights: []
+    spawnRate: 0
+    specialEvent: 1
+    targetActiveEnemies: 65
+  - startSeconds: 181
+    endSeconds: 240
+    enemyWeights:
+    - enemyId: enemy_chaser
+      weight: 0.5
+    - enemyId: enemy_charger
+      weight: 0.25
+    - enemyId: enemy_shooter
+      weight: 0.25
+    spawnRate: 1.2
+    specialEvent: 0
+    targetActiveEnemies: 85
+  - startSeconds: 240
+    endSeconds: 300
+    enemyWeights:
+    - enemyId: enemy_chaser
+      weight: 0.4
+    - enemyId: enemy_charger
+      weight: 0.2
+    - enemyId: enemy_shooter
+      weight: 0.2
+    - enemyId: enemy_splitter
+      weight: 0.2
+    spawnRate: 1.4
+    specialEvent: 0
+    targetActiveEnemies: 105
+  - startSeconds: 300
+    endSeconds: 360
+    enemyWeights:
+    - enemyId: enemy_chaser
+      weight: 0.3
+    - enemyId: enemy_charger
+      weight: 0.25
+    - enemyId: enemy_shooter
+      weight: 0.25
+    - enemyId: enemy_splitter
+      weight: 0.2
+    spawnRate: 1.6
+    specialEvent: 0
+    targetActiveEnemies: 125
+  - startSeconds: 360
+    endSeconds: 361
+    enemyWeights: []
+    spawnRate: 0
+    specialEvent: 1
+    targetActiveEnemies: 125
+  - startSeconds: 361
+    endSeconds: 480
+    enemyWeights:
+    - enemyId: enemy_chaser
+      weight: 0.3
+    - enemyId: enemy_charger
+      weight: 0.25
+    - enemyId: enemy_shooter
+      weight: 0.2
+    - enemyId: enemy_splitter
+      weight: 0.25
+    spawnRate: 1.8
+    specialEvent: 0
+    targetActiveEnemies: 150
+  - startSeconds: 480
+    endSeconds: 540
+    enemyWeights:
+    - enemyId: enemy_chaser
+      weight: 0.2
+    - enemyId: enemy_charger
+      weight: 0.4
+    - enemyId: enemy_shooter
+      weight: 0.3
+    - enemyId: enemy_splitter
+      weight: 0.1
+    spawnRate: 2
+    specialEvent: 0
+    targetActiveEnemies: 155
+  - startSeconds: 540
+    endSeconds: 600
+    enemyWeights:
+    - enemyId: enemy_chaser
+      weight: 0.3
+    - enemyId: enemy_charger
+      weight: 0.25
+    - enemyId: enemy_shooter
+      weight: 0.25
+    - enemyId: enemy_splitter
+      weight: 0.2
+    spawnRate: 2
+    specialEvent: 2
+    targetActiveEnemies: 160
+  - startSeconds: 600
+    endSeconds: 690
+    enemyWeights:
+    - enemyId: enemy_chaser
+      weight: 0.45
+    - enemyId: enemy_splitter
+      weight: 0.55
+    spawnRate: 2
+    specialEvent: 3
+    targetActiveEnemies: 180

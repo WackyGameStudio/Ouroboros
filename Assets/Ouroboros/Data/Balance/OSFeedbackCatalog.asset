@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f02dfbaa56d0d241be127ea154ef414, type: 3}
+  m_Name: OSFeedbackCatalog
+  m_EditorClassIdentifier: Ouroboros.Core::Ouroboros.Core.OSFeedbackCatalog
+  dataVersion: step02-v1
+  roleVisuals:
+  - id: shield
+    roleType: 0
+    sprite: {fileID: 21300000, guid: ed7dcbf96ef9a53419f8d77d169f148c, type: 3}
+    color: {r: 0.23921569, g: 0.54509807, b: 1, a: 1}
+    patternKey: cross_ring
+  - id: attack
+    roleType: 1
+    sprite: {fileID: 21300000, guid: c2a6a444aad7d5848b38fc1435351931, type: 3}
+    color: {r: 1, g: 0.3019608, b: 0.36078432, a: 1}
+    patternKey: arrow
+  - id: laser
+    roleType: 2
+    sprite: {fileID: 21300000, guid: 09a6bd2633fa25e458d4c95c9fc8f377, type: 3}
+    color: {r: 0.87058824, g: 0.2901961, b: 1, a: 1}
+    patternKey: double_bar
+  - id: control
+    roleType: 3
+    sprite: {fileID: 21300000, guid: 7c4116984039fcf41a34f55f09345f55, type: 3}
+    color: {r: 0.25490198, g: 0.9019608, b: 0.5686275, a: 1}
+    patternKey: diamond_cross
+  attackVfxKeys:
+  - head_projectile
+  - body_projectile
+  - laser_beam
+  telegraphKeys:
+  - charger_line
+  - laser_line
+  - explosion_reserved
+  audioKeys:
+  - ui_select
+  - hit_head
+  - cut_body
+  - explosion

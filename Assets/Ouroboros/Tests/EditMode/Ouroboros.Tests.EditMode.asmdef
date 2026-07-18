@@ -1,0 +1,25 @@
+{
+  "name": "Ouroboros.Tests.EditMode",
+  "rootNamespace": "Ouroboros.Tests.EditMode",
+  "references": [
+    "Ouroboros.Core",
+    "Ouroboros.Runtime",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

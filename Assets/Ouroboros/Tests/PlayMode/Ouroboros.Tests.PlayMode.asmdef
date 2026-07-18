@@ -1,0 +1,25 @@
+{
+  "name": "Ouroboros.Tests.PlayMode",
+  "rootNamespace": "Ouroboros.Tests.PlayMode",
+  "references": [
+    "Ouroboros.Core",
+    "Ouroboros.Runtime",
+    "Ouroboros.UI",
+    "Unity.InputSystem",
+    "Unity.InputSystem.TestFramework"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

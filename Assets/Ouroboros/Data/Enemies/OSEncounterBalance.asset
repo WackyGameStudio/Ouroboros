@@ -1,0 +1,134 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f90e0254991be5246bca0e721fd4b2ce, type: 3}
+  m_Name: OSEncounterBalance
+  m_EditorClassIdentifier: Ouroboros.Core::Ouroboros.Core.OSEncounterBalanceData
+  dataVersion: step02-v1
+  enemyDefinitions:
+  - id: enemy_chaser
+    archetype: 0
+    prefab: {fileID: 7974530653096916733, guid: 8a4d0d24064007148b14ba782caaf015, type: 3}
+    maxHealth: 18
+    moveSpeed: 2.1
+    contactDamage: 8
+    attackInterval: 1
+    dropTable:
+      experienceAmount: 1
+      fragmentAmount: 1
+      fragmentChance: 0.15
+      healAmount: 10
+      healChance: 0.02
+    controlAffectsMovement: 1
+    controlAffectsAttack: 0
+    poolCapacity: 200
+  - id: enemy_charger
+    archetype: 1
+    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    maxHealth: 42
+    moveSpeed: 1.6
+    contactDamage: 14
+    attackInterval: 1.5
+    dropTable:
+      experienceAmount: 1
+      fragmentAmount: 1
+      fragmentChance: 0.15
+      healAmount: 10
+      healChance: 0.02
+    controlAffectsMovement: 1
+    controlAffectsAttack: 0
+    poolCapacity: 32
+  - id: enemy_shooter
+    archetype: 2
+    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    maxHealth: 32
+    moveSpeed: 1.4
+    contactDamage: 10
+    attackInterval: 1.5
+    dropTable:
+      experienceAmount: 1
+      fragmentAmount: 1
+      fragmentChance: 0.15
+      healAmount: 10
+      healChance: 0.02
+    controlAffectsMovement: 1
+    controlAffectsAttack: 0
+    poolCapacity: 32
+  - id: enemy_splitter
+    archetype: 3
+    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    maxHealth: 36
+    moveSpeed: 1.5
+    contactDamage: 7
+    attackInterval: 1
+    dropTable:
+      experienceAmount: 1
+      fragmentAmount: 1
+      fragmentChance: 0.15
+      healAmount: 10
+      healChance: 0.02
+    controlAffectsMovement: 1
+    controlAffectsAttack: 0
+    poolCapacity: 32
+  - id: enemy_splitter_spawn
+    archetype: 4
+    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    maxHealth: 12
+    moveSpeed: 2.4
+    contactDamage: 4
+    attackInterval: 1
+    dropTable:
+      experienceAmount: 1
+      fragmentAmount: 1
+      fragmentChance: 0.15
+      healAmount: 10
+      healChance: 0.02
+    controlAffectsMovement: 1
+    controlAffectsAttack: 0
+    poolCapacity: 64
+  eliteDefinition:
+    id: enemy_elite_accelerator
+    archetype: 5
+    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    maxHealth: 650
+    moveSpeed: 1.8
+    contactDamage: 16
+    attackInterval: 1
+    dropTable:
+      experienceAmount: 1
+      fragmentAmount: 1
+      fragmentChance: 0.15
+      healAmount: 10
+      healChance: 0.02
+    controlAffectsMovement: 1
+    controlAffectsAttack: 0
+    poolCapacity: 4
+  bossDefinition:
+    id: boss_swarm_core
+    archetype: 6
+    prefab: {fileID: 4887241531276168779, guid: c195b439d43f0f64f91b610805c14139, type: 3}
+    maxHealth: 6000
+    moveSpeed: 1.2
+    contactDamage: 20
+    attackInterval: 1.5
+    dropTable:
+      experienceAmount: 1
+      fragmentAmount: 1
+      fragmentChance: 0.15
+      healAmount: 10
+      healChance: 0.02
+    controlAffectsMovement: 1
+    controlAffectsAttack: 0
+    poolCapacity: 1
+  activeEnemyLimit: 180
+  projectileLimit: 120
+  pickupLimit: 256
+  vfxLimit: 160

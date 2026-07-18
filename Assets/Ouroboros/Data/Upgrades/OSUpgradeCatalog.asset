@@ -1,0 +1,136 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a96f86f3bc1ab124284acc4f7a8958bf, type: 3}
+  m_Name: OSUpgradeCatalog
+  m_EditorClassIdentifier: Ouroboros.Core::Ouroboros.Core.OSUpgradeCatalog
+  dataVersion: step02-v1
+  entries:
+  - id: head_damage
+    category: 0
+    maxLevel: 3
+    operation: 0
+    perLevelValue: 0.15
+    clampMinimum: 0
+    clampMaximum: 10
+    candidateWeight: 1
+  - id: head_rate
+    category: 0
+    maxLevel: 3
+    operation: 1
+    perLevelValue: 0.12
+    clampMinimum: 0.15
+    clampMaximum: 10
+    candidateWeight: 1
+  - id: head_pierce
+    category: 0
+    maxLevel: 3
+    operation: 2
+    perLevelValue: 1
+    clampMinimum: 0
+    clampMaximum: 3
+    candidateWeight: 1
+  - id: body_fragment_efficiency
+    category: 1
+    maxLevel: 2
+    operation: 3
+    perLevelValue: -0.1
+    clampMinimum: 8
+    clampMaximum: 12
+    candidateWeight: 1
+  - id: body_damage_rate
+    category: 1
+    maxLevel: 2
+    operation: 4
+    perLevelValue: 0.01
+    clampMinimum: 0.04
+    clampMaximum: 0.06
+    candidateWeight: 1
+  - id: role_overclock
+    category: 1
+    maxLevel: 3
+    operation: 5
+    perLevelValue: -0.08
+    clampMinimum: 0.5
+    clampMaximum: 1
+    candidateWeight: 1
+  - id: explosion_radius
+    category: 2
+    maxLevel: 3
+    operation: 6
+    perLevelValue: 0.15
+    clampMinimum: 1
+    clampMaximum: 3
+    candidateWeight: 1
+  - id: explosion_damage
+    category: 2
+    maxLevel: 3
+    operation: 7
+    perLevelValue: 0.2
+    clampMinimum: 1
+    clampMaximum: 3
+    candidateWeight: 1
+  - id: explosion_efficiency
+    category: 2
+    maxLevel: 3
+    operation: 8
+    perLevelValue: -0.05
+    clampMinimum: 0.15
+    clampMaximum: 0.3
+    candidateWeight: 1
+  - id: max_health
+    category: 3
+    maxLevel: 2
+    operation: 9
+    perLevelValue: 0.2
+    clampMinimum: 0
+    clampMaximum: 10
+    candidateWeight: 1
+  - id: move_speed
+    category: 3
+    maxLevel: 2
+    operation: 10
+    perLevelValue: 0.08
+    clampMinimum: 0
+    clampMaximum: 7.5
+    candidateWeight: 1
+  - id: heal_amount
+    category: 3
+    maxLevel: 2
+    operation: 11
+    perLevelValue: 0.25
+    clampMinimum: 0
+    clampMaximum: 10
+    candidateWeight: 1
+  - id: magnet_radius
+    category: 4
+    maxLevel: 2
+    operation: 12
+    perLevelValue: 0.3
+    clampMinimum: 0
+    clampMaximum: 10
+    candidateWeight: 1
+  - id: experience_gain
+    category: 4
+    maxLevel: 2
+    operation: 13
+    perLevelValue: 0.1
+    clampMinimum: 0
+    clampMaximum: 10
+    candidateWeight: 1
+  - id: elite_priority
+    category: 4
+    maxLevel: 1
+    operation: 14
+    perLevelValue: 1
+    clampMinimum: 0
+    clampMaximum: 1
+    candidateWeight: 1

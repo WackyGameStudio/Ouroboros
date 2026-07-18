@@ -1,0 +1,322 @@
+{
+  "name": "OSInputActions",
+  "maps": [
+    {
+      "name": "Player",
+      "id": "47f27384-5e4e-42c8-a5df-dc55b45b73eb",
+      "actions": [
+        {
+          "name": "Move",
+          "type": "Value",
+          "id": "977fd450-9e08-4295-849f-d0a7fc8c7f93",
+          "expectedControlType": "Vector2",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": true
+        },
+        {
+          "name": "Explosion",
+          "type": "Button",
+          "id": "99745d0a-a5fd-4ab6-993f-a394af7c54c9",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "Press",
+          "initialStateCheck": false
+        }
+      ],
+      "bindings": [
+        {
+          "name": "WASD",
+          "id": "1a2b0aca-1b90-45a0-80f1-099b79f26301",
+          "path": "2DVector",
+          "interactions": "",
+          "processors": "NormalizeVector2",
+          "groups": "Keyboard&Mouse",
+          "action": "Move",
+          "isComposite": true,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "up",
+          "id": "36361eb0-7074-4ba5-a68f-2b6d092ea457",
+          "path": "<Keyboard>/w",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Move",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "down",
+          "id": "a9a505aa-e738-4311-954f-7851352b9a1a",
+          "path": "<Keyboard>/s",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Move",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "left",
+          "id": "73d92696-a2cc-41fb-a7af-1c80a2370669",
+          "path": "<Keyboard>/a",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Move",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "right",
+          "id": "0571d37c-647b-47d6-89f1-5890e34e9b23",
+          "path": "<Keyboard>/d",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Move",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "Arrows",
+          "id": "080ef06b-81a3-4f80-b650-101f4da2b2c6",
+          "path": "2DVector",
+          "interactions": "",
+          "processors": "NormalizeVector2",
+          "groups": "Keyboard&Mouse",
+          "action": "Move",
+          "isComposite": true,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "up",
+          "id": "8a20fd99-5089-4d1e-a8d4-3bce1d614e5c",
+          "path": "<Keyboard>/upArrow",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Move",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "down",
+          "id": "af88888c-c33d-49de-835d-273103220ed8",
+          "path": "<Keyboard>/downArrow",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Move",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "left",
+          "id": "d47211ca-0b67-4cc9-b75a-163be9f1b46c",
+          "path": "<Keyboard>/leftArrow",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Move",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "right",
+          "id": "98fdad90-5441-4134-b9e6-2f91583ae591",
+          "path": "<Keyboard>/rightArrow",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Move",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "",
+          "id": "1e16b702-6ac6-4d4f-8e32-79a1ed6523fb",
+          "path": "<Keyboard>/space",
+          "interactions": "Press",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Explosion",
+          "isComposite": false,
+          "isPartOfComposite": false
+        }
+      ]
+    },
+    {
+      "name": "UI",
+      "id": "6629a7a8-5dc7-4ad4-ae21-c46439f58343",
+      "actions": [
+        {
+          "name": "Point",
+          "type": "PassThrough",
+          "id": "96cbbe9a-bc90-4672-94fc-f840139ea8e6",
+          "expectedControlType": "Vector2",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": true
+        },
+        {
+          "name": "Click",
+          "type": "PassThrough",
+          "id": "c7d5b4bc-d82f-42dc-a8aa-0671b048d145",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": true
+        },
+        {
+          "name": "Navigate",
+          "type": "PassThrough",
+          "id": "c1f03779-b80c-4d39-b28d-ab164342f89c",
+          "expectedControlType": "Vector2",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": true
+        },
+        {
+          "name": "Submit",
+          "type": "Button",
+          "id": "335922ab-57c1-439b-8ca8-c76047ab48d6",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": false
+        },
+        {
+          "name": "Cancel",
+          "type": "Button",
+          "id": "cd0f321b-d77b-4686-9255-39d8ec29635d",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": false
+        }
+      ],
+      "bindings": [
+        {
+          "name": "",
+          "id": "37c65fc5-eef2-4260-a747-95494d8d8012",
+          "path": "<Mouse>/position",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Point",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "e8c6d06c-b0d8-41b5-8e6e-4a64a12b36d5",
+          "path": "<Mouse>/leftButton",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Click",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "Arrows",
+          "id": "b1705461-08f5-41ca-bd46-b6734461aa59",
+          "path": "2DVector",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Navigate",
+          "isComposite": true,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "up",
+          "id": "e2d02807-f754-482b-8e3a-17e418a76764",
+          "path": "<Keyboard>/upArrow",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Navigate",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "down",
+          "id": "bcb5a249-fd71-4c82-a069-4f2e56c5dc3d",
+          "path": "<Keyboard>/downArrow",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Navigate",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "left",
+          "id": "7125647e-c54e-4695-95dd-559f20610432",
+          "path": "<Keyboard>/leftArrow",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Navigate",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "right",
+          "id": "68d49dbb-5913-42e5-b576-33fa68320216",
+          "path": "<Keyboard>/rightArrow",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Navigate",
+          "isComposite": false,
+          "isPartOfComposite": true
+        },
+        {
+          "name": "",
+          "id": "387e8211-9102-452d-ad6b-e18e710a4d23",
+          "path": "<Keyboard>/enter",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Submit",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "e45c50da-667c-48c3-94b9-d1fd5d8ba2fb",
+          "path": "<Keyboard>/escape",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Cancel",
+          "isComposite": false,
+          "isPartOfComposite": false
+        }
+      ]
+    }
+  ],
+  "controlSchemes": [
+    {
+      "name": "Keyboard&Mouse",
+      "bindingGroup": "Keyboard&Mouse",
+      "devices": [
+        {
+          "devicePath": "<Keyboard>",
+          "isOptional": false,
+          "isOR": false
+        },
+        {
+          "devicePath": "<Mouse>",
+          "isOptional": true,
+          "isOR": false
+        }
+      ]
+    }
+  ]
+}

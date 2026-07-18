@@ -1,0 +1,18 @@
+{
+  "name": "Ouroboros.Runtime",
+  "rootNamespace": "Ouroboros.Runtime",
+  "references": [
+    "Ouroboros.Core",
+    "Unity.InputSystem",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
