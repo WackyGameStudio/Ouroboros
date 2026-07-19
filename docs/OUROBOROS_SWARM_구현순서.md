@@ -366,7 +366,7 @@ PC/Web에서 동일한 이동 감각과 장애물 처리를 완성한다.
 
 - 상태: 완료
 - 최근 갱신: 2026-07-19
-- 완료: `Assets/Ouroboros/Scripts/Runtime/OSPlayerController.cs`에 입력 크기 제한·5.5/s 이동·Kinematic `Collider2D.Cast`·접선 슬라이드·마지막 방향·월드 경계·선택/사망 상태 차단·재시작 위치 초기화를 구현했다. `OSCameraFollower.cs`는 고정 줌·무회전·0.1초 지연·카메라 여백 경계를 적용하고, `OSPlayerHeadVisual.cs`와 `Assets/Ouroboros/Art/Placeholders/Obstacle.png`로 머리 펄스/방향 표시를 구성했다. Step 15.1에서 플레이 가능 범위를 28×18에서 48×30으로 확장하고 장애물을 드문 7종 배치로 재구성했으며, `Assets/Ouroboros/Scenes/20_Game.unity`의 정적 `Enemy_Chaser`/`Pickup` 표시용 오브젝트를 제거했다. `WorldBlocker`/`PlayerHeadSolid` 레이어, 확장된 4면 경계, 플레이어 물리와 카메라 참조는 Step 04 재적용 메뉴에도 반영했다.
+- 완료: `Assets/Ouroboros/Scripts/Runtime/OSPlayerController.cs`에 입력 크기 제한·5.5/s 이동·Kinematic `Collider2D.Cast`·접선 슬라이드·마지막 방향·월드 경계·선택/사망 상태 차단·재시작 위치 초기화를 구현했다. `OSCameraFollower.cs`는 고정 줌·무회전·0.1초 지연·카메라 여백 경계를 적용하고, `OSPlayerHeadVisual.cs`와 `Assets/Ouroboros/Art/Placeholders/Obstacle.png`로 머리 펄스/방향 표시를 구성했다. Step 15.1에서 플레이 가능 범위를 28×18에서 48×30으로 확장하고 장애물을 드문 7종 배치로 재구성했으며, `Assets/Ouroboros/Scenes/20_Game.unity`의 정적 `Enemy_Chaser`/`Pickup` 표시용 오브젝트를 제거했다. Step 15.11에서 게임 카메라 직교 크기를 5.4에서 6.5로 확대해 16:9 월드 가시 영역을 약 19.2×10.8에서 23.1×13.0으로 넓혔다. `WorldBlocker`/`PlayerHeadSolid` 레이어, 확장된 4면 경계, 플레이어 물리와 카메라 참조는 Step 04 재적용 메뉴에도 반영했다.
 - 남음: 없음. Step 05 몸통 경로 추종 구현을 시작할 수 있다.
 - 검증: Unity 컴파일 및 최종 Console Error/Exception 0. EditMode 전체 19/19 통과, `Ouroboros.Tests.PlayMode` 12/12 통과(WASD/방향키 일치, 직선/대각선 속도, 0 입력 정지·마지막 방향, Cast 슬라이드, 코너 6,000틱·2분 등가 안정성, 30/60fps 거리, 선택 중 정지, 씬/카메라 여백). Windows Development Build `Builds/Step04/Windows/OuroborosSwarm.exe` 성공(errors 0, warnings 0). WebGL 첫 시도는 Unity 생성 `UnityAnalyticsModule` C 오브젝트의 진단문 없는 Bee ExitCode 3으로 종료됐으나 동일 소스 증분 재빌드가 `Builds/Step04/WebGL/index.html`로 성공(errors 0, warnings 4)했다.
 
@@ -1532,6 +1532,38 @@ Space 포위 폭발을 제거하고, 머리가 진행 방향으로 0.5초 동안
 
 ---
 
+## 16.11 게임 카메라 시야 확대 — Step 15.11
+
+### 목표
+
+전투 화면의 답답함을 줄이되 HUD 크기와 머리 중심 고정 추종, 화면 밖 안전 스폰 규칙을 유지한다.
+
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-19
+- 완료: `20_Game.unity`의 게임 카메라 직교 크기를 5.4에서 6.5로 확대했다. 16:9 기준 월드 가시 영역은 약 19.2×10.8에서 23.1×13.0으로 넓어지고 Screen Space HUD 크기는 그대로 유지된다. Step 04 재적용 경로도 같은 값을 사용하며 `Ouroboros/Setup/Apply Step 15.11 Wider Camera View`와 Step 전용 WebGL 빌드 메뉴를 추가했다. `OSStep04ScenePlayModeTests`에 정확한 고정 줌 수치 회귀를 추가했다.
+- 남음: 없음. Step 전용 커밋·원격 푸시 뒤 Step 16 성능 최적화·WebGL로 진행할 수 있다.
+- 검증: Unity 6000.5.1f1 스크립트 정적 검증 오류·경고 0, 컴파일과 도메인 재로드 뒤 최종 Console Error/Exception 0. `OSStep04ScenePlayModeTests`+`OSStep13ScenePlayModeTests` 집중 6/6 통과(job `be4cbc42d1e04c5ebf5a85ac3aedcd5b`)로 직교 크기 6.5, 고정 줌·무회전·월드 경계 여백과 확대된 시야 밖 웨이브 스폰을 확인했다. 전체 `Ouroboros.Tests.EditMode` 62/62 통과(job `6db900c91aba459b917924532786a36a`), 전체 `Ouroboros.Tests.PlayMode` 113/113 통과(job `ba7a748d1baf4be1a582ac3da2a4383d`). 승인 `WebGL Development` Build Profile의 `Builds/Step15_11/WebGL/` 빌드 성공(135,669,947 bytes, errors 0, warnings 0). `Tools/Serve-WebGL.ps1`로 `http://127.0.0.1:8131/`을 실행해 index/WASM HTTP 200, WASM MIME `application/wasm`, 960×540 Canvas와 MainMenu→Shield/Attack→Combat, 기존과 같은 HUD 크기·더 작아진 월드 오브젝트·넓어진 전장 시야와 실제 웨이브 진행을 확인했다. 브라우저 error 레벨은 0건이고 WebGL 고유 URP FSR 비지원 warning 1건이 기록됐다. Windows 빌드는 실행하지 않았다.
+
+### 프로그래머 체크
+
+- [x] 게임 카메라 직교 크기 6.5 적용
+- [x] Step 04/Step 15.11 재적용 경로와 수치 회귀 추가
+- [x] HUD 크기와 고정 추종·무회전 계약 유지
+- [x] 카메라 경계와 화면 밖 스폰 회귀
+- [x] EditMode/PlayMode 전체 회귀
+- [x] WebGL HTTP·Canvas·Console 검증
+
+### 완료 기준
+
+- 16:9 전투 화면에서 약 23.1×13.0 월드 영역이 보이고 HUD의 픽셀 크기는 기존과 같다.
+- 카메라가 경계 밖을 노출하지 않으며 머리 중심 추종·고정 줌·무회전을 유지한다.
+- 확대된 시야에서도 일반 적과 정예가 화면 안에 생성되지 않고 스폰 티켓이 정상 소모된다.
+- WebGL 전투가 로드되고 브라우저 error 레벨 로그가 없다.
+
+---
+
 ## 17. 성능 최적화·WebGL — Step 16
 
 ### 목표
@@ -1540,7 +1572,7 @@ Space 포위 폭발을 제거하고, 머리가 진행 방향으로 0.5초 동안
 
 ### 선행 조건
 
-- Step 15.10 후반 웨이브 생성 속도 완화와 전체 런 확정
+- Step 15.11 게임 카메라 시야 확대와 전체 런 확정
 
 ### 측정 순서
 

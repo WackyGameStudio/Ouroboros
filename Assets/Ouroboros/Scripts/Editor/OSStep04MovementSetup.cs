@@ -18,6 +18,7 @@ namespace Ouroboros.Editor
         private const string DirectionSpritePath = "Assets/Ouroboros/Art/Placeholders/Projectile.png";
         private const string WorldBlockerLayerName = "WorldBlocker";
         private const string PlayerHeadLayerName = "PlayerHeadSolid";
+        internal const float GameplayOrthographicSize = 6.5f;
         private static readonly Vector2 WorldMinimum = new(-24f, -15f);
         private static readonly Vector2 WorldMaximum = new(24f, 15f);
 
@@ -157,7 +158,7 @@ namespace Ouroboros.Editor
             OSPlayerController playerController)
         {
             camera.orthographic = true;
-            camera.orthographicSize = 5.4f;
+            camera.orthographicSize = GameplayOrthographicSize;
             var follower = GetOrAdd<OSCameraFollower>(cameraTransform.gameObject);
             Assign(follower, "target", head);
             Assign(follower, "targetCamera", camera);
@@ -166,6 +167,38 @@ namespace Ouroboros.Editor
             Assign(follower, "edgePadding", 0.35f);
             Assign(follower, "worldMin", WorldMinimum);
             Assign(follower, "worldMax", WorldMaximum);
+        }
+
+        internal static void ApplyGameplayCameraFraming()
+        {
+            var scene = SceneManager.GetSceneByPath(GameScenePath);
+            var openedForSetup = !scene.isLoaded;
+            if (openedForSetup)
+            {
+                scene = EditorSceneManager.OpenScene(GameScenePath, OpenSceneMode.Additive);
+            }
+
+            try
+            {
+                var gameRoot = FindRoot(scene, "GameRoot");
+                var cameraTransform = RequireTransform(gameRoot.transform, "CameraRoot/Main Camera");
+                var camera = cameraTransform.GetComponent<Camera>()
+                             ?? throw new InvalidOperationException(
+                                 "Main Camera is missing its Camera component.");
+                camera.orthographic = true;
+                camera.orthographicSize = GameplayOrthographicSize;
+                EditorUtility.SetDirty(camera);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                AssetDatabase.SaveAssets();
+            }
+            finally
+            {
+                if (openedForSetup && scene.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(scene, true);
+                }
+            }
         }
 
         private static void ConfigureArena(Transform obstacles, Sprite obstacleSprite, int blockerLayer)

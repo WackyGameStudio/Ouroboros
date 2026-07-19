@@ -55,6 +55,8 @@ namespace Ouroboros.Tests.PlayMode
 
             var camera = follower.GetComponent<Camera>();
             var originalSize = camera.orthographicSize;
+            Assert.That(camera.orthographic, Is.True);
+            Assert.That(originalSize, Is.EqualTo(6.5f).Within(0.0001f));
             body.position = player.WorldMax - Vector2.one;
             follower.SnapToTarget();
             yield return null;
