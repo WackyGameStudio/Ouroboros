@@ -29134,6 +29134,9 @@ MonoBehaviour:
   enemyRegistry: {fileID: 2124347085}
   sessionController: {fileID: 1136375590}
   bodyBalance: {fileID: 11400000, guid: 053e0a3fec1a48d4abdfb1992972f6d5, type: 2}
+  enemyHurtboxMask:
+    serializedVersion: 2
+    m_Bits: 8192
   telegraphViews:
   - {fileID: 564076649}
   - {fileID: 415357353}

@@ -52,6 +52,7 @@ namespace Ouroboros.Runtime
     public sealed class OSLaserBodyRole : MonoBehaviour
     {
         private const int Capacity = 64;
+        private const int BeamOverlapCapacity = 256;
         private const float DefaultLength = 7f;
         private const float DefaultDamage = 12f;
         private const float DefaultInterval = 2.5f;
@@ -62,7 +63,13 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSEnemyRegistry enemyRegistry;
         [SerializeField] private OSGameSessionController sessionController;
         [SerializeField] private OSBodyBalanceData bodyBalance;
+        [SerializeField] private LayerMask enemyHurtboxMask;
         [SerializeField] private LineRenderer[] telegraphViews = new LineRenderer[Capacity];
+
+        private readonly Collider2D[] _beamColliderHits = new Collider2D[BeamOverlapCapacity];
+        private readonly OSEnemyController[] _beamEnemyHits = new OSEnemyController[BeamOverlapCapacity];
+        private readonly int[] _beamEnemyRuntimeIds = new int[BeamOverlapCapacity];
+        private ContactFilter2D _enemyHurtboxFilter;
 
         private int[] _stableIds = new int[Capacity];
         private float[] _cooldowns = new float[Capacity];
@@ -128,7 +135,8 @@ namespace Ouroboros.Runtime
             float damage = DefaultDamage,
             float interval = DefaultInterval,
             float width = DefaultWidth,
-            float telegraph = DefaultTelegraph)
+            float telegraph = DefaultTelegraph,
+            int hurtboxMask = Physics2D.AllLayers)
         {
             Unsubscribe();
             roleRegistry = roles;
@@ -141,6 +149,8 @@ namespace Ouroboros.Runtime
             _testInterval = Mathf.Max(0.01f, interval);
             _testWidth = Mathf.Max(0.01f, width);
             _testTelegraph = Mathf.Max(0f, telegraph);
+            enemyHurtboxMask = hurtboxMask;
+            RefreshEnemyHurtboxFilter();
             ResetState();
             Subscribe();
             SynchronizeStates();
@@ -270,19 +280,12 @@ namespace Ouroboros.Runtime
 
             var hitCount = 0;
             var killCount = 0;
-            var enemyIndex = 0;
-            while (enemyRegistry != null && enemyIndex < enemyRegistry.Count)
+            var uniqueEnemyCount = CollectBeamTargets(index);
+            for (var enemyIndex = 0; enemyIndex < uniqueEnemyCount; enemyIndex++)
             {
-                var enemy = enemyRegistry.GetAt(enemyIndex);
-                if (enemy == null || !enemy.IsRented || enemy.CurrentHealth <= 0f ||
-                    !OSBodyRoleMath.IsInsideBeam(
-                        enemy.Position,
-                        _origins[index],
-                        _directions[index],
-                        EffectiveLength,
-                        EffectiveWidth))
+                var enemy = _beamEnemyHits[enemyIndex];
+                if (enemy == null || !enemy.IsRented || enemy.CurrentHealth <= 0f)
                 {
-                    enemyIndex++;
                     continue;
                 }
 
@@ -296,12 +299,10 @@ namespace Ouroboros.Runtime
                         killCount++;
                     }
                 }
-
-                if (enemy.RegistryIndex == enemyIndex)
-                {
-                    enemyIndex++;
-                }
             }
+
+            Array.Clear(_beamEnemyHits, 0, uniqueEnemyCount);
+            Array.Clear(_beamEnemyRuntimeIds, 0, uniqueEnemyCount);
 
             _telegraphActive[index] = false;
             _telegraphRemaining[index] = 0f;
@@ -310,6 +311,60 @@ namespace Ouroboros.Runtime
             SetViewVisible(index, false);
             BeamsFired++;
             LaserResolved?.Invoke(new OSLaserResolution(stableId, hitCount, killCount, false));
+        }
+
+        private int CollectBeamTargets(int index)
+        {
+            if (enemyRegistry == null || enemyHurtboxMask.value == 0)
+            {
+                return 0;
+            }
+
+            var length = EffectiveLength;
+            var direction = _directions[index];
+            var center = _origins[index] + (direction * (length * 0.5f));
+            var angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            var colliderCount = Physics2D.OverlapBox(
+                center,
+                new Vector2(length, EffectiveWidth),
+                angle,
+                _enemyHurtboxFilter,
+                _beamColliderHits);
+            var uniqueEnemyCount = 0;
+            for (var colliderIndex = 0; colliderIndex < colliderCount; colliderIndex++)
+            {
+                var collider = _beamColliderHits[colliderIndex];
+                var enemy = collider?.attachedRigidbody != null
+                    ? collider.attachedRigidbody.GetComponent<OSEnemyController>()
+                    : collider?.GetComponentInParent<OSEnemyController>();
+                if (enemy == null || !enemy.IsRented || enemy.CurrentHealth <= 0f ||
+                    enemy.RegistryIndex < 0 || enemy.RegistryIndex >= enemyRegistry.Count ||
+                    enemyRegistry.GetAt(enemy.RegistryIndex) != enemy ||
+                    ContainsRuntimeId(enemy.RuntimeId, uniqueEnemyCount))
+                {
+                    continue;
+                }
+
+                _beamEnemyRuntimeIds[uniqueEnemyCount] = enemy.RuntimeId;
+                _beamEnemyHits[uniqueEnemyCount] = enemy;
+                uniqueEnemyCount++;
+            }
+
+            Array.Clear(_beamColliderHits, 0, colliderCount);
+            return uniqueEnemyCount;
+        }
+
+        private bool ContainsRuntimeId(int runtimeId, int count)
+        {
+            for (var index = 0; index < count; index++)
+            {
+                if (_beamEnemyRuntimeIds[index] == runtimeId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void CancelTelegraph(int index)
@@ -479,7 +534,32 @@ namespace Ouroboros.Runtime
             ActiveTelegraphCount = 0;
             BeamsFired = 0;
             HitsConfirmed = 0;
+            Array.Clear(_beamColliderHits, 0, _beamColliderHits.Length);
+            Array.Clear(_beamEnemyHits, 0, _beamEnemyHits.Length);
+            Array.Clear(_beamEnemyRuntimeIds, 0, _beamEnemyRuntimeIds.Length);
             HideAllViews();
+        }
+
+        private void Awake()
+        {
+            RefreshEnemyHurtboxFilter();
+        }
+
+        private void OnValidate()
+        {
+            RefreshEnemyHurtboxFilter();
+        }
+
+        private void RefreshEnemyHurtboxFilter()
+        {
+            _enemyHurtboxFilter = new ContactFilter2D
+            {
+                useLayerMask = true,
+                layerMask = enemyHurtboxMask,
+                useTriggers = true,
+                useDepth = false,
+                useNormalAngle = false
+            };
         }
 
         private void Subscribe()

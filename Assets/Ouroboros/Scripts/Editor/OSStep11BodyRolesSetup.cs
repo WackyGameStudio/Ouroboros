@@ -30,11 +30,12 @@ namespace Ouroboros.Editor
             OSStep10ExplosionSetup.ApplyStep10EncirclementExplosion();
             var projectileLayer = RequireLayer("PlayerProjectile");
             var worldBlockerLayer = RequireLayer("WorldBlocker");
+            var enemyHurtboxLayer = RequireLayer("EnemyHurtbox");
             var bodyBalance = LoadRequired<OSBodyBalanceData>(BodyBalancePath);
             var controlProjectile = CreateOrUpdateControlProjectilePrefab(
                 projectileLayer,
                 worldBlockerLayer);
-            ConfigureScene(bodyBalance, controlProjectile);
+            ConfigureScene(bodyBalance, controlProjectile, enemyHurtboxLayer);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[OUROBOROS][SETUP] Step 11 body roles applied.");
@@ -131,7 +132,8 @@ namespace Ouroboros.Editor
 
         private static void ConfigureScene(
             OSBodyBalanceData bodyBalance,
-            OSControlProjectile controlProjectile)
+            OSControlProjectile controlProjectile,
+            int enemyHurtboxLayer)
         {
             var scene = SceneManager.GetSceneByPath(GameScenePath);
             var openedForSetup = !scene.isLoaded;
@@ -187,6 +189,7 @@ namespace Ouroboros.Editor
                 Assign(laser, "enemyRegistry", enemyRegistry);
                 Assign(laser, "sessionController", session);
                 Assign(laser, "bodyBalance", bodyBalance);
+                AssignLayerMask(laser, "enemyHurtboxMask", 1 << enemyHurtboxLayer);
 
                 var control = GetOrAdd<OSControlBodyRole>(roleRoot.gameObject);
                 AssignCommonRoleReferences(

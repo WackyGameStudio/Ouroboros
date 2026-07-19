@@ -134,6 +134,27 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [Test]
+        public void LaserDamage_HitsEveryEnemyWhoseHurtboxOverlapsBeam()
+        {
+            var rig = CreateRig();
+            rig.Chain.AppendSegment(OSBodyRoleType.Laser);
+            var origin = (Vector2)rig.Chain.GetActiveSegment(0).View.transform.position;
+            var aimedTarget = RentEnemy(rig, origin + Vector2.right * 2f, 40f);
+            var edgeOverlap = RentEnemy(rig, origin + new Vector2(4f, 0.4f), 40f);
+            var outside = RentEnemy(rig, origin + new Vector2(4f, 0.5f), 40f);
+            var laser = AddLaserRole(rig);
+
+            Physics2D.SyncTransforms();
+            laser.SimulateStep(0f);
+            laser.SimulateStep(0.2f);
+
+            Assert.That(aimedTarget.CurrentHealth, Is.EqualTo(28f));
+            Assert.That(edgeOverlap.CurrentHealth, Is.EqualTo(28f));
+            Assert.That(outside.CurrentHealth, Is.EqualTo(40f));
+            Assert.That(laser.HitsConfirmed, Is.EqualTo(2));
+        }
+
+        [Test]
         public void LaserWithMultipleTargetColliders_DamagesRegistryEnemyOnce()
         {
             var rig = CreateRig();
@@ -579,7 +600,9 @@ namespace Ouroboros.Tests.PlayMode
                 typeof(OSEnemyController));
             target.transform.SetParent(parent, false);
             target.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Kinematic;
-            target.GetComponent<CircleCollider2D>().isTrigger = true;
+            var collider = target.GetComponent<CircleCollider2D>();
+            collider.isTrigger = true;
+            collider.radius = 0.25f;
             var enemy = target.GetComponent<OSEnemyController>();
             enemy.ConfigureForTesting(registry, session, head, 18f, 0f, 0f, 1f);
             target.SetActive(false);
