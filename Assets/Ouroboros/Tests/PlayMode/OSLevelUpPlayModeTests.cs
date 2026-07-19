@@ -124,7 +124,7 @@ namespace Ouroboros.Tests.PlayMode
                 1.15f,
                 0.12f,
                 1,
-                0.9f,
+                0.83f,
                 0.01f,
                 0.92f,
                 1.15f,
@@ -155,7 +155,7 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(weapon.FireInterval, Is.LessThan(baseFireInterval));
             Assert.That(weapon.Pierce, Is.EqualTo(1));
             Assert.That(weapon.ElitePriority, Is.True);
-            Assert.That(growth.FragmentRequirement, Is.EqualTo(11));
+            Assert.That(growth.FragmentRequirement, Is.EqualTo(5));
             Assert.That(pickups.MagnetRadius, Is.EqualTo(baseMagnet * 1.3f).Within(0.001f));
             Assert.That(explosion.Radius, Is.EqualTo(baseExplosionRadius * 1.15f).Within(0.001f));
             Assert.That(explosion.DamagePerSegment, Is.EqualTo(baseExplosionDamage * 1.2f).Within(0.001f));

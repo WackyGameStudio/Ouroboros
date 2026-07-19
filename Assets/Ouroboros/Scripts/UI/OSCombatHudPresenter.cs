@@ -155,7 +155,7 @@ namespace Ouroboros.UI
                 primaryLabel.text =
                     $"CORE  {playerHealth?.CurrentHealth ?? 0f:0}/{playerHealth?.MaxHealth ?? 0f:0}{invulnerability}\n" +
                     $"BODY  {bodyChain?.ActiveCount ?? 0}   [O] S{shieldCount}  [>] A{attackCount}  [=] L{laserCount}  [+] C{controlCount}\n" +
-                    $"FRAG  {bodyGrowth?.FragmentProgress ?? 0}/{bodyGrowth?.FragmentRequirement ?? 12}   " +
+                    $"FRAG  {bodyGrowth?.FragmentProgress ?? 0}/{bodyGrowth?.FragmentRequirement ?? 6}   " +
                     $"LEVEL {levelUpController?.Level ?? 1}  XP {levelUpController?.CurrentExperience ?? 0f:0}/{levelUpController?.RequiredExperience ?? 15}";
             }
 

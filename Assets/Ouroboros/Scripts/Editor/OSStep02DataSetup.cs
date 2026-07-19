@@ -91,7 +91,7 @@ namespace Ouroboros.Editor
         private static void ConfigureBody(SerializedObject serialized)
         {
             SetString(serialized, "dataVersion", DataVersion);
-            SetInt(serialized, "fragmentRequirement", 12);
+            SetInt(serialized, "fragmentRequirement", 6);
             SetInt(serialized, "technicalGuard", 64);
             SetFloat(serialized, "segmentSpacing", 0.55f);
             SetFloat(serialized, "pathSampleInterval", 0.12f);
@@ -284,7 +284,7 @@ namespace Ouroboros.Editor
             ConfigureUpgrade(entries, 2, "head_pierce", OSUpgradeCategory.Firepower,
                 OSUpgradeOperation.AddHeadPierce, 1f, 3, 0f, 3f);
             ConfigureUpgrade(entries, 3, "body_fragment_efficiency", OSUpgradeCategory.Body,
-                OSUpgradeOperation.AddFragmentRequirementMultiplier, -0.1f, 2, 8f, 12f);
+                OSUpgradeOperation.AddFragmentRequirementMultiplier, -0.17f, 2, 4f, 6f);
             ConfigureUpgrade(entries, 4, "body_damage_rate", OSUpgradeCategory.Body,
                 OSUpgradeOperation.AddBodyDamageRate, 0.01f, 2, 0.04f, 0.06f);
             ConfigureUpgrade(entries, 5, "role_overclock", OSUpgradeCategory.Body,

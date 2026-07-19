@@ -54,6 +54,7 @@ namespace Ouroboros.Runtime
         private OSGameSessionController _session;
         private Transform _target;
         private readonly Transform[] _contactTransforms = new Transform[MaxContactTargets];
+        private readonly Collider2D[] _contactColliders = new Collider2D[MaxContactTargets];
         private readonly int[] _contactRuntimeIds = new int[MaxContactTargets];
         private readonly OSTargetKind[] _contactTargetKinds = new OSTargetKind[MaxContactTargets];
         private readonly RaycastHit2D[] _worldBlockerHits = new RaycastHit2D[4];
@@ -145,7 +146,11 @@ namespace Ouroboros.Runtime
             return OSRuleResult<float>.Accepted(CurrentHealth, "enemy.wave_health.applied");
         }
 
-        public void BeginContact(int targetRuntimeId, OSTargetKind targetKind, Transform contactTransform)
+        public void BeginContact(
+            int targetRuntimeId,
+            OSTargetKind targetKind,
+            Transform contactTransform,
+            Collider2D contactCollider = null)
         {
             if (!IsRented || targetRuntimeId <= 0)
             {
@@ -161,6 +166,7 @@ namespace Ouroboros.Runtime
                 }
 
                 _contactTransforms[index] = contactTransform;
+                _contactColliders[index] = contactCollider;
                 return;
             }
 
@@ -172,6 +178,7 @@ namespace Ouroboros.Runtime
             _contactRuntimeIds[_contactCount] = targetRuntimeId;
             _contactTargetKinds[_contactCount] = targetKind;
             _contactTransforms[_contactCount] = contactTransform;
+            _contactColliders[_contactCount] = contactCollider;
             _contactCount++;
         }
 
@@ -180,6 +187,7 @@ namespace Ouroboros.Runtime
             Array.Clear(_contactRuntimeIds, 0, _contactCount);
             Array.Clear(_contactTargetKinds, 0, _contactCount);
             Array.Clear(_contactTransforms, 0, _contactCount);
+            Array.Clear(_contactColliders, 0, _contactCount);
             _contactCount = 0;
         }
 
@@ -197,9 +205,11 @@ namespace Ouroboros.Runtime
                 _contactRuntimeIds[index] = _contactRuntimeIds[last];
                 _contactTargetKinds[index] = _contactTargetKinds[last];
                 _contactTransforms[index] = _contactTransforms[last];
+                _contactColliders[index] = _contactColliders[last];
                 _contactRuntimeIds[last] = 0;
                 _contactTargetKinds[last] = default;
                 _contactTransforms[last] = null;
+                _contactColliders[last] = null;
                 return;
             }
         }
@@ -489,9 +499,7 @@ namespace Ouroboros.Runtime
 
             for (var index = 0; index < _contactCount; index++)
             {
-                var hitPosition = _contactTransforms[index] != null
-                    ? (Vector2)_contactTransforms[index].position
-                    : Position;
+                var hitPosition = ResolveContactPoint(index);
                 ContactAttackRequested?.Invoke(new OSDamageEvent(
                     idResult.Value.Payload,
                     Time.frameCount,
@@ -503,6 +511,20 @@ namespace Ouroboros.Runtime
             }
 
             _attackCooldown = EffectiveAttackInterval;
+        }
+
+        private Vector2 ResolveContactPoint(int index)
+        {
+            var contactCollider = _contactColliders[index];
+            if (contactCollider != null && contactCollider.enabled &&
+                contactCollider.gameObject.activeInHierarchy)
+            {
+                return contactCollider.ClosestPoint(Position);
+            }
+
+            return _contactTransforms[index] != null
+                ? (Vector2)_contactTransforms[index].position
+                : Position;
         }
 
         private void SimulateBehavior(Vector2 targetOffset, float deltaTime)

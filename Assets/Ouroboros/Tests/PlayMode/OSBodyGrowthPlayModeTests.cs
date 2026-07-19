@@ -26,7 +26,7 @@ namespace Ouroboros.Tests.PlayMode
             var rig = CreateGrowthRig(64);
             CompleteStartSelections(rig);
 
-            var fragments = rig.Growth.AddFragments(24);
+            var fragments = rig.Growth.AddFragments(12);
             Assert.That(fragments.IsAccepted, Is.True);
             Assert.That(fragments.Payload, Is.EqualTo(2));
             Assert.That(rig.Session.State, Is.EqualTo(OSSessionState.BodyRoleSelection));
@@ -50,7 +50,7 @@ namespace Ouroboros.Tests.PlayMode
             CompleteStartSelections(rig);
             Assert.That(rig.Chain.SetDebugSegmentCount(64).IsAccepted, Is.True);
 
-            var deferred = rig.Growth.AddFragments(12);
+            var deferred = rig.Growth.AddFragments(6);
             Assert.That(deferred.IsAccepted, Is.True);
             Assert.That(deferred.Payload, Is.Zero);
             Assert.That(rig.Growth.HasDeferredRequest, Is.True);
@@ -135,7 +135,7 @@ namespace Ouroboros.Tests.PlayMode
             var growthObject = new GameObject("BodyGrowth", typeof(OSBodyGrowthController));
             growthObject.transform.SetParent(_root.transform, false);
             var growth = growthObject.GetComponent<OSBodyGrowthController>();
-            growth.ConfigureForTesting(session, chain, 12, capacity);
+            growth.ConfigureForTesting(session, chain, 6, capacity);
             Assert.That(session.BeginSession().IsAccepted, Is.True);
             return new GrowthRig(session, chain, growth, head);
         }

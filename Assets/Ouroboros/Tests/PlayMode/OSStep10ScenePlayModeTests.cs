@@ -78,14 +78,14 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(growth.ConfirmRole(OSBodyRoleType.Attack).IsAccepted, Is.True);
             Assert.That(chain.ActiveCount, Is.EqualTo(2));
 
-            Assert.That(growth.AddFragments(24).Payload, Is.EqualTo(2));
+            Assert.That(growth.AddFragments(12).Payload, Is.EqualTo(2));
             Assert.That(growth.ConfirmRole(OSBodyRoleType.Laser).IsAccepted, Is.True);
             Assert.That(growth.ConfirmRole(OSBodyRoleType.Control).IsAccepted, Is.True);
             Assert.That(chain.ActiveCount, Is.EqualTo(4));
 
             Assert.That(chain.TryCutFrom(3, Vector2.zero).Payload, Is.EqualTo(1));
             Assert.That(chain.ActiveCount, Is.EqualTo(3));
-            Assert.That(growth.AddFragments(12).Payload, Is.EqualTo(1));
+            Assert.That(growth.AddFragments(6).Payload, Is.EqualTo(1));
             Assert.That(growth.ConfirmRole(OSBodyRoleType.Attack).IsAccepted, Is.True);
             Assert.That(chain.ActiveCount, Is.EqualTo(4));
 
@@ -94,7 +94,7 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(chain.ActiveCount, Is.EqualTo(2));
             Assert.That(session.State, Is.EqualTo(OSSessionState.Combat));
 
-            Assert.That(growth.AddFragments(12).Payload, Is.EqualTo(1));
+            Assert.That(growth.AddFragments(6).Payload, Is.EqualTo(1));
             Assert.That(growth.ConfirmRole(OSBodyRoleType.Shield).IsAccepted, Is.True);
             Assert.That(chain.ActiveCount, Is.EqualTo(3));
 

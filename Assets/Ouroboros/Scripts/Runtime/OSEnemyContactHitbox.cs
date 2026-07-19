@@ -26,7 +26,7 @@ namespace Ouroboros.Runtime
                 return;
             }
 
-            owner.BeginContact(identity.RuntimeId, identity.TargetKind, identity.transform);
+            owner.BeginContact(identity.RuntimeId, identity.TargetKind, identity.transform, other);
         }
 
         private void OnTriggerExit2D(Collider2D other)

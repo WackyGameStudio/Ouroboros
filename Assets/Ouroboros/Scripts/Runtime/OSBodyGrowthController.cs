@@ -11,7 +11,7 @@ namespace Ouroboros.Runtime
     [DisallowMultipleComponent]
     public sealed class OSBodyGrowthController : MonoBehaviour
     {
-        private const int DefaultFragmentRequirement = 12;
+        private const int DefaultFragmentRequirement = 6;
         private const int DefaultTechnicalGuard = 64;
 
         [SerializeField] private OSGameSessionController sessionController;

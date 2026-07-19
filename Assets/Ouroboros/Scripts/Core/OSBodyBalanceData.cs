@@ -148,7 +148,7 @@ namespace Ouroboros.Core
     public sealed class OSBodyBalanceData : ScriptableObject, IOSValidatableData
     {
         [SerializeField] private string dataVersion = "step02-v1";
-        [SerializeField] private int fragmentRequirement = 12;
+        [SerializeField] private int fragmentRequirement = 6;
         [SerializeField] private int technicalGuard = 64;
         [SerializeField] private float segmentSpacing = 0.55f;
         [SerializeField] private float pathSampleInterval = 0.12f;

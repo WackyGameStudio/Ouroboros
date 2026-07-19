@@ -87,7 +87,7 @@ namespace Ouroboros.Tests.PlayMode
 
             for (var request = 0; request < 19; request++)
             {
-                var add = growth.AddFragments(12);
+                var add = growth.AddFragments(6);
                 Assert.That(add.IsAccepted, Is.True, add.ReasonKey);
                 Assert.That(session.State, Is.EqualTo(OSSessionState.BodyRoleSelection));
                 var confirmed = growth.ConfirmRole(OSBodyRoleType.Laser);

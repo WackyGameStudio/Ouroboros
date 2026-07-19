@@ -394,7 +394,7 @@ namespace Ouroboros.Runtime
 
         private int FragmentRequirement(float value, int level)
         {
-            var baseRequirement = bodyBalance != null ? bodyBalance.FragmentRequirement : 12;
+            var baseRequirement = bodyBalance != null ? bodyBalance.FragmentRequirement : 6;
             return OSUpgradeMath.CalculateFragmentRequirement(baseRequirement, 1f + (value * level));
         }
 

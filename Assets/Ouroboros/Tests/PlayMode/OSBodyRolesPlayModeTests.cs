@@ -283,6 +283,50 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [Test]
+        public void ShieldResolver_UsesColliderContactPointAtRangeBoundary()
+        {
+            var rig = CreateRig();
+            rig.Chain.AppendSegment(OSBodyRoleType.Shield);
+            rig.Chain.AppendSegment(OSBodyRoleType.Attack);
+            var shield = AddShieldRole(rig);
+            var health = AddHealth(rig);
+            var resolver = AddResolver(rig, health, shield);
+            var shieldSegment = rig.Chain.GetActiveSegment(0);
+            var target = rig.Chain.GetActiveSegment(1);
+            var shieldPosition = (Vector2)shieldSegment.View.transform.position;
+            target.View.transform.position = shieldPosition + Vector2.right * 1.8f;
+            var targetCollider = target.View.GetComponentInChildren<Collider2D>(true);
+            Assert.That(targetCollider, Is.Not.Null);
+            Physics2D.SyncTransforms();
+
+            var enemy = RentEnemy(rig, shieldPosition + Vector2.right * 1.3f);
+            enemy.ConfigureForTesting(
+                rig.Enemies,
+                rig.Session,
+                rig.Head,
+                damage: 8f,
+                speed: 0f);
+            enemy.ContactAttackRequested += damageEvent => resolver.EnqueueDamage(damageEvent);
+            enemy.BeginContact(
+                target.StableId,
+                OSTargetKind.PlayerBody,
+                target.View.transform,
+                targetCollider);
+
+            var contactPoint = targetCollider.ClosestPoint(enemy.Position);
+            Assert.That(Vector2.Distance(shieldPosition, target.View.transform.position),
+                Is.GreaterThan(shield.Radius));
+            Assert.That(Vector2.Distance(shieldPosition, contactPoint),
+                Is.LessThanOrEqualTo(shield.Radius));
+
+            enemy.SimulateStep(0.01f);
+            resolver.ProcessPendingForTesting();
+
+            Assert.That(rig.Chain.ActiveCount, Is.EqualTo(2));
+            Assert.That(shield.ChargedCount, Is.Zero);
+        }
+
+        [Test]
         public void OverlappingShieldTie_ConsumesHeadmostOneOnly()
         {
             var rig = CreateRig();

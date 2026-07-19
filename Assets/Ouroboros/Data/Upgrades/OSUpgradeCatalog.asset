@@ -42,9 +42,9 @@ MonoBehaviour:
     category: 1
     maxLevel: 2
     operation: 3
-    perLevelValue: -0.1
-    clampMinimum: 8
-    clampMaximum: 12
+    perLevelValue: -0.17
+    clampMinimum: 4
+    clampMaximum: 6
     candidateWeight: 1
   - id: body_damage_rate
     category: 1

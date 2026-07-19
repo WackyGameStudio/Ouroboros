@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: OSBodyBalance
   m_EditorClassIdentifier: Ouroboros.Core::Ouroboros.Core.OSBodyBalanceData
   dataVersion: step02-v1
-  fragmentRequirement: 12
+  fragmentRequirement: 6
   technicalGuard: 64
   segmentSpacing: 0.55
   pathSampleInterval: 0.12

@@ -528,10 +528,10 @@ namespace Ouroboros.Core
         {
             if (!float.IsFinite(baseRequirement) || !float.IsFinite(multiplier))
             {
-                return 8;
+                return 4;
             }
 
-            return Math.Max(8, (int)Math.Ceiling(Math.Max(1f, baseRequirement) * Math.Max(0.01f, multiplier)));
+            return Math.Max(4, (int)Math.Ceiling(Math.Max(1f, baseRequirement) * Math.Max(0.01f, multiplier)));
         }
 
         public static float CalculateExplosionConsumeRate(float baseRate, float delta)

@@ -105,7 +105,7 @@ namespace Ouroboros.Tests.EditMode
             Assert.That(modifiers.HeadDamageMultiplier, Is.EqualTo(1.15f).Within(0.0001f));
             Assert.That(modifiers.HeadRateBonus, Is.EqualTo(0.12f).Within(0.0001f));
             Assert.That(modifiers.HeadPierceBonus, Is.EqualTo(1));
-            Assert.That(modifiers.FragmentRequirementMultiplier, Is.EqualTo(0.9f).Within(0.0001f));
+            Assert.That(modifiers.FragmentRequirementMultiplier, Is.EqualTo(0.83f).Within(0.0001f));
             Assert.That(modifiers.BodyDamageRateBonus, Is.EqualTo(0.01f).Within(0.0001f));
             Assert.That(modifiers.RoleCooldownMultiplier, Is.EqualTo(0.92f).Within(0.0001f));
             Assert.That(modifiers.ExplosionRadiusMultiplier, Is.EqualTo(1.15f).Within(0.0001f));
@@ -124,7 +124,7 @@ namespace Ouroboros.Tests.EditMode
         public void UpgradeMath_EnforcesFireRateFragmentConsumeAndMoveClamps()
         {
             Assert.That(OSUpgradeMath.CalculateHeadFireInterval(0.5f, 100f), Is.EqualTo(0.15f));
-            Assert.That(OSUpgradeMath.CalculateFragmentRequirement(12f, 0.01f), Is.EqualTo(8));
+            Assert.That(OSUpgradeMath.CalculateFragmentRequirement(6f, 0.01f), Is.EqualTo(4));
             Assert.That(OSUpgradeMath.CalculateExplosionConsumeRate(0.3f, -1f), Is.EqualTo(0.15f));
             Assert.That(OSUpgradeMath.CalculateMoveSpeed(7f, 2f), Is.EqualTo(7.5f));
         }

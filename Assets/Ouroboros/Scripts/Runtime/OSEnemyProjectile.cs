@@ -118,7 +118,7 @@ namespace Ouroboros.Runtime
             }
         }
 
-        internal bool TryHitPlayer(OSCombatTargetIdentity target)
+        internal bool TryHitPlayer(OSCombatTargetIdentity target, Collider2D targetCollider = null)
         {
             if (!IsRented || target == null || _attackEventId <= 0 ||
                 target.TargetKind is not OSTargetKind.PlayerHead and not OSTargetKind.PlayerBody)
@@ -133,7 +133,9 @@ namespace Ouroboros.Runtime
                 target.RuntimeId,
                 target.TargetKind,
                 _damage,
-                target.transform.position);
+                targetCollider != null
+                    ? targetCollider.ClosestPoint(Position)
+                    : (Vector2)target.transform.position);
             var result = _combatResolver?.EnqueueDamage(damageEvent);
             if (!result.HasValue || !result.Value.IsAccepted)
             {
@@ -166,7 +168,7 @@ namespace Ouroboros.Runtime
             var target = other.GetComponentInParent<OSCombatTargetIdentity>();
             if (target != null)
             {
-                TryHitPlayer(target);
+                TryHitPlayer(target, other);
             }
         }
 

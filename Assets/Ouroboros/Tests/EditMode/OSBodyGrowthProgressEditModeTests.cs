@@ -6,27 +6,27 @@ namespace Ouroboros.Tests.EditMode
     public sealed class OSBodyGrowthProgressEditModeTests
     {
         [Test]
-        public void ElevenAndTwelveFragments_CreateOnlyTheExpectedRequest()
+        public void FiveAndSixFragments_CreateOnlyTheExpectedRequest()
         {
-            var progress = new OSBodyGrowthProgress(12, 64);
+            var progress = new OSBodyGrowthProgress(6, 64);
 
-            var eleven = progress.AddFragments(11, 0, 0);
-            Assert.That(eleven.Payload, Is.Zero);
-            Assert.That(progress.FragmentProgress, Is.EqualTo(11));
+            var five = progress.AddFragments(5, 0, 0);
+            Assert.That(five.Payload, Is.Zero);
+            Assert.That(progress.FragmentProgress, Is.EqualTo(5));
 
-            var twelve = progress.AddFragments(1, 0, 0);
-            Assert.That(twelve.Payload, Is.EqualTo(1));
+            var six = progress.AddFragments(1, 0, 0);
+            Assert.That(six.Payload, Is.EqualTo(1));
             Assert.That(progress.FragmentProgress, Is.Zero);
         }
 
-        [TestCase(23, 1, 11)]
-        [TestCase(24, 2, 0)]
+        [TestCase(11, 1, 5)]
+        [TestCase(12, 2, 0)]
         public void MultiThresholdCollection_PreservesRemainder(
             int amount,
             int expectedRequests,
             int expectedRemainder)
         {
-            var progress = new OSBodyGrowthProgress(12, 64);
+            var progress = new OSBodyGrowthProgress(6, 64);
 
             var result = progress.AddFragments(amount, 0, 0);
 
@@ -38,12 +38,12 @@ namespace Ouroboros.Tests.EditMode
         [Test]
         public void TechnicalGuard_HoldsOneFullGaugeAndResumesAfterCapacityReturns()
         {
-            var progress = new OSBodyGrowthProgress(12, 64);
+            var progress = new OSBodyGrowthProgress(6, 64);
 
-            var deferred = progress.AddFragments(24, 63, 1);
+            var deferred = progress.AddFragments(12, 63, 1);
             Assert.That(deferred.IsAccepted, Is.True);
             Assert.That(deferred.Payload, Is.Zero);
-            Assert.That(progress.FragmentProgress, Is.EqualTo(12));
+            Assert.That(progress.FragmentProgress, Is.EqualTo(6));
             Assert.That(progress.HasDeferredRequest, Is.True);
 
             var resumed = progress.TryResumeDeferred(62, 1);
