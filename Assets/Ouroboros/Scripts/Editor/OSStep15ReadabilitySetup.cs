@@ -117,6 +117,10 @@ namespace Ouroboros.Editor
                 var primaryPanel = CreatePanel(readability, "CombatSummaryPanel", new Color32(7, 15, 28, 228));
                 SetTopLeft((RectTransform)primaryPanel, new Vector2(22f, -108f), new Vector2(555f, 156f));
                 var primary = CreateLabel(primaryPanel, "PrimaryLabel", font, 19f, TextAlignmentOptions.TopLeft);
+                var healthFill = OSStep15HealthBarSetup.ConfigureConsolidatedHealthBar(
+                    canvas,
+                    primaryPanel,
+                    primary);
 
                 var actionPanel = CreatePanel(readability, "ActionSummaryPanel", new Color32(7, 15, 28, 228));
                 SetBottomLeft((RectTransform)actionPanel, new Vector2(22f, 22f), new Vector2(760f, 84f));
@@ -143,6 +147,7 @@ namespace Ouroboros.Editor
                 hud.Configure(
                     session, health, chain, growth, roles, attack, laser, control, shield,
                     bodyDash, level, wave, boss, primary, action, threat);
+                hud.ConfigureHealthFill(healthFill);
 
                 var tutorialPresenter = GetOrAdd<OSTutorialPresenter>(tutorialPanel.gameObject);
                 tutorialPresenter.Configure(session, player, growth, chain, bodyDash, summary, tutorial);

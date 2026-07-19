@@ -2,6 +2,7 @@ using Ouroboros.Core;
 using Ouroboros.Runtime;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Ouroboros.UI
 {
@@ -27,6 +28,7 @@ namespace Ouroboros.UI
         [SerializeField] private TMP_Text primaryLabel;
         [SerializeField] private TMP_Text actionLabel;
         [SerializeField] private TMP_Text threatLabel;
+        [SerializeField] private Image healthFill;
 
         private bool _subscribed;
         private bool _dirty = true;
@@ -40,6 +42,7 @@ namespace Ouroboros.UI
         public string PrimaryText => primaryLabel != null ? primaryLabel.text : string.Empty;
         public string ActionText => actionLabel != null ? actionLabel.text : string.Empty;
         public string ThreatText => threatLabel != null ? threatLabel.text : string.Empty;
+        public float HealthFillAmount => healthFill != null ? healthFill.fillAmount : 0f;
 
         private void OnEnable()
         {
@@ -128,6 +131,16 @@ namespace Ouroboros.UI
             RefreshNow();
         }
 
+        public void ConfigureHealthFill(Image fill)
+        {
+            healthFill = fill;
+            MarkDirty();
+            if (!Application.isPlaying)
+            {
+                RefreshNow();
+            }
+        }
+
         private void RefreshNow()
         {
             _dirty = false;
@@ -157,6 +170,13 @@ namespace Ouroboros.UI
                     $"BODY  {bodyChain?.ActiveCount ?? 0}   [O] S{shieldCount}  [>] A{attackCount}  [=] L{laserCount}  [+] C{controlCount}\n" +
                     $"FRAG  {bodyGrowth?.FragmentProgress ?? 0}/{bodyGrowth?.FragmentRequirement ?? 6}   " +
                     $"LEVEL {levelUpController?.Level ?? 1}  XP {levelUpController?.CurrentExperience ?? 0f:0}/{levelUpController?.RequiredExperience ?? 15}";
+            }
+
+            if (healthFill != null)
+            {
+                healthFill.fillAmount = playerHealth != null && playerHealth.MaxHealth > 0f
+                    ? Mathf.Clamp01(playerHealth.CurrentHealth / playerHealth.MaxHealth)
+                    : Application.isPlaying ? 0f : 1f;
             }
 
             if (actionLabel != null)

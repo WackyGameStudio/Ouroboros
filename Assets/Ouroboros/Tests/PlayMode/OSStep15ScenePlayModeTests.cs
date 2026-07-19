@@ -8,6 +8,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace Ouroboros.Tests.PlayMode
 {
@@ -39,6 +40,13 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(feedback, Is.Not.Null);
             Assert.That(animators.Length, Is.EqualTo(2));
             Assert.That(canvas?.Find("ReadabilityHUD/CombatSummaryPanel/PrimaryLabel"), Is.Not.Null);
+            var healthFill = canvas?.Find(
+                    "ReadabilityHUD/CombatSummaryPanel/HealthBarBackground/HealthBarFill")
+                ?.GetComponent<Image>();
+            Assert.That(healthFill, Is.Not.Null);
+            Assert.That(healthFill.type, Is.EqualTo(Image.Type.Filled));
+            Assert.That(healthFill.fillMethod, Is.EqualTo(Image.FillMethod.Horizontal));
+            Assert.That(healthFill.fillOrigin, Is.EqualTo((int)Image.OriginHorizontal.Left));
             Assert.That(canvas?.Find("ReadabilityHUD/ThreatPriorityPanel/ThreatLabel"), Is.Not.Null);
             Assert.That(head?.Find("CoreReadabilityRing"), Is.Not.Null);
             Assert.That(head.GetComponentsInChildren<SpriteRenderer>(true).Min(renderer => renderer.sortingOrder),
@@ -50,6 +58,7 @@ namespace Ouroboros.Tests.PlayMode
             var staticHealth = canvas.GetComponentsInChildren<TMP_Text>(true)
                 .First(label => label.name == "HP");
             Assert.That(staticHealth.enabled, Is.False);
+            Assert.That(canvas.Find("CombatHUD/PlayerHealthHUD").gameObject.activeSelf, Is.False);
         }
 
         [UnityTest]
@@ -62,6 +71,7 @@ namespace Ouroboros.Tests.PlayMode
 
             Assert.That(hud.PrimaryText, Does.Contain("HP  100/100"));
             Assert.That(hud.PrimaryText, Does.Not.Contain("CORE  100/100"));
+            Assert.That(hud.HealthFillAmount, Is.EqualTo(1f).Within(0.001f));
 
             var damage = new OSDamageEvent(
                 1514001,
@@ -76,6 +86,7 @@ namespace Ouroboros.Tests.PlayMode
             yield return new WaitForEndOfFrame();
 
             Assert.That(hud.PrimaryText, Does.Contain("HP  92/100"));
+            Assert.That(hud.HealthFillAmount, Is.EqualTo(0.92f).Within(0.001f));
         }
 
         [UnityTest]

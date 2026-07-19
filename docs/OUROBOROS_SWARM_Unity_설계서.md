@@ -756,7 +756,7 @@ SpawnRateMultiplier(minute > 3) = 1.15 ^ 3 × 1.02 ^ (minute - 3)
 
 | 요소 | 위치 | 표시 내용 | 갱신 원천 |
 | --- | --- | --- | --- |
-| HP | 좌상단 | 현재/최대, 무적 점멸 | `HealthChanged` |
+| HP | 좌상단 | 현재/최대, 현재/최대 비율 가로 바, 무적 점멸 | `HealthChanged` |
 | 몸통 | HP 아래 | 현재 몸통 수, 4역할 개수, 조각 `현재/요구량` | `ChainChanged`, `RuntimeStateChanged` |
 | 대시 | 몸통 영역 | 사용 가능 여부, 남은 재사용 시간, 거리·지속 시간 | `DashStarted/DashCompleted` |
 | 경험치 | 상단 | 레벨, 현재/요구량 | `RuntimeStateChanged` |
@@ -764,7 +764,7 @@ SpawnRateMultiplier(minute > 3) = 1.15 ^ 3 × 1.02 ^ (minute - 3)
 | 보스 HP | 상단 하단 | 본체/보호막 | `BossStateChanged` |
 | 역할 상태 | 몸통 HUD 또는 월드 | 실드 충전, 제어 지속, 레이저 예고 | 역할 이벤트 |
 
-- 플레이어 머리 체력은 `OSPlayerHealth` 한 값만 사용하며 통합 HUD에는 `HP 현재/최대`로 표시한다. `CORE`는 별도 플레이어 자원이 아니므로 구형 정적 `HP`와 플레이어 `CORE` 중복 표기를 동시에 노출하지 않는다. 보스의 `CORE HP` 표기는 보스 고유 명칭으로만 유지한다.
+- 플레이어 머리 체력은 `OSPlayerHealth` 한 값만 사용하며 통합 HUD에는 `HP 현재/최대` 숫자와 `Clamp01(CurrentHealth / MaxHealth)` 비율의 가로 바를 함께 표시한다. 바는 왼쪽을 원점으로 줄어들며 최대 HP 변경, 피해, 회복, 사망을 모두 같은 `HealthChanged` 이벤트로 반영한다. `CORE`는 별도 플레이어 자원이 아니므로 구형 정적 `HP`와 플레이어 `CORE` 중복 표기를 동시에 노출하지 않는다. 보스의 `CORE HP` 표기는 보스 고유 명칭으로만 유지한다.
 - 무제한 길이이므로 `현재/최대 몸통` 표시는 사용하지 않는다.
 - 기술 안전 한도 64를 HUD 최대치로 노출하지 않는다.
 - 역할 세그먼트는 색 외에 실루엣, 문양, 발사 형태 중 2개 이상으로 구분한다.
@@ -832,7 +832,7 @@ SpawnRateMultiplier(minute > 3) = 1.15 ^ 3 × 1.02 ^ (minute - 3)
 
 **[확정]** Step 14의 `OSRunSummaryController`가 세션 시작부터 위 통계를 누적하고 Dead/Cleared 진입 시 불변 `OSSessionSummary`로 고정한다. `OSResultPanel`은 결과 중 전투 입력을 차단한 상태에서 같은 씬 새 런 재시작과 `10_MainMenu` 복귀를 제공한다. 캐릭터 변경은 현재 단일 캐릭터 MVP에서는 메인 메뉴 복귀 경로로 처리한다.
 
-**[확정]** Step 15의 `OSCombatHudPresenter`는 전투 규칙 객체를 수정하지 않는 읽기 전용 표시 모델이다. 상태 이벤트는 dirty 표식으로 모으고 `LateUpdate`에서 프레임당 최대 1회 TMP 텍스트에 반영한다. 플레이어 체력은 `OSPlayerHealth.HealthChanged`를 읽는 단일 `HP` 표기로 노출하고 구형 정적 HP 텍스트는 비활성화한다. 몸통은 현재 수만 표시하며 기술 가드 64를 최대치나 분모로 노출하지 않는다. Shield/Attack/Laser/Control은 색과 함께 `[O]`, `[>]`, `[=]`, `[+]` 문양을 사용한다.
+**[확정]** Step 15의 `OSCombatHudPresenter`는 전투 규칙 객체를 수정하지 않는 읽기 전용 표시 모델이다. 상태 이벤트는 dirty 표식으로 모으고 `LateUpdate`에서 프레임당 최대 1회 TMP 텍스트와 UI Image에 반영한다. 플레이어 체력은 `OSPlayerHealth.HealthChanged`를 읽는 단일 `HP` 숫자와 왼쪽 기준 가로형 비율 바로 노출하고 구형 `Canvas/CombatHUD/PlayerHealthHUD`는 비활성화한다. 몸통은 현재 수만 표시하며 기술 가드 64를 최대치나 분모로 노출하지 않는다. Shield/Attack/Laser/Control은 색과 함께 `[O]`, `[>]`, `[=]`, `[+]` 문양을 사용한다.
 
 **[확정]** 판독성 Sorting Order 기준은 머리 코어 220, 적·보스 즉시 위험 200, 레이저 198, 절단 경계 185, 제어 잔여 원호 182, 실드 175다. 대시는 별도 피해 범위 View 없이 몸통 수축과 HUD 상태로 표시한다. 제어 잔여량은 적 둘레의 감소 원호로도 표시하고, 절단 피드백은 충돌 위치의 경계와 꼬리 방향 및 역할별 상실 수를 한 메시지로 축약한다. 표시 오브젝트나 피드백이 부족하거나 비활성화되어도 전투 판정은 되돌리지 않는다.
 
@@ -1042,8 +1042,8 @@ public enum OSSessionState
 
 | 클래스 | 형태 | 단일 책임 |
 | --- | --- | --- |
-| `OSCombatHud` | MonoBehaviour | 확정 이벤트를 표시 모델에 반영하고 프레임 말 1회 갱신 |
-| `OSPlayerHealthPresenter` | MonoBehaviour | 머리 HP·무적 시간과 머리 피해·몸통 절단 피드백을 HUD에 표시 |
+| `OSCombatHudPresenter` | MonoBehaviour | 확정 이벤트를 통합 표시 모델에 반영하고 HP 숫자·비율 바를 포함한 HUD를 프레임 말 1회 갱신 |
+| `OSPlayerHealthPresenter` | MonoBehaviour | Step 09 호환용 머리 HP·피해 Presenter이며 Step 15.16 통합 HUD에서는 비활성 유지 |
 | `OSBodyGrowthPresenter` | MonoBehaviour | 몸통 수·역할별 보유 수·조각 진행도를 HUD에 표시 |
 | `OSBodyRoleCombatPresenter` | MonoBehaviour | 역할별 보유 수·발동 수·실드 충전 상태를 HUD에 표시 |
 | `OSBodyDashPresenter` | MonoBehaviour | 대시 가능·재사용·진행 시간과 몸통 수축 결과를 표시 |
@@ -1088,8 +1088,9 @@ flowchart LR
     Resolver --> Chain
     Dash --> Session
     Health --> Session
-    Runtime[OSSessionRuntimeState] --> HUD[OSCombatHud]
-    Health --> HealthHUD[OSPlayerHealthPresenter]
+    Runtime[OSSessionRuntimeState] --> HUD[OSCombatHudPresenter]
+    Health --> HUD
+    Health --> HealthHUD["OSPlayerHealthPresenter (legacy inactive)"]
     Chain --> HealthHUD
     Session --> HUD
     Queue --> BodyUI[OSBodyRoleSelectionPanel]

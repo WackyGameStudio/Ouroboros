@@ -1695,6 +1695,38 @@ Enter 입력으로 사망·결과 상태를 전환할 때 같은 `UI/Submit` Act
 
 ---
 
+## 16.16 통합 플레이어 HP 바 — Step 15.16
+
+### 목표
+
+통합 전투 HUD의 플레이어 HP 숫자와 같은 실제 체력 값을 사용하는 가로형 HP 바를 추가해 피해·회복·최대 HP 변화를 즉시 판독할 수 있게 한다.
+
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-20
+- 완료: `OSCombatHudPresenter`에 `Image` 기반 HP fill 참조를 추가하고 기존 `OSPlayerHealth.HealthChanged` dirty 표시 모델에서 숫자와 바를 함께 프레임당 최대 1회 갱신한다. 바는 `Clamp01(CurrentHealth / MaxHealth)` 비율을 왼쪽 기준으로 표시하며 별도 체력 상태를 만들지 않는다. `ReadabilityHUD/CombatSummaryPanel` 아래에 배경과 초록색 fill을 배치하고 구형 `Canvas/CombatHUD/PlayerHealthHUD`는 비활성화했다. 기본 Step 15 재적용 경로와 `Ouroboros/Setup/Apply Step 15.16 Player HP Bar`, `Ouroboros/Build/Build Step 15.16 WebGL` 메뉴를 연결했으며, 전용 재적용은 이미 올바른 씬을 불필요하게 다시 저장하지 않는다.
+- 남음: 없음. Step 전용 커밋·원격 푸시 뒤 Step 16 성능 최적화·WebGL 착수 가능.
+- 검증: Unity 6000.5.1f1 집중 `OSStep15ScenePlayModeTests` 9/9 통과(job `dff279707d544ed2a321d2f2b95f5bfa`)로 초기 HP 100/100에서 fill 1.0, 피해 8 뒤 HP 92/100과 fill 0.92 연동, 왼쪽 기준 Horizontal fill, 구형 HUD 비활성을 확인했다. 전체 EditMode 62/62(job `eb0735f153ea44c3a8975c528f791427`)와 PlayMode 118/118(job `a8aebef63df5455ab48bc8e367c920c0`)이 통과했고 최종 Unity Console Error/Exception은 0이다. `Builds/Step15_16/WebGL/` Development 빌드는 오류 0·경고 5·135,676,823바이트로 성공했고 Windows 빌드는 실행하지 않았다. HTTP에서 `index.html`과 `WebGL.wasm`이 200, wasm MIME `application/wasm`, Canvas 960×540을 확인했다. 브라우저 전투 화면에서 `HP 100/100` 아래의 가로형 초록 HP 바 렌더를 확인했으며 Error/Exception 0, 기존 URP FSR 미지원 경고 1건만 남았다.
+
+### 프로그래머 체크
+
+- [x] `OSPlayerHealth` 현재/최대 체력과 단일 소스 연동
+- [x] 왼쪽 기준 Horizontal fill 및 0~1 비율 제한
+- [x] 피해·회복·최대 HP 변경 이벤트의 dirty 갱신 유지
+- [x] 통합 HUD 배치와 구형 `PlayerHealthHUD` 비활성화
+- [x] Step 15 기본 재적용과 Step 15.16 전용 재적용·WebGL 빌드 경로
+- [x] 집중 테스트와 전체 EditMode/PlayMode 회귀
+- [x] WebGL HTTP·Canvas·HP 바 렌더·Console 검증
+
+### 완료 기준
+
+- 플레이어 HP 숫자와 바가 같은 `OSPlayerHealth` 현재/최대 값을 사용한다.
+- 피해 후 바 비율이 감소하고 회복·최대 HP 변경 시 같은 이벤트 경로로 갱신된다.
+- 통합 HUD에 HP가 한 세트만 보이고 WebGL 브라우저 Error/Exception이 없다.
+
+---
+
 ## 17. 성능 최적화·WebGL — Step 16
 
 ### 목표
@@ -1703,7 +1735,7 @@ Enter 입력으로 사망·결과 상태를 전환할 때 같은 `UI/Submit` Act
 
 ### 선행 조건
 
-- Step 15.15 대시 경로 픽업 고속 흡입과 전체 런 확정
+- Step 15.16 통합 플레이어 HP 바와 전체 런 확정
 
 ### 측정 순서
 
