@@ -310,7 +310,7 @@ namespace Ouroboros.Editor
         {
             var names = new[]
             {
-                "HealthLabel", "DamageFeedbackLabel", "BodyGrowthLabel", "RoleCombatStatusLabel",
+                "HP", "HealthLabel", "DamageFeedbackLabel", "BodyGrowthLabel", "RoleCombatStatusLabel",
                 "BodyDashStatusLabel", "BodyDashFeedbackLabel", "ExplosionStatusLabel", "ExplosionFeedbackLabel",
                 "LevelProgressLabel", "UpgradeFeedbackLabel",
                 "WaveStatusLabel", "WaveEventLabel", "BossStatusLabel", "BossPatternLabel"

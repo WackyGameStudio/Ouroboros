@@ -47,6 +47,35 @@ namespace Ouroboros.Tests.PlayMode
             var legacy = canvas.GetComponentsInChildren<TMP_Text>(true)
                 .First(label => label.name == "HealthLabel");
             Assert.That(legacy.enabled, Is.False);
+            var staticHealth = canvas.GetComponentsInChildren<TMP_Text>(true)
+                .First(label => label.name == "HP");
+            Assert.That(staticHealth.enabled, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerDamage_UpdatesTheSingleHpReadout()
+        {
+            yield return LoadGameAndEnterCombat();
+            var health = Object.FindAnyObjectByType<OSPlayerHealth>();
+            var hud = Object.FindAnyObjectByType<OSCombatHudPresenter>();
+            hud.ForceRefreshForTesting();
+
+            Assert.That(hud.PrimaryText, Does.Contain("HP  100/100"));
+            Assert.That(hud.PrimaryText, Does.Not.Contain("CORE  100/100"));
+
+            var damage = new OSDamageEvent(
+                1514001,
+                1,
+                1,
+                1,
+                OSTargetKind.PlayerHead,
+                8f,
+                Vector2.zero);
+            Assert.That(health.TryApplyHeadDamage(damage).IsAccepted, Is.True);
+            yield return null;
+            yield return new WaitForEndOfFrame();
+
+            Assert.That(hud.PrimaryText, Does.Contain("HP  92/100"));
         }
 
         [UnityTest]

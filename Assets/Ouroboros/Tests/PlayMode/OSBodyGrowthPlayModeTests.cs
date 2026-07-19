@@ -158,6 +158,48 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(rig.Chain.GetActiveSegment(2).Role, Is.EqualTo(OSBodyRoleType.Laser));
         }
 
+        [Test]
+        public void ReclaimedMergedBody_StacksAtCurrentTailAndUnfoldsInTravelOrder()
+        {
+            var rig = CreateGrowthRig(8);
+            CompleteStartSelections(rig);
+            var tailPosition = (Vector2)rig.Chain.GetActiveSegment(1).View.transform.position;
+
+            var reclaimed = rig.Growth.ReclaimSegments(OSBodyRoleType.Control, 3);
+
+            Assert.That(reclaimed.IsAccepted, Is.True, reclaimed.ReasonKey);
+            Assert.That(reclaimed.Payload, Is.EqualTo(3));
+            Assert.That(rig.Chain.ActiveCount, Is.EqualTo(5));
+            for (var index = 2; index < 5; index++)
+            {
+                Assert.That(
+                    (Vector2)rig.Chain.GetActiveSegment(index).View.transform.position,
+                    Is.EqualTo(tailPosition));
+            }
+
+            rig.Chain.SimulatePathStep(new Vector2(0.7f, 0f));
+            Assert.That(rig.Chain.GetActiveSegment(2).View.transform.position.x,
+                Is.GreaterThan(tailPosition.x));
+            Assert.That((Vector2)rig.Chain.GetActiveSegment(3).View.transform.position,
+                Is.EqualTo(tailPosition));
+            Assert.That((Vector2)rig.Chain.GetActiveSegment(4).View.transform.position,
+                Is.EqualTo(tailPosition));
+
+            rig.Chain.SimulatePathStep(new Vector2(1.25f, 0f));
+            Assert.That(rig.Chain.GetActiveSegment(3).View.transform.position.x,
+                Is.GreaterThan(tailPosition.x));
+            Assert.That((Vector2)rig.Chain.GetActiveSegment(4).View.transform.position,
+                Is.EqualTo(tailPosition));
+
+            rig.Chain.SimulatePathStep(new Vector2(3f, 0f));
+            for (var index = 1; index < rig.Chain.ActiveCount; index++)
+            {
+                var previous = rig.Chain.GetActiveSegment(index - 1).View.transform.position;
+                var current = rig.Chain.GetActiveSegment(index).View.transform.position;
+                Assert.That(previous.x - current.x, Is.EqualTo(0.55f).Within(0.001f));
+            }
+        }
+
         private GrowthRig CreateGrowthRig(int capacity)
         {
             _root = new GameObject("Step08GrowthTestRoot");

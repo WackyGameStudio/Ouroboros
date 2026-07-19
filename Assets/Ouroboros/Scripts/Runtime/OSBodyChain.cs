@@ -59,6 +59,8 @@ namespace Ouroboros.Runtime
         private OSPathSampleRingBuffer _path;
         private OSBodySegmentView[] _poolViews = Array.Empty<OSBodySegmentView>();
         private OSBodySegmentRuntime[] _runtimeSlots = Array.Empty<OSBodySegmentRuntime>();
+        private float[] _reclaimAnchorDistances = Array.Empty<float>();
+        private bool[] _hasReclaimAnchor = Array.Empty<bool>();
         private Vector2 _currentHeadPosition;
         private Vector2 _lastHeadPosition;
         private Vector2 _lastForward = Vector2.right;
@@ -151,6 +153,47 @@ namespace Ouroboros.Runtime
 
         public OSRuleResult<int> AppendSegment(OSBodyRoleType role)
         {
+            return AppendSegmentInternal(role, false, 0f);
+        }
+
+        /// <summary>
+        /// Restores a severed-body batch at the current last-tail position. Every restored
+        /// segment shares one path anchor and only joins its normal spacing after the head
+        /// has travelled enough distance, preventing merged pickups from expanding instantly.
+        /// </summary>
+        public OSRuleResult<int> AppendReclaimedSegments(OSBodyRoleType role, int amount)
+        {
+            if (amount <= 0 || !Enum.IsDefined(typeof(OSBodyRoleType), role))
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedRequirement,
+                    "body.reclaim.invalid_request");
+            }
+
+            var anchorDistance = _headCumulativeDistance -
+                                 (ActiveCount * EffectiveSegmentSpacing);
+            var reclaimed = 0;
+            for (var index = 0; index < amount; index++)
+            {
+                var append = AppendSegmentInternal(role, true, anchorDistance);
+                if (!append.IsAccepted)
+                {
+                    return reclaimed > 0
+                        ? OSRuleResult<int>.Accepted(reclaimed, "body.reclaim.partial")
+                        : OSRuleResult<int>.Rejected(append.Code, append.ReasonKey);
+                }
+
+                reclaimed++;
+            }
+
+            return OSRuleResult<int>.Accepted(reclaimed, "body.reclaim.accepted");
+        }
+
+        private OSRuleResult<int> AppendSegmentInternal(
+            OSBodyRoleType role,
+            bool stackAtTail,
+            float reclaimAnchorDistance)
+        {
             if (!Enum.IsDefined(typeof(OSBodyRoleType), role))
             {
                 return OSRuleResult<int>.Rejected(
@@ -179,6 +222,8 @@ namespace Ouroboros.Runtime
             var stableId = _nextStableId++;
             var view = _poolViews[chainIndex];
             var runtime = _runtimeSlots[chainIndex];
+            _hasReclaimAnchor[chainIndex] = stackAtTail;
+            _reclaimAnchorDistances[chainIndex] = reclaimAnchorDistance;
             runtime.Activate(stableId, chainIndex, role, view);
             view.Configure(role, stableId, chainIndex);
             ActiveCount++;
@@ -470,6 +515,7 @@ namespace Ouroboros.Runtime
 
             var hadSegments = ActiveCount > 0;
             ActiveCount = 0;
+            Array.Clear(_hasReclaimAnchor, 0, _hasReclaimAnchor.Length);
             _cutGuardRemaining = 0f;
             _nextStableId = 1;
             if (hadSegments)
@@ -504,6 +550,8 @@ namespace Ouroboros.Runtime
             {
                 _poolViews[index]?.Deactivate();
                 _runtimeSlots[index]?.Deactivate();
+                _hasReclaimAnchor[index] = false;
+                _reclaimAnchorDistances[index] = 0f;
             }
 
             ActiveCount = startIndex;
@@ -561,6 +609,8 @@ namespace Ouroboros.Runtime
             DestroyPool();
             _poolViews = new OSBodySegmentView[capacity];
             _runtimeSlots = new OSBodySegmentRuntime[capacity];
+            _reclaimAnchorDistances = new float[capacity];
+            _hasReclaimAnchor = new bool[capacity];
             for (var index = 0; index < capacity; index++)
             {
                 var view = Instantiate(segmentPrefab, poolRoot);
@@ -594,6 +644,8 @@ namespace Ouroboros.Runtime
 
             _poolViews = Array.Empty<OSBodySegmentView>();
             _runtimeSlots = Array.Empty<OSBodySegmentRuntime>();
+            _reclaimAnchorDistances = Array.Empty<float>();
+            _hasReclaimAnchor = Array.Empty<bool>();
         }
 
         private void InitializePath()
@@ -679,6 +731,19 @@ namespace Ouroboros.Runtime
             {
                 var targetDistance = _headCumulativeDistance -
                                      ((chainIndex + 1) * EffectiveSegmentSpacing);
+                if (_hasReclaimAnchor[chainIndex])
+                {
+                    var anchorDistance = _reclaimAnchorDistances[chainIndex];
+                    if (targetDistance + PositionEpsilon >= anchorDistance)
+                    {
+                        _hasReclaimAnchor[chainIndex] = false;
+                    }
+                    else
+                    {
+                        targetDistance = anchorDistance;
+                    }
+                }
+
                 var sample = EvaluateTarget(targetDistance, ref newerIndex);
                 var visualPosition = ResolveBodyConvergencePosition(chainIndex, sample.Position);
                 _poolViews[chainIndex].SetPose(visualPosition, sample.Forward);

@@ -136,21 +136,7 @@ namespace Ouroboros.Runtime
                     "body.reclaim.invalid_state");
             }
 
-            var reclaimed = 0;
-            for (var index = 0; index < amount; index++)
-            {
-                var append = bodyChain.AppendSegment(role);
-                if (!append.IsAccepted)
-                {
-                    return reclaimed > 0
-                        ? OSRuleResult<int>.Accepted(reclaimed, "body.reclaim.partial")
-                        : OSRuleResult<int>.Rejected(append.Code, append.ReasonKey);
-                }
-
-                reclaimed++;
-            }
-
-            return OSRuleResult<int>.Accepted(reclaimed, "body.reclaim.accepted");
+            return bodyChain.AppendReclaimedSegments(role, amount);
         }
 
         /// <summary>
