@@ -21,6 +21,7 @@ namespace Ouroboros.Tests.PlayMode
         private OSGameSessionController _session;
         private OSPlayerController _player;
         private Rigidbody2D _body;
+        private Transform _headCore;
 
         public override void Setup()
         {
@@ -54,6 +55,12 @@ namespace Ouroboros.Tests.PlayMode
                 1 << 0,
                 new Vector2(-20f, -20f),
                 new Vector2(20f, 20f));
+            _headCore = new GameObject("HeadCore").transform;
+            _headCore.SetParent(_playerObject.transform, false);
+            var directionIndicator = new GameObject("DirectionIndicator").transform;
+            directionIndicator.SetParent(_playerObject.transform, false);
+            var headVisual = _playerObject.AddComponent<OSPlayerHeadVisual>();
+            headVisual.Configure(_player, _session, _headCore, directionIndicator, 90f);
 
             _blockerRoot = new GameObject("Step04TestBlockers");
             _host.SetActive(true);
@@ -107,6 +114,21 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(_body.position, Is.EqualTo(stoppedPosition).Using(Vector2ComparerWithEqualsOperator.Instance));
             Assert.That(lastDirection, Is.EqualTo(Vector2.right).Using(Vector2ComparerWithEqualsOperator.Instance));
             Assert.That(_player.LastDirection, Is.EqualTo(lastDirection).Using(Vector2ComparerWithEqualsOperator.Instance));
+        }
+
+        [UnityTest]
+        public IEnumerator HeadVisualTurnsCurrentUpFacingEyesTowardLastMovementDirection()
+        {
+            yield return null;
+            AssertVisualForward(Vector2.right);
+
+            var directions = new[] { Vector2.up, Vector2.left, Vector2.down, Vector2.right };
+            foreach (var direction in directions)
+            {
+                _player.SimulateMovementStep(direction, 0.02f);
+                yield return null;
+                AssertVisualForward(direction);
+            }
         }
 
         [Test]
@@ -185,6 +207,14 @@ namespace Ouroboros.Tests.PlayMode
             blocker.transform.position = position;
             var collider = blocker.AddComponent<BoxCollider2D>();
             collider.size = size;
+        }
+
+        private void AssertVisualForward(Vector2 expectedDirection)
+        {
+            var visualForward = (Vector2)_headCore.up;
+            Assert.That(
+                Vector2.Dot(visualForward.normalized, expectedDirection.normalized),
+                Is.GreaterThan(0.999f));
         }
 
         private static InputActionAsset CreateActions()

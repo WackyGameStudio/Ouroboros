@@ -51,6 +51,12 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(player.WorldMin, Is.EqualTo(new Vector2(-24f, -15f)));
             Assert.That(player.WorldMax, Is.EqualTo(new Vector2(24f, 15f)));
             Assert.That(player.transform.Find("DirectionIndicator"), Is.Not.Null);
+            var headCore = player.transform.Find("Head");
+            Assert.That(headCore, Is.Not.Null);
+            Assert.That(visual.SpriteForwardDegrees, Is.EqualTo(90f).Within(0.0001f));
+            Assert.That(
+                Vector2.Dot(((Vector2)headCore.up).normalized, player.LastDirection.normalized),
+                Is.GreaterThan(0.999f));
             Assert.That(follower.Target, Is.EqualTo(player.transform));
 
             var camera = follower.GetComponent<Camera>();

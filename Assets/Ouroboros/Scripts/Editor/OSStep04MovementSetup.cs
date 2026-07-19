@@ -19,6 +19,7 @@ namespace Ouroboros.Editor
         private const string WorldBlockerLayerName = "WorldBlocker";
         private const string PlayerHeadLayerName = "PlayerHeadSolid";
         internal const float GameplayOrthographicSize = 6.5f;
+        internal const float HeadSpriteForwardDegrees = 90f;
         private static readonly Vector2 WorldMinimum = new(-24f, -15f);
         private static readonly Vector2 WorldMaximum = new(24f, 15f);
 
@@ -149,6 +150,9 @@ namespace Ouroboros.Editor
             Assign(visual, "sessionController", session);
             Assign(visual, "coreVisual", core);
             Assign(visual, "directionIndicator", indicator);
+            Assign(visual, "spriteForwardDegrees", HeadSpriteForwardDegrees);
+            core.localRotation = Quaternion.Euler(0f, 0f, -HeadSpriteForwardDegrees);
+            EditorUtility.SetDirty(core);
         }
 
         private static void ConfigureCamera(
@@ -188,6 +192,39 @@ namespace Ouroboros.Editor
                 camera.orthographic = true;
                 camera.orthographicSize = GameplayOrthographicSize;
                 EditorUtility.SetDirty(camera);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                AssetDatabase.SaveAssets();
+            }
+            finally
+            {
+                if (openedForSetup && scene.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(scene, true);
+                }
+            }
+        }
+
+        internal static void ApplyPlayerHeadFacing()
+        {
+            var scene = SceneManager.GetSceneByPath(GameScenePath);
+            var openedForSetup = !scene.isLoaded;
+            if (openedForSetup)
+            {
+                scene = EditorSceneManager.OpenScene(GameScenePath, OpenSceneMode.Additive);
+            }
+
+            try
+            {
+                var gameRoot = FindRoot(scene, "GameRoot");
+                var head = RequireTransform(gameRoot.transform, "PlayerRoot/Head");
+                var playerController = head.GetComponent<OSPlayerController>()
+                                       ?? throw new InvalidOperationException(
+                                           "Player head is missing OSPlayerController.");
+                var session = RequireComponent<OSGameSessionController>(
+                    gameRoot.transform,
+                    "Systems/OSGameSessionController");
+                ConfigurePlayerVisual(head, playerController, session);
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene);
                 AssetDatabase.SaveAssets();

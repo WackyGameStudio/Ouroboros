@@ -5,6 +5,8 @@ namespace Ouroboros.Runtime
     [DisallowMultipleComponent]
     public sealed class OSPlayerHeadVisual : MonoBehaviour
     {
+        private const float MinimumDirectionSqrMagnitude = 0.000001f;
+
         [SerializeField] private OSPlayerController playerController;
         [SerializeField] private OSGameSessionController sessionController;
         [SerializeField] private Transform coreVisual;
@@ -12,9 +14,12 @@ namespace Ouroboros.Runtime
         [SerializeField, Min(0f)] private float pulseAmount = 0.035f;
         [SerializeField, Min(0f)] private float pulseFrequency = 3f;
         [SerializeField, Min(0f)] private float indicatorRadius = 0.72f;
+        [SerializeField] private float spriteForwardDegrees = 90f;
 
         private Vector3 _coreBaseScale = Vector3.one;
         private float _pulseTime;
+
+        public float SpriteForwardDegrees => spriteForwardDegrees;
 
         private void Awake()
         {
@@ -42,17 +47,37 @@ namespace Ouroboros.Runtime
                 }
             }
 
-            if (directionIndicator == null || playerController == null)
+            RefreshFacing();
+        }
+
+        internal void RefreshFacing()
+        {
+            if (playerController == null)
             {
                 return;
             }
 
             var direction = playerController.LastDirection;
-            directionIndicator.localPosition = direction * indicatorRadius;
-            directionIndicator.localRotation = Quaternion.Euler(
-                0f,
-                0f,
-                Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
+            if (direction.sqrMagnitude <= MinimumDirectionSqrMagnitude)
+            {
+                return;
+            }
+
+            direction.Normalize();
+            var targetDegrees = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            if (coreVisual != null)
+            {
+                coreVisual.localRotation = Quaternion.Euler(
+                    0f,
+                    0f,
+                    targetDegrees - spriteForwardDegrees);
+            }
+
+            if (directionIndicator != null)
+            {
+                directionIndicator.localPosition = direction * indicatorRadius;
+                directionIndicator.localRotation = Quaternion.Euler(0f, 0f, targetDegrees);
+            }
         }
 
         /// <summary>
@@ -62,13 +87,16 @@ namespace Ouroboros.Runtime
             OSPlayerController controller,
             OSGameSessionController session,
             Transform core,
-            Transform indicator)
+            Transform indicator,
+            float sourceSpriteForwardDegrees = 90f)
         {
             playerController = controller;
             sessionController = session;
             coreVisual = core;
             directionIndicator = indicator;
+            spriteForwardDegrees = sourceSpriteForwardDegrees;
             CaptureBaseScale();
+            RefreshFacing();
         }
 
         private void CaptureBaseScale()

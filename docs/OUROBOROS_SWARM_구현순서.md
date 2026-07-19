@@ -365,8 +365,8 @@ PC/Web에서 동일한 이동 감각과 장애물 처리를 완성한다.
 ### 구현 현황
 
 - 상태: 완료
-- 최근 갱신: 2026-07-19
-- 완료: `Assets/Ouroboros/Scripts/Runtime/OSPlayerController.cs`에 입력 크기 제한·5.5/s 이동·Kinematic `Collider2D.Cast`·접선 슬라이드·마지막 방향·월드 경계·선택/사망 상태 차단·재시작 위치 초기화를 구현했다. `OSCameraFollower.cs`는 고정 줌·무회전·0.1초 지연·카메라 여백 경계를 적용하고, `OSPlayerHeadVisual.cs`와 `Assets/Ouroboros/Art/Placeholders/Obstacle.png`로 머리 펄스/방향 표시를 구성했다. Step 15.1에서 플레이 가능 범위를 28×18에서 48×30으로 확장하고 장애물을 드문 7종 배치로 재구성했으며, `Assets/Ouroboros/Scenes/20_Game.unity`의 정적 `Enemy_Chaser`/`Pickup` 표시용 오브젝트를 제거했다. Step 15.11에서 게임 카메라 직교 크기를 5.4에서 6.5로 확대해 16:9 월드 가시 영역을 약 19.2×10.8에서 23.1×13.0으로 넓혔다. `WorldBlocker`/`PlayerHeadSolid` 레이어, 확장된 4면 경계, 플레이어 물리와 카메라 참조는 Step 04 재적용 메뉴에도 반영했다.
+- 최근 갱신: 2026-07-20
+- 완료: `Assets/Ouroboros/Scripts/Runtime/OSPlayerController.cs`에 입력 크기 제한·5.5/s 이동·Kinematic `Collider2D.Cast`·접선 슬라이드·마지막 방향·월드 경계·선택/사망 상태 차단·재시작 위치 초기화를 구현했다. `OSCameraFollower.cs`는 고정 줌·무회전·0.1초 지연·카메라 여백 경계를 적용하고, `OSPlayerHeadVisual.cs`와 `Assets/Ouroboros/Art/Placeholders/Obstacle.png`로 머리 펄스/방향 표시를 구성했다. Step 15.13에서 현재 `Head.png`의 눈 정면축 +Y(`90°`)를 설정값으로 두고 물리 루트가 아닌 머리 Sprite만 마지막 이동 방향으로 회전하도록 보강했다. Step 15.1에서 플레이 가능 범위를 28×18에서 48×30으로 확장하고 장애물을 드문 7종 배치로 재구성했으며, `Assets/Ouroboros/Scenes/20_Game.unity`의 정적 `Enemy_Chaser`/`Pickup` 표시용 오브젝트를 제거했다. Step 15.11에서 게임 카메라 직교 크기를 5.4에서 6.5로 확대해 16:9 월드 가시 영역을 약 19.2×10.8에서 23.1×13.0으로 넓혔다. `WorldBlocker`/`PlayerHeadSolid` 레이어, 확장된 4면 경계, 플레이어 물리와 카메라 참조는 Step 04 재적용 메뉴에도 반영했다.
 - 남음: 없음. Step 05 몸통 경로 추종 구현을 시작할 수 있다.
 - 검증: Unity 컴파일 및 최종 Console Error/Exception 0. EditMode 전체 19/19 통과, `Ouroboros.Tests.PlayMode` 12/12 통과(WASD/방향키 일치, 직선/대각선 속도, 0 입력 정지·마지막 방향, Cast 슬라이드, 코너 6,000틱·2분 등가 안정성, 30/60fps 거리, 선택 중 정지, 씬/카메라 여백). Windows Development Build `Builds/Step04/Windows/OuroborosSwarm.exe` 성공(errors 0, warnings 0). WebGL 첫 시도는 Unity 생성 `UnityAnalyticsModule` C 오브젝트의 진단문 없는 Bee ExitCode 3으로 종료됐으나 동일 소스 증분 재빌드가 `Builds/Step04/WebGL/index.html`로 성공(errors 0, warnings 4)했다.
 
@@ -1596,6 +1596,38 @@ Enter 입력으로 사망·결과 상태를 전환할 때 같은 `UI/Submit` Act
 
 ---
 
+## 16.13 머리 진행 방향 비주얼 — Step 15.13
+
+### 목표
+
+현재 임시 머리 리소스의 눈이 항상 뱀의 마지막 이동 방향을 향하고, 방향 전환 시 머리 Sprite도 함께 회전하게 한다.
+
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-20
+- 완료: `OSPlayerHeadVisual`이 `OSPlayerController.LastDirection`을 정규화해 물리·카메라·몸통 경로를 소유하는 머리 루트는 유지하고 `coreVisual` Sprite만 회전한다. 현재 `Head.png`의 원본 정면축은 로컬 +Y이므로 `spriteForwardDegrees=90`으로 저장했으며, 나중에 리소스를 교체할 때 이 값만 새 Sprite의 정면축에 맞출 수 있다. 정지 중에는 마지막 유효 방향을 유지하고 대시는 시작 시 확정된 진행 방향을 그대로 사용한다. Step 04 재적용 경로와 `Ouroboros/Setup/Apply Step 15.13 Head Facing Visual`, 전용 WebGL 빌드 메뉴를 추가했다.
+- 남음: 없음. Step 전용 커밋·원격 푸시 뒤 Step 16 성능 최적화·WebGL로 진행할 수 있다.
+- 검증: Unity 6000.5.1f1 컴파일 및 정적 검증 오류·경고 0, 최종 Console Error/Exception 0. `OSPlayerMovementPlayModeTests`+`OSStep04ScenePlayModeTests` 집중 7/7 통과(job `b475207bffea43dd801cb72dc0c99fe0`)로 초기 오른쪽과 상·좌·하·우 전환마다 현재 Sprite의 로컬 +Y 눈 방향이 마지막 이동 방향과 일치하고 씬의 기준축 90°가 유지됨을 확인했다. 전체 `Ouroboros.Tests.EditMode` 62/62 통과(job `89895455a99e499399615786170376b7`), 전체 `Ouroboros.Tests.PlayMode` 115/115 통과(job `096e554e3cf8497e983bb69c46c7fe7e`). 승인 `WebGL Development` Build Profile의 `Builds/Step15_13/WebGL/` 빌드 성공(135,671,767 bytes, errors 0, warnings 5; TMP IL2CPP 대형 메서드 분리 정보 3건 포함). `Tools/Serve-WebGL.ps1`로 `http://127.0.0.1:8133/`을 실행해 index/WASM HTTP 200, WASM MIME `application/wasm`, 960×540 Canvas, MainMenu→Shield/Attack→Combat과 초기 오른쪽 진행 방향에서 머리의 두 눈·Sprite·방향 표식 정렬을 확인했다. 브라우저 error 레벨은 0건이고 WebGL 고유 URP FSR 비지원 warning 1건만 기록됐다. Windows 빌드는 실행하지 않았다.
+
+### 프로그래머 체크
+
+- [x] 물리 머리 루트와 분리된 Sprite 회전
+- [x] 현재 눈 정면축 +Y(`90°`) 설정화
+- [x] 정지 시 마지막 방향과 대시 방향 유지
+- [x] Step 04/Step 15.13 재적용 경로와 방향 회귀
+- [x] EditMode/PlayMode 전체 회귀
+- [x] WebGL HTTP·Canvas·초기 방향·Console 검증
+
+### 완료 기준
+
+- 초기 오른쪽 방향과 상·좌·하·우 이동에서 눈이 마지막 유효 이동 방향을 향한다.
+- 정지해도 머리 방향이 초기화되지 않고, 대시 중에는 대시 진행 방향을 유지한다.
+- 머리 Sprite 회전이 물리 Collider, 카메라 회전, 몸통 경로·사격 조준을 바꾸지 않는다.
+- WebGL 초기 진행 방향에서 눈·Sprite·방향 표식이 정렬되고 브라우저 error 레벨 로그가 없으며, 상·좌·하·우 전환은 자동 회귀로 보장된다.
+
+---
+
 ## 17. 성능 최적화·WebGL — Step 16
 
 ### 목표
@@ -1604,7 +1636,7 @@ Enter 입력으로 사망·결과 상태를 전환할 때 같은 `UI/Submit` Act
 
 ### 선행 조건
 
-- Step 15.12 UI Submit 콜백 안전 전환과 전체 런 확정
+- Step 15.13 머리 진행 방향 비주얼과 전체 런 확정
 
 ### 측정 순서
 
