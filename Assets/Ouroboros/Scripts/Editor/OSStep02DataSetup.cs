@@ -118,7 +118,6 @@ namespace Ouroboros.Editor
             bodyDash.FindPropertyRelative("duration").floatValue = 0.5f;
             bodyDash.FindPropertyRelative("distance").floatValue = 4.5f;
             bodyDash.FindPropertyRelative("cooldown").floatValue = 2f;
-            bodyDash.FindPropertyRelative("bodyRecoveryDuration").floatValue = 0.25f;
         }
 
         private static void ConfigureRole(
@@ -291,8 +290,8 @@ namespace Ouroboros.Editor
                 OSUpgradeOperation.AddDashDistanceMultiplier, 0.15f, 3, 1f, 3f);
             ConfigureUpgrade(entries, 7, "dash_cooldown", OSUpgradeCategory.Dash,
                 OSUpgradeOperation.AddDashCooldownMultiplier, -0.12f, 3, 0.5f, 1f);
-            ConfigureUpgrade(entries, 8, "dash_recovery", OSUpgradeCategory.Dash,
-                OSUpgradeOperation.AddDashRecoveryDuration, -0.05f, 3, 0.1f, 0.25f);
+            ConfigureUpgrade(entries, 8, "dash_recharge", OSUpgradeCategory.Dash,
+                OSUpgradeOperation.AddDashCooldownDelta, -0.2f, 3, 0.5f, 2f);
             ConfigureUpgrade(entries, 9, "max_health", OSUpgradeCategory.Survival,
                 OSUpgradeOperation.AddMaxHealth, 0.2f, 2, 0f, 10f);
             ConfigureUpgrade(entries, 10, "move_speed", OSUpgradeCategory.Survival,

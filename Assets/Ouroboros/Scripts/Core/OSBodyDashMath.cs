@@ -7,7 +7,6 @@ namespace Ouroboros.Core
         public const float MinimumDuration = 0.01f;
         public const float MinimumDistance = 0.1f;
         public const float MinimumCooldown = 0.5f;
-        public const float MinimumRecoveryDuration = 0.1f;
 
         public static Vector2 ResolveDirection(Vector2 moveInput, Vector2 lastDirection)
         {
@@ -54,24 +53,16 @@ namespace Ouroboros.Core
             return Mathf.Max(MinimumDistance, baseDistance * Mathf.Max(0.01f, multiplier));
         }
 
-        public static float CalculateCooldown(float baseCooldown, float multiplier)
+        public static float CalculateCooldown(float baseCooldown, float multiplier, float delta = 0f)
         {
-            if (!float.IsFinite(baseCooldown) || !float.IsFinite(multiplier))
+            if (!float.IsFinite(baseCooldown) || !float.IsFinite(multiplier) || !float.IsFinite(delta))
             {
                 return MinimumCooldown;
             }
 
-            return Mathf.Max(MinimumCooldown, baseCooldown * Mathf.Max(0.01f, multiplier));
-        }
-
-        public static float CalculateRecoveryDuration(float baseDuration, float delta)
-        {
-            if (!float.IsFinite(baseDuration) || !float.IsFinite(delta))
-            {
-                return MinimumRecoveryDuration;
-            }
-
-            return Mathf.Max(MinimumRecoveryDuration, baseDuration + delta);
+            return Mathf.Max(
+                MinimumCooldown,
+                (baseCooldown * Mathf.Max(0.01f, multiplier)) + delta);
         }
 
         private static bool IsFinite(Vector2 value)

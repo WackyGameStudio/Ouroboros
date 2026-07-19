@@ -83,7 +83,7 @@ namespace Ouroboros.Core
             float roleCooldownMultiplier,
             float dashDistanceMultiplier,
             float dashCooldownMultiplier,
-            float dashRecoveryDurationDelta,
+            float dashCooldownDelta,
             float maxHealthMultiplier,
             float moveSpeedMultiplier,
             float healMultiplier,
@@ -99,7 +99,7 @@ namespace Ouroboros.Core
             RoleCooldownMultiplier = roleCooldownMultiplier;
             DashDistanceMultiplier = dashDistanceMultiplier;
             DashCooldownMultiplier = dashCooldownMultiplier;
-            DashRecoveryDurationDelta = dashRecoveryDurationDelta;
+            DashCooldownDelta = dashCooldownDelta;
             MaxHealthMultiplier = maxHealthMultiplier;
             MoveSpeedMultiplier = moveSpeedMultiplier;
             HealMultiplier = healMultiplier;
@@ -133,7 +133,7 @@ namespace Ouroboros.Core
         public float RoleCooldownMultiplier { get; }
         public float DashDistanceMultiplier { get; }
         public float DashCooldownMultiplier { get; }
-        public float DashRecoveryDurationDelta { get; }
+        public float DashCooldownDelta { get; }
         public float MaxHealthMultiplier { get; }
         public float MoveSpeedMultiplier { get; }
         public float HealMultiplier { get; }
@@ -383,7 +383,7 @@ namespace Ouroboros.Core
             var roleCooldown = 1f;
             var dashDistance = 1f;
             var dashCooldown = 1f;
-            var dashRecoveryDuration = 0f;
+            var dashCooldownDelta = 0f;
             var maxHealth = 1f;
             var moveSpeed = 1f;
             var heal = 1f;
@@ -426,8 +426,8 @@ namespace Ouroboros.Core
                     case OSUpgradeOperation.AddDashCooldownMultiplier:
                         dashCooldown += value;
                         break;
-                    case OSUpgradeOperation.AddDashRecoveryDuration:
-                        dashRecoveryDuration += value;
+                    case OSUpgradeOperation.AddDashCooldownDelta:
+                        dashCooldownDelta += value;
                         break;
                     case OSUpgradeOperation.AddMaxHealth:
                         maxHealth += value;
@@ -459,7 +459,7 @@ namespace Ouroboros.Core
                 Math.Clamp(roleCooldown, 0.5f, 1f),
                 Math.Max(0.01f, dashDistance),
                 Math.Clamp(dashCooldown, 0.5f, 1f),
-                dashRecoveryDuration,
+                dashCooldownDelta,
                 Math.Max(0.01f, maxHealth),
                 Math.Max(0.01f, moveSpeed),
                 Math.Max(0.01f, heal),

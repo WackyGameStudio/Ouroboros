@@ -109,22 +109,16 @@ namespace Ouroboros.Core
         [SerializeField] private float duration = 0.5f;
         [SerializeField] private float distance = 4.5f;
         [SerializeField] private float cooldown = 2f;
-        [SerializeField] private float bodyRecoveryDuration = 0.25f;
 
         public float Duration => duration;
         public float Distance => distance;
         public float Cooldown => cooldown;
-        public float BodyRecoveryDuration => bodyRecoveryDuration;
 
         internal void CollectValidationErrors(List<string> errors, string path)
         {
             OSValidationUtility.RequireFinitePositive(duration, $"{path}.duration", errors);
             OSValidationUtility.RequireFinitePositive(distance, $"{path}.distance", errors);
             OSValidationUtility.RequireFinitePositive(cooldown, $"{path}.cooldown", errors);
-            OSValidationUtility.RequireFiniteNonNegative(
-                bodyRecoveryDuration,
-                $"{path}.bodyRecoveryDuration",
-                errors);
         }
     }
 

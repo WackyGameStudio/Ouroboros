@@ -73,11 +73,12 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [Test]
-        public void BodyConvergence_PullsSegmentsToHeadThenRecoversPath()
+        public void BodyConvergence_ClumpsAtDashEndThenNaturallyUnfoldsWithMovement()
         {
             var rig = CreateRig(4);
             var tail = rig.Chain.GetActiveSegment(3).View.transform;
             var initialDistance = Vector2.Distance(rig.Player.Position, tail.position);
+            var pickupCountBefore = Object.FindObjectsByType<OSPickup>(FindObjectsSortMode.None).Length;
             Assert.That(rig.Controller.RequestBodyDash().IsAccepted, Is.True);
 
             rig.Player.SimulateBodyDashStep(0.25f);
@@ -87,13 +88,25 @@ namespace Ouroboros.Tests.PlayMode
             rig.Player.SimulateBodyDashStep(0.25f);
             rig.Chain.SimulateBodyConvergenceForTesting(0.25f);
             var convergedDistance = Vector2.Distance(rig.Player.Position, tail.position);
-            rig.Chain.SimulateBodyConvergenceForTesting(0.25f);
-            var recoveredDistance = Vector2.Distance(rig.Player.Position, tail.position);
+            rig.Chain.SimulatePathStep(rig.Player.Position);
+            var stationaryDistance = Vector2.Distance(rig.Player.Position, tail.position);
 
             Assert.That(midpointDistance, Is.LessThan(initialDistance));
             Assert.That(convergedDistance, Is.LessThan(0.01f));
-            Assert.That(recoveredDistance, Is.GreaterThan(1.5f));
+            Assert.That(stationaryDistance, Is.LessThan(0.01f));
             Assert.That(rig.Chain.IsBodyConvergenceActive, Is.False);
+            Assert.That(rig.Chain.IsNaturalUnfoldActive, Is.True);
+            Assert.That(Object.FindObjectsByType<OSPickup>(FindObjectsSortMode.None).Length,
+                Is.EqualTo(pickupCountBefore));
+
+            for (var step = 0; step < 10; step++)
+            {
+                rig.Player.SimulateMovementStep(Vector2.right, 0.1f);
+                rig.Chain.SimulatePathStep(rig.Player.Position);
+            }
+
+            Assert.That(Vector2.Distance(rig.Player.Position, tail.position), Is.GreaterThan(1.5f));
+            Assert.That(rig.Chain.IsNaturalUnfoldActive, Is.False);
         }
 
         [Test]

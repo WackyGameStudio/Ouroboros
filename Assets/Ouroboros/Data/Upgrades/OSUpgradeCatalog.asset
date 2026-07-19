@@ -78,13 +78,13 @@ MonoBehaviour:
     clampMinimum: 0.5
     clampMaximum: 1
     candidateWeight: 1
-  - id: dash_recovery
+  - id: dash_recharge
     category: 2
     maxLevel: 3
     operation: 8
-    perLevelValue: -0.05
-    clampMinimum: 0.1
-    clampMaximum: 0.25
+    perLevelValue: -0.2
+    clampMinimum: 0.5
+    clampMaximum: 2
     candidateWeight: 1
   - id: max_health
     category: 3

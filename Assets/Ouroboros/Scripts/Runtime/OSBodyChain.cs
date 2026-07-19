@@ -69,8 +69,8 @@ namespace Ouroboros.Runtime
         private bool _started;
         private readonly Vector2[] _bodyConvergenceStarts = new Vector2[DefaultTechnicalGuard];
         private bool _bodyConvergenceActive;
+        private bool _naturalUnfoldActive;
         private float _bodyConvergenceDuration;
-        private float _bodyRecoveryDuration;
         private float _bodyConvergenceElapsed;
 
         public event Action<int, int, OSBodyRoleType> SegmentAppended;
@@ -86,6 +86,7 @@ namespace Ouroboros.Runtime
         public int PathSampleCount => _path?.Count ?? 0;
         public float CutGuardRemaining => _cutGuardRemaining;
         public bool IsBodyConvergenceActive => _bodyConvergenceActive;
+        public bool IsNaturalUnfoldActive => _naturalUnfoldActive;
         public float BodyConvergenceProgress => !_bodyConvergenceActive || _bodyConvergenceDuration <= 0f
             ? 0f
             : Mathf.Clamp01(_bodyConvergenceElapsed / _bodyConvergenceDuration);
@@ -218,12 +219,12 @@ namespace Ouroboros.Runtime
             return OSRuleResult<int>.Accepted(ActiveCount, "body.debug_count.accepted");
         }
 
-        public void BeginBodyConvergence(float duration, float recoveryDuration)
+        public void BeginBodyConvergence(float duration)
         {
             _bodyConvergenceDuration = Mathf.Max(OSBodyDashMath.MinimumDuration, duration);
-            _bodyRecoveryDuration = Mathf.Max(0f, recoveryDuration);
             _bodyConvergenceElapsed = 0f;
             _bodyConvergenceActive = true;
+            _naturalUnfoldActive = false;
             for (var index = 0; index < ActiveCount && index < _bodyConvergenceStarts.Length; index++)
             {
                 _bodyConvergenceStarts[index] = _poolViews[index] != null
@@ -232,11 +233,24 @@ namespace Ouroboros.Runtime
             }
         }
 
+        public void CompleteBodyConvergence(Vector2 headPosition)
+        {
+            if (!IsFinite(headPosition))
+            {
+                headPosition = ResolveCurrentHeadPosition();
+            }
+
+            _bodyConvergenceActive = false;
+            _bodyConvergenceDuration = 0f;
+            _bodyConvergenceElapsed = 0f;
+            ResetPathAt(headPosition, ActiveCount > 0);
+        }
+
         public void CancelBodyConvergence()
         {
             _bodyConvergenceActive = false;
+            _naturalUnfoldActive = false;
             _bodyConvergenceDuration = 0f;
-            _bodyRecoveryDuration = 0f;
             _bodyConvergenceElapsed = 0f;
             ApplySegmentPoses();
         }
@@ -518,9 +532,9 @@ namespace Ouroboros.Runtime
             }
 
             _bodyConvergenceElapsed += deltaTime;
-            if (_bodyConvergenceElapsed >= _bodyConvergenceDuration + _bodyRecoveryDuration)
+            if (_bodyConvergenceElapsed >= _bodyConvergenceDuration)
             {
-                _bodyConvergenceActive = false;
+                _bodyConvergenceElapsed = _bodyConvergenceDuration;
             }
         }
 
@@ -641,6 +655,12 @@ namespace Ouroboros.Runtime
             _lastHeadPosition = nextHeadPosition;
             _lastForward = forward;
             _headCumulativeDistance = nextDistance;
+            if (_naturalUnfoldActive &&
+                _headCumulativeDistance + PositionEpsilon >= ActiveCount * EffectiveSegmentSpacing)
+            {
+                _naturalUnfoldActive = false;
+            }
+
             var oldestRequiredDistance = _headCumulativeDistance -
                                          ((EffectiveTechnicalGuard * EffectiveSegmentSpacing) +
                                           EffectiveReserveDistance);
@@ -679,14 +699,7 @@ namespace Ouroboros.Runtime
                 return Vector2.Lerp(_bodyConvergenceStarts[chainIndex], _currentHeadPosition, progress);
             }
 
-            if (_bodyRecoveryDuration <= 0f)
-            {
-                return normalPosition;
-            }
-
-            var recoveryProgress = OSBodyDashMath.EaseOutCubic(
-                (_bodyConvergenceElapsed - _bodyConvergenceDuration) / _bodyRecoveryDuration);
-            return Vector2.Lerp(_currentHeadPosition, normalPosition, recoveryProgress);
+            return _currentHeadPosition;
         }
 
         private OSPathSample EvaluateTarget(float targetDistance, ref int newerIndex)
@@ -694,6 +707,11 @@ namespace Ouroboros.Runtime
             var oldest = _path.Oldest;
             if (targetDistance <= oldest.CumulativeDistance)
             {
+                if (_naturalUnfoldActive)
+                {
+                    return new OSPathSample(oldest.Position, targetDistance, oldest.Forward);
+                }
+
                 var offset = targetDistance - oldest.CumulativeDistance;
                 return new OSPathSample(
                     oldest.Position + (oldest.Forward * offset),
@@ -727,6 +745,34 @@ namespace Ouroboros.Runtime
                 _path[newerIndex - 1],
                 _path[newerIndex],
                 targetDistance);
+        }
+
+        private void ResetPathAt(Vector2 headPosition, bool naturalUnfold)
+        {
+            if (_path == null)
+            {
+                InitializePath();
+            }
+
+            if (_path == null)
+            {
+                return;
+            }
+
+            _path.Clear();
+            _currentHeadPosition = headPosition;
+            _lastHeadPosition = headPosition;
+            _headCumulativeDistance = 0f;
+            var forward = playerController != null &&
+                          playerController.LastDirection.sqrMagnitude > PositionEpsilon
+                ? playerController.LastDirection.normalized
+                : _lastForward.sqrMagnitude > PositionEpsilon
+                    ? _lastForward.normalized
+                    : Vector2.right;
+            _lastForward = forward;
+            _path.Append(headPosition, 0f, forward);
+            _naturalUnfoldActive = naturalUnfold;
+            ApplySegmentPoses();
         }
 
         private void ResolveReferences()

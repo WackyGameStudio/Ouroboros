@@ -25,19 +25,43 @@ namespace Ouroboros.Editor
         [MenuItem("Ouroboros/Setup/Apply Step 15.7 Body Convergence Dash")]
         public static void ApplyStep15BodyDash()
         {
+            ApplyBodyDashSetup(
+                "Step 15.7 Space input now runs the 0.5s body convergence dash.");
+        }
+
+        [MenuItem("Ouroboros/Setup/Apply Step 15.8 Natural Body Unfold")]
+        public static void ApplyStep15NaturalBodyUnfold()
+        {
+            ApplyBodyDashSetup(
+                "Step 15.8 keeps the body clumped at the dash endpoint and unfolds it from head movement.");
+        }
+
+        private static void ApplyBodyDashSetup(string message)
+        {
             ConfigureBalance();
             ConfigureScene();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log(
-                "[OUROBOROS][SETUP] Step 15.7 Space input now runs the 0.5s body convergence dash.");
+            Debug.Log($"[OUROBOROS][SETUP] {message}");
         }
 
         [MenuItem("Ouroboros/Build/Build Step 15.7 WebGL")]
         public static void BuildStep15BodyDashWebGL()
         {
             ApplyStep15BodyDash();
-            var outputPath = Path.GetFullPath(Path.Combine("Builds", "Step15_7", "WebGL"));
+            BuildWebGL("Step 15.7", "Step15_7");
+        }
+
+        [MenuItem("Ouroboros/Build/Build Step 15.8 WebGL")]
+        public static void BuildStep15NaturalBodyUnfoldWebGL()
+        {
+            ApplyStep15NaturalBodyUnfold();
+            BuildWebGL("Step 15.8", "Step15_8");
+        }
+
+        private static void BuildWebGL(string stepLabel, string outputFolder)
+        {
+            var outputPath = Path.GetFullPath(Path.Combine("Builds", outputFolder, "WebGL"));
             var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(WebGLProfilePath)
                           ?? throw new BuildFailedException(
                               $"WebGL build profile is missing at '{WebGLProfilePath}'.");
@@ -63,11 +87,11 @@ namespace Ouroboros.Editor
             if (summary.result != BuildResult.Succeeded)
             {
                 throw new BuildFailedException(
-                    $"Step 15.7 WebGL build failed: {summary.result}, errors {summary.totalErrors}.");
+                    $"{stepLabel} WebGL build failed: {summary.result}, errors {summary.totalErrors}.");
             }
 
             Debug.Log(
-                $"[OUROBOROS][BUILD] Step 15.7 WebGL succeeded at '{outputPath}' " +
+                $"[OUROBOROS][BUILD] {stepLabel} WebGL succeeded at '{outputPath}' " +
                 $"with errors {summary.totalErrors}, warnings {summary.totalWarnings}, " +
                 $"size {summary.totalSize} bytes.");
         }
@@ -83,7 +107,6 @@ namespace Ouroboros.Editor
             dash.FindPropertyRelative("duration").floatValue = 0.5f;
             dash.FindPropertyRelative("distance").floatValue = 4.5f;
             dash.FindPropertyRelative("cooldown").floatValue = 2f;
-            dash.FindPropertyRelative("bodyRecoveryDuration").floatValue = 0.25f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(balance);
         }

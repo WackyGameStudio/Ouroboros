@@ -73,4 +73,3 @@ MonoBehaviour:
     duration: 0.5
     distance: 4.5
     cooldown: 2
-    bodyRecoveryDuration: 0.25

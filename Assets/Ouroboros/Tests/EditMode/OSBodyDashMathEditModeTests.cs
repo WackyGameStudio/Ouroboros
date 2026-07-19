@@ -45,7 +45,9 @@ namespace Ouroboros.Tests.EditMode
             Assert.That(OSBodyDashMath.CalculateDistance(4.5f, 1.15f), Is.EqualTo(5.175f).Within(0.0001f));
             Assert.That(OSBodyDashMath.CalculateCooldown(2f, 0.88f), Is.EqualTo(1.76f).Within(0.0001f));
             Assert.That(OSBodyDashMath.CalculateCooldown(2f, -10f), Is.EqualTo(0.5f));
-            Assert.That(OSBodyDashMath.CalculateRecoveryDuration(0.25f, -1f), Is.EqualTo(0.1f));
+            Assert.That(OSBodyDashMath.CalculateCooldown(2f, 0.88f, -0.2f),
+                Is.EqualTo(1.56f).Within(0.0001f));
+            Assert.That(OSBodyDashMath.CalculateCooldown(2f, 1f, -10f), Is.EqualTo(0.5f));
         }
     }
 }

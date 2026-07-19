@@ -36,7 +36,6 @@ namespace Ouroboros.Runtime
         private const float DefaultDuration = 0.5f;
         private const float DefaultDistance = 4.5f;
         private const float DefaultCooldown = 2f;
-        private const float DefaultRecoveryDuration = 0.25f;
 
         [SerializeField] private OSGameSessionController sessionController;
         [SerializeField] private OSBodyChain bodyChain;
@@ -54,7 +53,6 @@ namespace Ouroboros.Runtime
         private float _testDuration = -1f;
         private float _testDistance = -1f;
         private float _testCooldown = -1f;
-        private float _testRecoveryDuration = -1f;
 
         public event Action<OSBodyDashSnapshot> DashStarted;
         public event Action<OSBodyDashResolution> DashCompleted;
@@ -66,7 +64,6 @@ namespace Ouroboros.Runtime
         public float Duration => EffectiveDuration;
         public float Distance => EffectiveDistance;
         public float Cooldown => EffectiveCooldown;
-        public float RecoveryDuration => EffectiveRecoveryDuration;
         public bool IsReady => !_active && _cooldownRemaining <= 0f &&
                                sessionController != null && sessionController.State == OSSessionState.Combat;
 
@@ -131,7 +128,7 @@ namespace Ouroboros.Runtime
             _convergedBodyCount = bodyChain.ActiveCount;
             _cooldownRemaining = EffectiveCooldown;
             _active = true;
-            bodyChain.BeginBodyConvergence(EffectiveDuration, EffectiveRecoveryDuration);
+            bodyChain.BeginBodyConvergence(EffectiveDuration);
             DashStarted?.Invoke(new OSBodyDashSnapshot(
                 _requestId,
                 EffectiveDuration,
@@ -153,8 +150,7 @@ namespace Ouroboros.Runtime
             OSBodyGrowthController growth = null,
             float duration = DefaultDuration,
             float distance = DefaultDistance,
-            float cooldown = DefaultCooldown,
-            float recoveryDuration = DefaultRecoveryDuration)
+            float cooldown = DefaultCooldown)
         {
             Unsubscribe();
             sessionController = session;
@@ -165,7 +161,6 @@ namespace Ouroboros.Runtime
             _testDuration = Mathf.Max(OSBodyDashMath.MinimumDuration, duration);
             _testDistance = Mathf.Max(OSBodyDashMath.MinimumDistance, distance);
             _testCooldown = Mathf.Max(OSBodyDashMath.MinimumCooldown, cooldown);
-            _testRecoveryDuration = Mathf.Max(0f, recoveryDuration);
             _active = false;
             _cooldownRemaining = 0f;
             Subscribe();
@@ -191,14 +186,8 @@ namespace Ouroboros.Runtime
             _testCooldown >= 0f
                 ? _testCooldown
                 : bodyBalance != null ? bodyBalance.BodyDash.Cooldown : DefaultCooldown,
-            _upgradeModifiers.DashCooldownMultiplier);
-        private float EffectiveRecoveryDuration => OSBodyDashMath.CalculateRecoveryDuration(
-            _testRecoveryDuration >= 0f
-                ? _testRecoveryDuration
-                : bodyBalance != null
-                    ? bodyBalance.BodyDash.BodyRecoveryDuration
-                    : DefaultRecoveryDuration,
-            _upgradeModifiers.DashRecoveryDurationDelta);
+            _upgradeModifiers.DashCooldownMultiplier,
+            _upgradeModifiers.DashCooldownDelta);
 
         private void HandlePlayerBodyDashCompleted(float travelledDistance)
         {
@@ -210,6 +199,9 @@ namespace Ouroboros.Runtime
             var requestId = _requestId;
             var bodyCount = _convergedBodyCount;
             _active = false;
+            bodyChain?.CompleteBodyConvergence(playerController != null
+                ? playerController.Position
+                : Vector2.zero);
             sessionController?.CompleteBodyDash();
             DashCompleted?.Invoke(new OSBodyDashResolution(
                 requestId,

@@ -74,7 +74,7 @@ namespace Ouroboros.Core
         AddRoleCooldownMultiplier,
         AddDashDistanceMultiplier,
         AddDashCooldownMultiplier,
-        AddDashRecoveryDuration,
+        AddDashCooldownDelta,
         AddMaxHealth,
         AddMoveSpeedMultiplier,
         AddHealMultiplier,

@@ -220,7 +220,7 @@ namespace Ouroboros.Runtime
                 "role_overclock" => "ROLE OVERCLOCK",
                 "dash_distance" => "SURGE EXTENSION",
                 "dash_cooldown" => "SURGE RECOVERY",
-                "dash_recovery" => "TAIL REFORM",
+                "dash_recharge" => "SURGE RECHARGE",
                 "max_health" => "CORE REINFORCEMENT",
                 "move_speed" => "FLEX NERVES",
                 "heal_amount" => "REGEN TISSUE",
@@ -267,8 +267,8 @@ namespace Ouroboros.Runtime
                     $"DASH DIST  {DashDistance(value, level):0.00} → {DashDistance(value, next):0.00}",
                 OSUpgradeOperation.AddDashCooldownMultiplier =>
                     $"DASH CD  {DashCooldown(value, level):0.00}s → {DashCooldown(value, next):0.00}s",
-                OSUpgradeOperation.AddDashRecoveryDuration =>
-                    $"TAIL REFORM  {DashRecovery(value, level):0.00}s → {DashRecovery(value, next):0.00}s",
+                OSUpgradeOperation.AddDashCooldownDelta =>
+                    $"DASH CD  {DashCooldownDelta(value, level):0.00}s → {DashCooldownDelta(value, next):0.00}s",
                 OSUpgradeOperation.AddMaxHealth =>
                     $"MAX HP  {MaxHealth(value, level):0} → {MaxHealth(value, next):0}",
                 OSUpgradeOperation.AddMoveSpeedMultiplier =>
@@ -416,10 +416,10 @@ namespace Ouroboros.Runtime
             return OSBodyDashMath.CalculateCooldown(cooldown, 1f + (value * level));
         }
 
-        private float DashRecovery(float value, int level)
+        private float DashCooldownDelta(float value, int level)
         {
-            var recovery = bodyBalance != null ? bodyBalance.BodyDash.BodyRecoveryDuration : 0.25f;
-            return OSBodyDashMath.CalculateRecoveryDuration(recovery, value * level);
+            var cooldown = bodyBalance != null ? bodyBalance.BodyDash.Cooldown : 2f;
+            return OSBodyDashMath.CalculateCooldown(cooldown, 1f, value * level);
         }
 
         private float MaxHealth(float value, int level)

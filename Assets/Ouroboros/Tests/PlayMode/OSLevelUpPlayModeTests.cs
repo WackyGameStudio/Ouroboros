@@ -116,7 +116,6 @@ namespace Ouroboros.Tests.PlayMode
             var baseMagnet = pickups.MagnetRadius;
             var baseDashDistance = bodyDash.Distance;
             var baseDashCooldown = bodyDash.Cooldown;
-            var baseDashRecovery = bodyDash.RecoveryDuration;
             var baseAttackInterval = attack.Interval;
             var baseLaserInterval = laser.Interval;
             var baseShieldRecharge = shield.RechargeDuration;
@@ -130,7 +129,7 @@ namespace Ouroboros.Tests.PlayMode
                 0.92f,
                 1.15f,
                 0.88f,
-                -0.05f,
+                -0.2f,
                 1.2f,
                 1.08f,
                 1.25f,
@@ -159,8 +158,8 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(growth.FragmentRequirement, Is.EqualTo(5));
             Assert.That(pickups.MagnetRadius, Is.EqualTo(baseMagnet * 1.3f).Within(0.001f));
             Assert.That(bodyDash.Distance, Is.EqualTo(baseDashDistance * 1.15f).Within(0.001f));
-            Assert.That(bodyDash.Cooldown, Is.EqualTo(baseDashCooldown * 0.88f).Within(0.001f));
-            Assert.That(bodyDash.RecoveryDuration, Is.EqualTo(baseDashRecovery - 0.05f).Within(0.001f));
+            Assert.That(bodyDash.Cooldown,
+                Is.EqualTo((baseDashCooldown * 0.88f) - 0.2f).Within(0.001f));
             Assert.That(attack.Interval, Is.EqualTo(baseAttackInterval * 0.92f).Within(0.001f));
             Assert.That(laser.Interval, Is.EqualTo(baseLaserInterval * 0.92f).Within(0.001f));
             Assert.That(shield.RechargeDuration, Is.EqualTo(baseShieldRecharge * 0.92f).Within(0.001f));

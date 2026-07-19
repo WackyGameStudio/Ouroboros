@@ -44,13 +44,11 @@ namespace Ouroboros.Core
             Duration = source.Duration;
             Distance = source.Distance;
             Cooldown = source.Cooldown;
-            BodyRecoveryDuration = source.BodyRecoveryDuration;
         }
 
         public float Duration { get; }
         public float Distance { get; }
         public float Cooldown { get; }
-        public float BodyRecoveryDuration { get; }
     }
 
     public readonly struct OSDropRuntimeData
