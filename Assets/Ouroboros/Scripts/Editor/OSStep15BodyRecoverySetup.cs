@@ -17,13 +17,24 @@ namespace Ouroboros.Editor
     {
         private const string GameScenePath = "Assets/Ouroboros/Scenes/20_Game.unity";
         private const string BodyBalancePath = "Assets/Ouroboros/Data/Balance/OSBodyBalance.asset";
+        private const string PickupPrefabPath =
+            "Assets/Ouroboros/Prefabs/Pickups/PF_Pickup_BodyFragment.prefab";
+        private const string PickupSpritePath = "Assets/Ouroboros/Art/Placeholders/Pickup.png";
         private const string WebGLProfilePath =
             "Assets/Ouroboros/BuildProfiles/WebGL Development.asset";
+        private static readonly string[] SeveredBodySpritePaths =
+        {
+            "Assets/Ouroboros/Art/Placeholders/Body_Shield.png",
+            "Assets/Ouroboros/Art/Placeholders/Body_Attack.png",
+            "Assets/Ouroboros/Art/Placeholders/Body_Laser.png",
+            "Assets/Ouroboros/Art/Placeholders/Body_Control.png"
+        };
 
         [MenuItem("Ouroboros/Setup/Apply Step 15.5 Body Arsenal And Recovery")]
         public static void ApplyStep15BodyRecovery()
         {
             ConfigureBodyBalance();
+            ConfigurePickupVisuals();
             ConfigureRecoveryController();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -32,11 +43,32 @@ namespace Ouroboros.Editor
                 "and role-preserving severed body recovery applied.");
         }
 
+        [MenuItem("Ouroboros/Setup/Apply Step 15.6 Severed Body Visual")]
+        public static void ApplyStep15SeveredBodyVisual()
+        {
+            ApplyStep15BodyRecovery();
+            Debug.Log(
+                "[OUROBOROS][SETUP] Step 15.6 severed pickups use role body sprites " +
+                "at the smaller 0.42 pickup scale.");
+        }
+
         [MenuItem("Ouroboros/Build/Build Step 15.5 WebGL")]
         public static void BuildStep15BodyRecoveryWebGL()
         {
             ApplyStep15BodyRecovery();
-            var outputPath = Path.GetFullPath(Path.Combine("Builds", "Step15_5", "WebGL"));
+            BuildWebGL("Step 15.5", "Step15_5");
+        }
+
+        [MenuItem("Ouroboros/Build/Build Step 15.6 WebGL")]
+        public static void BuildStep15SeveredBodyVisualWebGL()
+        {
+            ApplyStep15SeveredBodyVisual();
+            BuildWebGL("Step 15.6", "Step15_6");
+        }
+
+        private static void BuildWebGL(string stepName, string outputFolder)
+        {
+            var outputPath = Path.GetFullPath(Path.Combine("Builds", outputFolder, "WebGL"));
             var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(WebGLProfilePath)
                           ?? throw new BuildFailedException(
                               $"WebGL build profile is missing at '{WebGLProfilePath}'.");
@@ -62,13 +94,55 @@ namespace Ouroboros.Editor
             if (summary.result != BuildResult.Succeeded)
             {
                 throw new BuildFailedException(
-                    $"Step 15.5 WebGL build failed: {summary.result}, errors {summary.totalErrors}.");
+                    $"{stepName} WebGL build failed: {summary.result}, errors {summary.totalErrors}.");
             }
 
             Debug.Log(
-                $"[OUROBOROS][BUILD] Step 15.5 WebGL succeeded at '{outputPath}' " +
+                $"[OUROBOROS][BUILD] {stepName} WebGL succeeded at '{outputPath}' " +
                 $"with errors {summary.totalErrors}, warnings {summary.totalWarnings}, " +
                 $"size {summary.totalSize} bytes.");
+        }
+
+        private static void ConfigurePickupVisuals()
+        {
+            var root = PrefabUtility.LoadPrefabContents(PickupPrefabPath);
+            try
+            {
+                var pickup = root.GetComponent<OSPickup>()
+                             ?? throw new InvalidOperationException(
+                                 "OSPickup is missing from the shared pickup prefab.");
+                var renderer = root.GetComponent<SpriteRenderer>()
+                               ?? throw new InvalidOperationException(
+                                   "SpriteRenderer is missing from the shared pickup prefab.");
+                var pickupSprite = AssetDatabase.LoadAssetAtPath<Sprite>(PickupSpritePath)
+                                   ?? throw new InvalidOperationException(
+                                       $"Pickup sprite is missing at '{PickupSpritePath}'.");
+                root.transform.localScale = new Vector3(0.42f, 0.42f, 1f);
+                renderer.sprite = pickupSprite;
+
+                var serialized = new SerializedObject(pickup);
+                serialized.FindProperty("bodyRenderer").objectReferenceValue = renderer;
+                serialized.FindProperty("pickupSprite").objectReferenceValue = pickupSprite;
+                var roleSprites = serialized.FindProperty("severedBodyRoleSprites")
+                                  ?? throw new InvalidOperationException(
+                                      "OSPickup.severedBodyRoleSprites is missing.");
+                roleSprites.arraySize = SeveredBodySpritePaths.Length;
+                for (var index = 0; index < SeveredBodySpritePaths.Length; index++)
+                {
+                    roleSprites.GetArrayElementAtIndex(index).objectReferenceValue =
+                        AssetDatabase.LoadAssetAtPath<Sprite>(SeveredBodySpritePaths[index])
+                        ?? throw new InvalidOperationException(
+                            $"Severed body sprite is missing at '{SeveredBodySpritePaths[index]}'.");
+                }
+
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(pickup);
+                PrefabUtility.SaveAsPrefabAsset(root, PickupPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         private static void ConfigureBodyBalance()

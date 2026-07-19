@@ -62,33 +62,56 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(attack.Damage, Is.EqualTo(10f).Within(0.0001f));
             Assert.That(laser.Length, Is.EqualTo(14f).Within(0.0001f));
             Assert.That(chain.SetDebugSegmentCount(4).IsAccepted, Is.True);
+            var activeBodyScale = chain.GetActiveSegment(0).View.transform.localScale.x;
 
-            var cut = chain.TryCutFrom(1, chain.GetActiveSegment(1).View.transform.position);
+            var cut = chain.TryCutFrom(0, chain.GetActiveSegment(0).View.transform.position);
             Assert.That(cut.IsAccepted, Is.True, cut.ReasonKey);
-            Assert.That(cut.Payload, Is.EqualTo(3));
-            Assert.That(chain.ActiveCount, Is.EqualTo(1));
-            Assert.That(recovery.LastCutDropCount, Is.EqualTo(3));
-            Assert.That(recovery.LastCutSpawnedCount, Is.EqualTo(3));
+            Assert.That(cut.Payload, Is.EqualTo(4));
+            Assert.That(chain.ActiveCount, Is.Zero);
+            Assert.That(recovery.LastCutDropCount, Is.EqualTo(4));
+            Assert.That(recovery.LastCutSpawnedCount, Is.EqualTo(4));
             Assert.That(recovery.PendingDropCount, Is.Zero);
 
             var drops = Object.FindObjectsByType<OSPickup>(FindObjectsInactive.Exclude)
                 .Where(pickup => pickup.IsRented && pickup.PickupType == OSPickupType.SeveredBody)
                 .ToArray();
-            Assert.That(drops, Has.Length.EqualTo(3));
+            Assert.That(drops, Has.Length.EqualTo(4));
             CollectionAssert.AreEquivalent(
-                new[] { OSBodyRoleType.Attack, OSBodyRoleType.Laser, OSBodyRoleType.Control },
+                new[]
+                {
+                    OSBodyRoleType.Shield,
+                    OSBodyRoleType.Attack,
+                    OSBodyRoleType.Laser,
+                    OSBodyRoleType.Control
+                },
                 drops.Select(pickup => pickup.BodyRole));
+            Assert.That(
+                drops.Single(pickup => pickup.BodyRole == OSBodyRoleType.Shield).VisualSprite.name,
+                Does.StartWith("Body_Shield"));
+            Assert.That(
+                drops.Single(pickup => pickup.BodyRole == OSBodyRoleType.Attack).VisualSprite.name,
+                Does.StartWith("Body_Attack"));
+            Assert.That(
+                drops.Single(pickup => pickup.BodyRole == OSBodyRoleType.Laser).VisualSprite.name,
+                Does.StartWith("Body_Laser"));
+            Assert.That(
+                drops.Single(pickup => pickup.BodyRole == OSBodyRoleType.Control).VisualSprite.name,
+                Does.StartWith("Body_Control"));
+            Assert.That(
+                drops[0].transform.localScale.x,
+                Is.LessThan(activeBodyScale));
 
             var laserDrop = drops.Single(pickup => pickup.BodyRole == OSBodyRoleType.Laser);
             var collect = laserDrop.TryCollect(collector);
             Assert.That(collect.IsAccepted, Is.True, collect.ReasonKey);
             Assert.That(collect.Payload, Is.EqualTo(1));
             Assert.That(laserDrop.IsRented, Is.False);
-            Assert.That(chain.ActiveCount, Is.EqualTo(2));
-            Assert.That(chain.GetActiveSegment(1).Role, Is.EqualTo(OSBodyRoleType.Laser));
+            Assert.That(laserDrop.VisualSprite.name, Does.StartWith("Pickup"));
+            Assert.That(chain.ActiveCount, Is.EqualTo(1));
+            Assert.That(chain.GetActiveSegment(0).Role, Is.EqualTo(OSBodyRoleType.Laser));
             Assert.That(session.State, Is.EqualTo(OSSessionState.Combat));
             Assert.That(session.PendingBodySelectionCount, Is.Zero);
-            Assert.That(spawner.ActiveCount, Is.EqualTo(2));
+            Assert.That(spawner.ActiveCount, Is.EqualTo(3));
         }
 
         private static void AssertSeparated(OSPickup first, OSPickup second, float minimumDistance)

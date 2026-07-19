@@ -12,6 +12,8 @@ namespace Ouroboros.Runtime
     {
         [SerializeField] private Rigidbody2D body;
         [SerializeField] private SpriteRenderer bodyRenderer;
+        [SerializeField] private Sprite pickupSprite;
+        [SerializeField] private Sprite[] severedBodyRoleSprites = new Sprite[4];
         [SerializeField, Min(0.01f)] private float magnetSpeed = 8f;
 
         private OSPickupSpawner _spawner;
@@ -24,6 +26,7 @@ namespace Ouroboros.Runtime
         public int Amount { get; private set; }
         public int RegistryIndex { get; internal set; } = -1;
         public Vector2 Position => body != null ? body.position : (Vector2)transform.position;
+        public Sprite VisualSprite => bodyRenderer != null ? bodyRenderer.sprite : null;
 
         private void Awake()
         {
@@ -159,6 +162,7 @@ namespace Ouroboros.Runtime
             RegistryIndex = -1;
             if (bodyRenderer != null)
             {
+                bodyRenderer.sprite = pickupSprite;
                 bodyRenderer.color = Color.white;
             }
         }
@@ -167,6 +171,11 @@ namespace Ouroboros.Runtime
         {
             body ??= GetComponent<Rigidbody2D>();
             bodyRenderer ??= GetComponent<SpriteRenderer>();
+            if (pickupSprite == null && bodyRenderer != null)
+            {
+                pickupSprite = bodyRenderer.sprite;
+            }
+
             var collider = GetComponent<Collider2D>();
             if (collider != null)
             {
@@ -181,14 +190,27 @@ namespace Ouroboros.Runtime
                 return;
             }
 
-            bodyRenderer.color = pickupType == OSPickupType.SeveredBody
-                ? BodyRoleColor(bodyRole)
-                : pickupType switch
-                {
-                    OSPickupType.Experience => new Color32(255, 220, 76, 255),
-                    OSPickupType.Heal => new Color32(76, 255, 176, 255),
-                    _ => new Color32(109, 255, 211, 255)
-                };
+            if (pickupType == OSPickupType.SeveredBody)
+            {
+                var roleIndex = (int)bodyRole;
+                bodyRenderer.sprite = severedBodyRoleSprites != null &&
+                                      (uint)roleIndex < (uint)severedBodyRoleSprites.Length &&
+                                      severedBodyRoleSprites[roleIndex] != null
+                    ? severedBodyRoleSprites[roleIndex]
+                    : pickupSprite;
+                bodyRenderer.color = bodyRenderer.sprite == pickupSprite
+                    ? BodyRoleColor(bodyRole)
+                    : Color.white;
+                return;
+            }
+
+            bodyRenderer.sprite = pickupSprite;
+            bodyRenderer.color = pickupType switch
+            {
+                OSPickupType.Experience => new Color32(255, 220, 76, 255),
+                OSPickupType.Heal => new Color32(76, 255, 176, 255),
+                _ => new Color32(109, 255, 211, 255)
+            };
         }
 
         private static Color32 BodyRoleColor(OSBodyRoleType role)

@@ -21,6 +21,13 @@ namespace Ouroboros.Editor
         private const string GameScenePath = "Assets/Ouroboros/Scenes/20_Game.unity";
         private const string PickupPrefabPath = "Assets/Ouroboros/Prefabs/Pickups/PF_Pickup_BodyFragment.prefab";
         private const string PickupSpritePath = "Assets/Ouroboros/Art/Placeholders/Pickup.png";
+        private static readonly string[] SeveredBodySpritePaths =
+        {
+            "Assets/Ouroboros/Art/Placeholders/Body_Shield.png",
+            "Assets/Ouroboros/Art/Placeholders/Body_Attack.png",
+            "Assets/Ouroboros/Art/Placeholders/Body_Laser.png",
+            "Assets/Ouroboros/Art/Placeholders/Body_Control.png"
+        };
         private const string BodyBalancePath = "Assets/Ouroboros/Data/Balance/OSBodyBalance.asset";
         private const string PlayerBalancePath = "Assets/Ouroboros/Data/Balance/OSPlayerBalance.asset";
         private const string EncounterPath = "Assets/Ouroboros/Data/Enemies/OSEncounterBalance.asset";
@@ -86,6 +93,9 @@ namespace Ouroboros.Editor
         private static OSPickup CreateOrUpdatePickupPrefab(int pickupLayer)
         {
             var sprite = LoadRequired<Sprite>(PickupSpritePath);
+            var severedBodySprites = SeveredBodySpritePaths
+                .Select(LoadRequired<Sprite>)
+                .ToArray();
             var root = new GameObject(
                 "PF_Pickup_BodyFragment",
                 typeof(SpriteRenderer),
@@ -115,6 +125,20 @@ namespace Ouroboros.Editor
 
                 var pickup = root.GetComponent<OSPickup>();
                 Assign(pickup, "body", body);
+                Assign(pickup, "bodyRenderer", renderer);
+                Assign(pickup, "pickupSprite", sprite);
+                var pickupSerialized = new SerializedObject(pickup);
+                var severedSprites = pickupSerialized.FindProperty("severedBodyRoleSprites")
+                                     ?? throw new InvalidOperationException(
+                                         "OSPickup.severedBodyRoleSprites is missing.");
+                severedSprites.arraySize = severedBodySprites.Length;
+                for (var index = 0; index < severedBodySprites.Length; index++)
+                {
+                    severedSprites.GetArrayElementAtIndex(index).objectReferenceValue =
+                        severedBodySprites[index];
+                }
+
+                pickupSerialized.ApplyModifiedPropertiesWithoutUndo();
                 Assign(pickup, "magnetSpeed", 8f);
 
                 var saved = PrefabUtility.SaveAsPrefabAsset(root, PickupPrefabPath)
