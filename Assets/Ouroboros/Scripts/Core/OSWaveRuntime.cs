@@ -178,7 +178,7 @@ namespace Ouroboros.Core
                 return 1f;
             }
 
-            return (float)Math.Pow(1.15d, elapsedSeconds / 60d);
+            return (float)Math.Pow(1.08d, elapsedSeconds / 60d);
         }
 
         public static bool CanSpawn(int activeCount, int activeLimit, int targetActiveEnemies)

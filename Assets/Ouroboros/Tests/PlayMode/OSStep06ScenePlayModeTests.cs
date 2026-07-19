@@ -41,7 +41,7 @@ namespace Ouroboros.Tests.PlayMode
 
             Assert.That(session.CompleteActiveSelection().IsAccepted, Is.True);
             Assert.That(session.CompleteActiveSelection().IsAccepted, Is.True);
-            yield return new WaitForSeconds(2.2f);
+            yield return new WaitForSeconds(2.7f);
 
             var firstEnemy = registry.GetAt(0);
             Assert.That(firstEnemy, Is.Not.Null);
@@ -58,7 +58,7 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(firstEnemy.TryApplyDamage(999f).IsAccepted, Is.True);
             Assert.That(registry.Count, Is.EqualTo(countBeforeDeath - 1));
 
-            yield return new WaitForSeconds(2.1f);
+            yield return new WaitForSeconds(2.7f);
 
             Assert.That(registry.Count, Is.GreaterThanOrEqualTo(countBeforeDeath));
             Assert.That(registry.Count, Is.LessThanOrEqualTo(25));

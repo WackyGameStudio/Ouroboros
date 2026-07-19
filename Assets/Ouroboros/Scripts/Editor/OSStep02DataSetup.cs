@@ -206,41 +206,41 @@ namespace Ouroboros.Editor
             drop.FindPropertyRelative("healChance").floatValue = 0.02f;
         }
 
-        private static void ConfigureWaves(SerializedObject serialized)
+        internal static void ConfigureWaves(SerializedObject serialized)
         {
             SetString(serialized, "dataVersion", DataVersion);
             var entries = Require(serialized, "entries");
             entries.arraySize = 12;
-            ConfigureWave(entries.GetArrayElementAtIndex(0), 0f, 60f, 0.5f, 25,
+            ConfigureWave(entries.GetArrayElementAtIndex(0), 0f, 60f, 0.4f, 25,
                 OSWaveSpecialEvent.None, ("enemy_chaser", 1f));
-            ConfigureWave(entries.GetArrayElementAtIndex(1), 60f, 120f, 0.75f, 45,
+            ConfigureWave(entries.GetArrayElementAtIndex(1), 60f, 120f, 0.6f, 45,
                 OSWaveSpecialEvent.None, ("enemy_chaser", 0.8f), ("enemy_charger", 0.2f));
-            ConfigureWave(entries.GetArrayElementAtIndex(2), 120f, 180f, 1f, 65,
+            ConfigureWave(entries.GetArrayElementAtIndex(2), 120f, 180f, 0.8f, 65,
                 OSWaveSpecialEvent.None, ("enemy_chaser", 0.65f), ("enemy_charger", 0.2f),
                 ("enemy_shooter", 0.15f));
             ConfigureWave(entries.GetArrayElementAtIndex(3), 180f, 181f, 0f, 65,
                 OSWaveSpecialEvent.EliteAccelerator);
-            ConfigureWave(entries.GetArrayElementAtIndex(4), 181f, 240f, 1.2f, 85,
+            ConfigureWave(entries.GetArrayElementAtIndex(4), 181f, 240f, 0.96f, 85,
                 OSWaveSpecialEvent.None, ("enemy_chaser", 0.5f), ("enemy_charger", 0.25f),
                 ("enemy_shooter", 0.25f));
-            ConfigureWave(entries.GetArrayElementAtIndex(5), 240f, 300f, 1.4f, 105,
+            ConfigureWave(entries.GetArrayElementAtIndex(5), 240f, 300f, 1.12f, 105,
                 OSWaveSpecialEvent.None, ("enemy_chaser", 0.4f), ("enemy_charger", 0.2f),
                 ("enemy_shooter", 0.2f), ("enemy_splitter", 0.2f));
-            ConfigureWave(entries.GetArrayElementAtIndex(6), 300f, 360f, 1.6f, 125,
+            ConfigureWave(entries.GetArrayElementAtIndex(6), 300f, 360f, 1.28f, 125,
                 OSWaveSpecialEvent.None, ("enemy_chaser", 0.3f), ("enemy_charger", 0.25f),
                 ("enemy_shooter", 0.25f), ("enemy_splitter", 0.2f));
             ConfigureWave(entries.GetArrayElementAtIndex(7), 360f, 361f, 0f, 125,
                 OSWaveSpecialEvent.EliteAccelerator);
-            ConfigureWave(entries.GetArrayElementAtIndex(8), 361f, 480f, 1.8f, 150,
+            ConfigureWave(entries.GetArrayElementAtIndex(8), 361f, 480f, 1.44f, 150,
                 OSWaveSpecialEvent.None, ("enemy_chaser", 0.3f), ("enemy_charger", 0.25f),
                 ("enemy_shooter", 0.2f), ("enemy_splitter", 0.25f));
-            ConfigureWave(entries.GetArrayElementAtIndex(9), 480f, 540f, 2f, 155,
+            ConfigureWave(entries.GetArrayElementAtIndex(9), 480f, 540f, 1.6f, 155,
                 OSWaveSpecialEvent.None, ("enemy_chaser", 0.2f), ("enemy_charger", 0.4f),
                 ("enemy_shooter", 0.3f), ("enemy_splitter", 0.1f));
-            ConfigureWave(entries.GetArrayElementAtIndex(10), 540f, 600f, 2f, 160,
+            ConfigureWave(entries.GetArrayElementAtIndex(10), 540f, 600f, 1.6f, 160,
                 OSWaveSpecialEvent.BossWarning, ("enemy_chaser", 0.3f), ("enemy_charger", 0.25f),
                 ("enemy_shooter", 0.25f), ("enemy_splitter", 0.2f));
-            ConfigureWave(entries.GetArrayElementAtIndex(11), 600f, 690f, 2f, 180,
+            ConfigureWave(entries.GetArrayElementAtIndex(11), 600f, 690f, 1.6f, 180,
                 OSWaveSpecialEvent.BossSwarmCore, ("enemy_chaser", 0.45f),
                 ("enemy_splitter", 0.55f));
         }

@@ -54,9 +54,9 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(((RectTransform)waveLabel).anchorMin, Is.EqualTo(new Vector2(0.5f, 0f)));
 
             CompleteStartSelections(session);
-            yield return new WaitForSeconds(2.2f);
+            yield return new WaitForSeconds(2.7f);
 
-            Assert.That(director.ElapsedSeconds, Is.GreaterThan(2f));
+            Assert.That(director.ElapsedSeconds, Is.GreaterThan(2.5f));
             Assert.That(registry.Count, Is.GreaterThan(0));
             Assert.That(registry.Count, Is.LessThanOrEqualTo(director.CurrentTargetActiveEnemies));
             Assert.That(director.IsValidSpawnPosition(director.LastSpawnPosition), Is.True);
