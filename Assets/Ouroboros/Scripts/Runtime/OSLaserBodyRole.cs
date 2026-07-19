@@ -53,7 +53,7 @@ namespace Ouroboros.Runtime
     {
         private const int Capacity = 64;
         private const int BeamOverlapCapacity = 256;
-        private const float DefaultLength = 7f;
+        private const float DefaultLength = 14f;
         private const float DefaultDamage = 12f;
         private const float DefaultInterval = 2.5f;
         private const float DefaultWidth = 0.35f;

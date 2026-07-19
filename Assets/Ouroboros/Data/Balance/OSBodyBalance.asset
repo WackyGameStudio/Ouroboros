@@ -36,7 +36,7 @@ MonoBehaviour:
   - id: attack
     roleType: 1
     range: 6
-    damage: 6
+    damage: 10
     interval: 1
     radius: 0
     charges: 0
@@ -47,7 +47,7 @@ MonoBehaviour:
     eliteControlDuration: 0
   - id: laser
     roleType: 2
-    range: 7
+    range: 14
     damage: 12
     interval: 2.5
     radius: 0

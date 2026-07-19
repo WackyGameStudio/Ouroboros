@@ -105,10 +105,10 @@ namespace Ouroboros.Editor
                 range: 0f, damage: 0f, interval: 0f, radius: 1.5f, charges: 1,
                 recharge: 6f, beamWidth: 0f, telegraph: 0f, normalControl: 0f, eliteControl: 0f);
             ConfigureRole(roles.GetArrayElementAtIndex(1), "attack", OSBodyRoleType.Attack,
-                range: 6f, damage: 6f, interval: 1f, radius: 0f, charges: 0,
+                range: 6f, damage: 10f, interval: 1f, radius: 0f, charges: 0,
                 recharge: 0f, beamWidth: 0f, telegraph: 0f, normalControl: 0f, eliteControl: 0f);
             ConfigureRole(roles.GetArrayElementAtIndex(2), "laser", OSBodyRoleType.Laser,
-                range: 7f, damage: 12f, interval: 2.5f, radius: 0f, charges: 0,
+                range: 14f, damage: 12f, interval: 2.5f, radius: 0f, charges: 0,
                 recharge: 0f, beamWidth: 0.35f, telegraph: 0.2f, normalControl: 0f, eliteControl: 0f);
             ConfigureRole(roles.GetArrayElementAtIndex(3), "control", OSBodyRoleType.Control,
                 range: 6f, damage: 0f, interval: 4f, radius: 0f, charges: 0,

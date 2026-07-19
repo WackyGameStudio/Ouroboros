@@ -20,6 +20,7 @@ namespace Ouroboros.Runtime
         private float _magnetRadius;
 
         public OSPickupType PickupType { get; private set; }
+        public OSBodyRoleType BodyRole { get; private set; }
         public int Amount { get; private set; }
         public int RegistryIndex { get; internal set; } = -1;
         public Vector2 Position => body != null ? body.position : (Vector2)transform.position;
@@ -48,6 +49,20 @@ namespace Ouroboros.Runtime
             return OSRuleResult<int>.Accepted(Amount, "pickup.amount.merged");
         }
 
+        internal OSRuleResult<int> RemoveAmount(int amount)
+        {
+            if (!IsRented || amount <= 0 || amount > Amount)
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedRequirement,
+                    "pickup.amount.remove_invalid",
+                    Amount);
+            }
+
+            Amount -= amount;
+            return OSRuleResult<int>.Accepted(Amount, "pickup.amount.removed");
+        }
+
         public OSRuleResult<int> TryCollect(OSPickupCollector collector)
         {
             if (!IsRented || collector == null || _spawner == null ||
@@ -74,9 +89,28 @@ namespace Ouroboros.Runtime
             _session = session;
             _target = target;
             PickupType = pickupType;
+            BodyRole = default;
             Amount = Mathf.Max(1, amount);
             _magnetRadius = Mathf.Max(0f, magnetRadius);
-            ApplyPickupVisual(pickupType);
+            ApplyPickupVisual(pickupType, default);
+        }
+
+        internal void ConfigureSeveredBodyPickup(
+            OSPickupSpawner spawner,
+            OSGameSessionController session,
+            Transform target,
+            OSBodyRoleType bodyRole,
+            int amount,
+            float magnetRadius)
+        {
+            _spawner = spawner;
+            _session = session;
+            _target = target;
+            PickupType = OSPickupType.SeveredBody;
+            BodyRole = bodyRole;
+            Amount = Mathf.Max(1, amount);
+            _magnetRadius = Mathf.Max(0f, magnetRadius);
+            ApplyPickupVisual(PickupType, bodyRole);
         }
 
         internal void SetMagnetRadius(float radius)
@@ -119,6 +153,7 @@ namespace Ouroboros.Runtime
             _session = null;
             _target = null;
             PickupType = default;
+            BodyRole = default;
             Amount = 0;
             _magnetRadius = 0f;
             RegistryIndex = -1;
@@ -139,18 +174,32 @@ namespace Ouroboros.Runtime
             }
         }
 
-        private void ApplyPickupVisual(OSPickupType pickupType)
+        private void ApplyPickupVisual(OSPickupType pickupType, OSBodyRoleType bodyRole)
         {
             if (bodyRenderer == null)
             {
                 return;
             }
 
-            bodyRenderer.color = pickupType switch
+            bodyRenderer.color = pickupType == OSPickupType.SeveredBody
+                ? BodyRoleColor(bodyRole)
+                : pickupType switch
+                {
+                    OSPickupType.Experience => new Color32(255, 220, 76, 255),
+                    OSPickupType.Heal => new Color32(76, 255, 176, 255),
+                    _ => new Color32(109, 255, 211, 255)
+                };
+        }
+
+        private static Color32 BodyRoleColor(OSBodyRoleType role)
+        {
+            return role switch
             {
-                OSPickupType.Experience => new Color32(255, 220, 76, 255),
-                OSPickupType.Heal => new Color32(76, 255, 176, 255),
-                _ => new Color32(109, 255, 211, 255)
+                OSBodyRoleType.Shield => new Color32(92, 207, 255, 255),
+                OSBodyRoleType.Attack => new Color32(255, 103, 92, 255),
+                OSBodyRoleType.Laser => new Color32(202, 112, 255, 255),
+                OSBodyRoleType.Control => new Color32(95, 231, 165, 255),
+                _ => new Color32(255, 255, 255, 255)
             };
         }
 

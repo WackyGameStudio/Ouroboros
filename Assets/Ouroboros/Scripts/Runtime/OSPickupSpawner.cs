@@ -60,6 +60,49 @@ namespace Ouroboros.Runtime
         /// </summary>
         public OSRuleResult<OSPickup> Spawn(OSPickupType pickupType, int amount, Vector2 position)
         {
+            if (pickupType == OSPickupType.SeveredBody)
+            {
+                return OSRuleResult<OSPickup>.Rejected(
+                    OSResultCode.RejectedRequirement,
+                    "pickup.spawn.severed_role_required");
+            }
+
+            return SpawnInternal(pickupType, amount, position, true, default, false);
+        }
+
+        /// <summary>
+        /// Keeps each cut segment as a role-preserving pickup. Separate cut pieces do not merge
+        /// on spawn, while an exhausted pool may merge only with the same severed role.
+        /// </summary>
+        public OSRuleResult<OSPickup> SpawnSeveredBody(
+            OSBodyRoleType bodyRole,
+            int amount,
+            Vector2 position)
+        {
+            if (!Enum.IsDefined(typeof(OSBodyRoleType), bodyRole))
+            {
+                return OSRuleResult<OSPickup>.Rejected(
+                    OSResultCode.RejectedRequirement,
+                    "pickup.spawn.invalid_body_role");
+            }
+
+            return SpawnInternal(
+                OSPickupType.SeveredBody,
+                amount,
+                position,
+                false,
+                bodyRole,
+                true);
+        }
+
+        private OSRuleResult<OSPickup> SpawnInternal(
+            OSPickupType pickupType,
+            int amount,
+            Vector2 position,
+            bool mergeNearby,
+            OSBodyRoleType bodyRole,
+            bool preserveBodyRole)
+        {
             if (poolRegistry == null || amount <= 0 || !float.IsFinite(position.x) ||
                 !float.IsFinite(position.y))
             {
@@ -69,7 +112,15 @@ namespace Ouroboros.Runtime
             }
 
             EnsureStorage();
-            var nearby = FindNearestSameType(pickupType, position, mergeRadius, true);
+            var nearby = mergeNearby
+                ? FindNearestMergeTarget(
+                    pickupType,
+                    bodyRole,
+                    preserveBodyRole,
+                    position,
+                    mergeRadius,
+                    true)
+                : null;
             if (nearby != null)
             {
                 nearby.AddAmount(amount);
@@ -80,13 +131,27 @@ namespace Ouroboros.Runtime
             var rent = poolRegistry.Rent(pickupPoolKey, spawnPosition, Quaternion.identity);
             if (rent.IsAccepted && rent.Payload is OSPickup pickup)
             {
-                pickup.ConfigurePickup(
-                    this,
-                    sessionController,
-                    collectionTarget,
-                    pickupType,
-                    amount,
-                    EffectiveMagnetRadius);
+                if (preserveBodyRole)
+                {
+                    pickup.ConfigureSeveredBodyPickup(
+                        this,
+                        sessionController,
+                        collectionTarget,
+                        bodyRole,
+                        amount,
+                        EffectiveMagnetRadius);
+                }
+                else
+                {
+                    pickup.ConfigurePickup(
+                        this,
+                        sessionController,
+                        collectionTarget,
+                        pickupType,
+                        amount,
+                        EffectiveMagnetRadius);
+                }
+
                 var registration = Register(pickup);
                 if (!registration.IsAccepted)
                 {
@@ -99,7 +164,13 @@ namespace Ouroboros.Runtime
                 return OSRuleResult<OSPickup>.Accepted(pickup, "pickup.spawn.rented");
             }
 
-            var fallback = FindNearestSameType(pickupType, position, 0f, false);
+            var fallback = FindNearestMergeTarget(
+                pickupType,
+                bodyRole,
+                preserveBodyRole,
+                position,
+                0f,
+                false);
             if (fallback == null)
             {
                 return OSRuleResult<OSPickup>.Rejected(
@@ -174,6 +245,13 @@ namespace Ouroboros.Runtime
                         ? OSRuleResult<int>.Accepted(amount, "pickup.collect.heal_applied")
                         : OSRuleResult<int>.Rejected(heal.Code, heal.ReasonKey);
                     break;
+                case OSPickupType.SeveredBody:
+                    applied = bodyGrowth != null
+                        ? bodyGrowth.ReclaimSegments(pickup.BodyRole, amount)
+                        : OSRuleResult<int>.Rejected(
+                            OSResultCode.ConfigurationError,
+                            "pickup.collect.growth_missing");
+                    break;
                 default:
                     applied = OSRuleResult<int>.Rejected(
                         OSResultCode.RejectedRequirement,
@@ -186,9 +264,28 @@ namespace Ouroboros.Runtime
                 return applied;
             }
 
-            PickupCollected?.Invoke(type, amount);
+            var collectedAmount = type == OSPickupType.SeveredBody
+                ? Mathf.Clamp(applied.Payload, 0, amount)
+                : amount;
+            if (collectedAmount <= 0)
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedCapacity,
+                    "pickup.collect.no_capacity");
+            }
+
+            if (collectedAmount < amount)
+            {
+                pickup.RemoveAmount(collectedAmount);
+                PickupCollected?.Invoke(type, collectedAmount);
+                return OSRuleResult<int>.Accepted(
+                    collectedAmount,
+                    "pickup.collect.partial_reclaim");
+            }
+
             pickup.ReturnToPool();
-            return OSRuleResult<int>.Accepted(amount, "pickup.collect.accepted");
+            PickupCollected?.Invoke(type, collectedAmount);
+            return OSRuleResult<int>.Accepted(collectedAmount, "pickup.collect.accepted");
         }
 
         internal void Unregister(OSPickup pickup)
@@ -268,8 +365,10 @@ namespace Ouroboros.Runtime
             return OSRuleResult<int>.Accepted(pickup.RegistryIndex, "pickup.registry.registered");
         }
 
-        private OSPickup FindNearestSameType(
+        private OSPickup FindNearestMergeTarget(
             OSPickupType pickupType,
+            OSBodyRoleType bodyRole,
+            bool preserveBodyRole,
             Vector2 position,
             float radius,
             bool limitRadius)
@@ -279,7 +378,8 @@ namespace Ouroboros.Runtime
             for (var index = 0; index < ActiveCount; index++)
             {
                 var candidate = _activePickups[index];
-                if (candidate == null || !candidate.IsRented || candidate.PickupType != pickupType)
+                if (candidate == null || !candidate.IsRented || candidate.PickupType != pickupType ||
+                    preserveBodyRole && candidate.BodyRole != bodyRole)
                 {
                     continue;
                 }

@@ -43,7 +43,8 @@ namespace Ouroboros.Core
     {
         BodyFragment,
         Experience,
-        Heal
+        Heal,
+        SeveredBody
     }
 
     public enum OSTargetKind

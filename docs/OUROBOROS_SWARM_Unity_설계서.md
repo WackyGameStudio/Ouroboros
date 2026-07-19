@@ -358,7 +358,9 @@ TotalHeadProjectileCount = 1 + AuxProjectileCount
 - 유효 절단 후 전체 몸통에 **[가설] 0.35초** 연속 절단 방지를 적용한다.
 - 절단 방지는 머리 피해를 막지 않는다.
 - 머리 무적은 몸통 절단을 막지 않는다.
-- 절단된 세그먼트는 픽업으로 변환되지 않는다.
+- 절단된 각 세그먼트는 비활성화 직전 위치와 역할을 보존한 `SeveredBody` 픽업으로 변환되어 맵에 남는다.
+- `SeveredBody`를 머리로 수집하면 조각 게이지나 역할 선택을 거치지 않고 원래 역할 몸통 1칸을 꼬리에 즉시 복구한다. 기술 가드 때문에 일부만 복구되면 남은 수량은 픽업에 보존한다.
+- 픽업 풀이 포화되면 같은 역할의 기존 `SeveredBody`에 수량을 합치고, 합칠 대상도 없으면 역할별 고정 대기량으로 보존해 픽업 반환 뒤 다시 생성한다.
 - 절단 시 역할 관리자 등록 해제, 폭발 예약 제거, 공통 화력 갱신, HUD 갱신을 하나의 원자 처리로 수행한다.
 
 ## 4.8 동일 공격의 머리·몸통 중복
@@ -414,7 +416,7 @@ TotalHeadProjectileCount = 1 + AuxProjectileCount
 | 항목 | 규칙 |
 | --- | --- |
 | 사거리 | 6 |
-| 피해 | 6 |
+| 피해 | 10 |
 | 주기 | 1초 |
 | 표적 | 해당 세그먼트 기준 가장 가까운 적 |
 | 중첩 | 세그먼트별 독립 발사; 같은 적 동시 공격 가능 |
@@ -424,7 +426,7 @@ TotalHeadProjectileCount = 1 + AuxProjectileCount
 
 | 항목 | 규칙 |
 | --- | --- |
-| 사거리/길이 | 7 |
+| 사거리/길이 | 14 |
 | 피해 | 12 |
 | 주기 | 2.5초 |
 | 폭 | 0.35 |
@@ -537,6 +539,7 @@ K = max(1, ceil(N × 0.30))
 | 경험치 | 런 경험치 증가 | 레벨 요구량 도달 시 LevelUp 요청 |
 | 몸통 조각 | 몸통 게이지 증가 | 6마다 Body 요청 |
 | 회복 | 머리 HP 회복 | 최대 HP 제한 |
+| 절단 몸통 | 원래 역할 몸통 즉시 재부착 | 조각 게이지·역할 선택 없음; 기술 가드 초과분은 픽업에 잔류 |
 
 - 모든 픽업은 머리의 수집 콜라이더만 수집한다.
 - 픽업은 자석 반경 밖에서는 정지 또는 짧은 드롭 이동만 하고, 반경 안에서 머리로 가속한다.
@@ -553,7 +556,7 @@ K = max(1, ceil(N × 0.30))
 5. 풀이 포화되면 가장 가까운 같은 종류 픽업에 거리를 무시하고 값을 합친다.
 6. 값은 보존하고 GameObject 수만 줄인다. 분산은 종류와 수량을 변경하지 않으며 같은 종류 병합보다 먼저 실행하지 않는다.
 
-Step 12 기준 경험치·몸통 조각·회복은 세션 전 256개를 만든 공용 `body_fragment_pickup` 풀을 사용한다. 풀 키는 구현 호환을 위해 유지하되 각 인스턴스는 `OSPickupType`으로 효과·병합 대상을 구분하고 경험치/조각/회복 색상을 다르게 표시한다.
+Step 12 기준 경험치·몸통 조각·회복과 Step 15.5의 절단 몸통은 세션 전 256개를 만든 공용 `body_fragment_pickup` 풀을 사용한다. 풀 키는 구현 호환을 위해 유지하되 각 인스턴스는 `OSPickupType`으로 효과·병합 대상을 구분하고 경험치/조각/회복 색상을 다르게 표시한다. `SeveredBody`는 원래 Shield/Attack/Laser/Control 역할 색을 유지하고 같은 역할끼리만 용량 병합한다.
 
 ## 6.3 경험치 요구량
 
@@ -1001,6 +1004,7 @@ public enum OSSessionState
 | `OSBodyGrowthController` | MonoBehaviour | 조각 수집을 Body 선택 요청으로 변환하고 역할 확정·꼬리 추가·보류 재개를 연결 |
 | `OSBodyChain` | MonoBehaviour | 경로 버퍼, 세그먼트 순서, 생성·절단·예약·소비 |
 | `OSBodySegmentView` | MonoBehaviour | 세그먼트 Transform, 역할 시각, Hurtbox ID 전달 |
+| `OSSeveredBodyDropController` | MonoBehaviour | 절단 직전 위치·역할을 회수 픽업으로 변환하고 풀 포화 대기량을 역할별로 보존 |
 | `OSBodyRoleRegistry` | MonoBehaviour | 몸통 추가·제거 이벤트를 역할별 고정 배열 런타임 목록과 안정 ID 참조로 반영 |
 | `OSShieldBodyRole` | MonoBehaviour | 실드 등록·범위·충전·재충전·방어 |
 | `OSAttackBodyRole` | MonoBehaviour | 공격 세그먼트별 표적·주기·발사 |
@@ -1018,9 +1022,9 @@ public enum OSSessionState
 | `OSProjectile` | MonoBehaviour | 피해 투사체의 이동, 월드 차단, 수명, 페이로드, 고유 적 중복 명중 방지 |
 | `OSControlProjectile` | MonoBehaviour | 피해 0 제어탄의 이동·월드 차단·첫 명중·제어 시간 적용·풀 반환 |
 | `OSEnemyProjectile` | MonoBehaviour | 적 원거리탄의 이동·월드 차단·플레이어 피해 후보 등록·풀 반환 |
-| `OSPickup` | MonoBehaviour | 타입·수량, 자석 이동, 수집 후보 등록 |
+| `OSPickup` | MonoBehaviour | 타입·수량·절단 역할, 자석 이동, 수집 후보 등록 |
 | `OSPickupCollector` | MonoBehaviour | 머리 전용 Trigger에서 픽업 수집을 확정 |
-| `OSPickupSpawner` | MonoBehaviour | 경험치·조각·회복의 타입별 병합, 공용 풀 대여, 총량 보존과 수집 효과 전달 |
+| `OSPickupSpawner` | MonoBehaviour | 경험치·조각·회복·절단 몸통의 타입/역할별 병합, 공용 풀 대여, 총량 보존과 수집 효과 전달 |
 | `OSPoolRegistry` | MonoBehaviour | 종류별 사전 생성, Rent/Return, 활성 상한 |
 
 ### UI
@@ -1059,6 +1063,8 @@ flowchart LR
     Pool --> Enemy[OSEnemyController]
     Enemy --> Resolver
     Enemy --> Pickup[OSPickup/OSPickupSpawner]
+    Chain --> Severed[OSSeveredBodyDropController]
+    Severed --> Pickup
     Pickup --> Growth[OSBodyGrowthController]
     Pickup --> Level[OSLevelUpController]
     Pickup --> Health

@@ -33,7 +33,7 @@ namespace Ouroboros.Runtime
     {
         private const int Capacity = 64;
         private const float DefaultRange = 6f;
-        private const float DefaultDamage = 6f;
+        private const float DefaultDamage = 10f;
         private const float DefaultInterval = 1f;
 
         [SerializeField] private OSBodyRoleRegistry roleRegistry;

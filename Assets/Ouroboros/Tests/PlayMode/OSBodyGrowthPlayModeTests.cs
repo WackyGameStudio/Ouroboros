@@ -127,6 +127,37 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(rig.Growth.FragmentProgress, Is.EqualTo(3));
         }
 
+        [Test]
+        public void SeveredBodyPickup_PreservesRoleAndLeavesRemainderWhenOnlyOneSegmentFits()
+        {
+            var rig = CreateGrowthRig(3);
+            CompleteStartSelections(rig);
+            var pickupRig = ConfigurePickupRig(rig, 2);
+            var spawned = pickupRig.Spawner.SpawnSeveredBody(
+                OSBodyRoleType.Laser,
+                2,
+                Vector2.zero);
+
+            Assert.That(spawned.IsAccepted, Is.True, spawned.ReasonKey);
+            Assert.That(spawned.Payload.PickupType, Is.EqualTo(OSPickupType.SeveredBody));
+            Assert.That(spawned.Payload.BodyRole, Is.EqualTo(OSBodyRoleType.Laser));
+
+            var partial = spawned.Payload.TryCollect(pickupRig.Collector);
+            Assert.That(partial.IsAccepted, Is.True, partial.ReasonKey);
+            Assert.That(partial.Payload, Is.EqualTo(1));
+            Assert.That(spawned.Payload.IsRented, Is.True);
+            Assert.That(spawned.Payload.Amount, Is.EqualTo(1));
+            Assert.That(rig.Chain.ActiveCount, Is.EqualTo(3));
+            Assert.That(rig.Chain.GetActiveSegment(2).Role, Is.EqualTo(OSBodyRoleType.Laser));
+
+            Assert.That(rig.Chain.RemoveTailSegments(1).IsAccepted, Is.True);
+            var remainder = spawned.Payload.TryCollect(pickupRig.Collector);
+            Assert.That(remainder.IsAccepted, Is.True, remainder.ReasonKey);
+            Assert.That(spawned.Payload.IsRented, Is.False);
+            Assert.That(rig.Chain.ActiveCount, Is.EqualTo(3));
+            Assert.That(rig.Chain.GetActiveSegment(2).Role, Is.EqualTo(OSBodyRoleType.Laser));
+        }
+
         private GrowthRig CreateGrowthRig(int capacity)
         {
             _root = new GameObject("Step08GrowthTestRoot");

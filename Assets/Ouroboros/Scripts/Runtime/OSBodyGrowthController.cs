@@ -116,6 +116,44 @@ namespace Ouroboros.Runtime
         }
 
         /// <summary>
+        /// Reattaches severed body pickups with their original role without opening a new choice.
+        /// A partial result is accepted when only part of a merged pickup fits under the technical guard.
+        /// </summary>
+        public OSRuleResult<int> ReclaimSegments(OSBodyRoleType role, int amount)
+        {
+            if (amount <= 0 || !Enum.IsDefined(typeof(OSBodyRoleType), role))
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedRequirement,
+                    "body.reclaim.invalid_request");
+            }
+
+            if (sessionController == null || bodyChain == null ||
+                sessionController.State != OSSessionState.Combat)
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedState,
+                    "body.reclaim.invalid_state");
+            }
+
+            var reclaimed = 0;
+            for (var index = 0; index < amount; index++)
+            {
+                var append = bodyChain.AppendSegment(role);
+                if (!append.IsAccepted)
+                {
+                    return reclaimed > 0
+                        ? OSRuleResult<int>.Accepted(reclaimed, "body.reclaim.partial")
+                        : OSRuleResult<int>.Rejected(append.Code, append.ReasonKey);
+                }
+
+                reclaimed++;
+            }
+
+            return OSRuleResult<int>.Accepted(reclaimed, "body.reclaim.accepted");
+        }
+
+        /// <summary>
         /// Test and debug entry point for releasing tail capacity without Step 09 damage rules.
         /// </summary>
         public OSRuleResult<int> DebugRemoveTailSegments(int removeCount)
