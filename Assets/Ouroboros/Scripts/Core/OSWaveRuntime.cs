@@ -178,7 +178,16 @@ namespace Ouroboros.Core
                 return 1f;
             }
 
-            return (float)Math.Pow(1.08d, elapsedSeconds / 60d);
+            const double transitionMinutes = 3d;
+            var elapsedMinutes = elapsedSeconds / 60d;
+            if (elapsedMinutes <= transitionMinutes)
+            {
+                return (float)Math.Pow(1.15d, elapsedMinutes);
+            }
+
+            var transitionMultiplier = Math.Pow(1.15d, transitionMinutes);
+            return (float)(transitionMultiplier *
+                           Math.Pow(1.02d, elapsedMinutes - transitionMinutes));
         }
 
         public static bool CanSpawn(int activeCount, int activeLimit, int targetActiveEnemies)

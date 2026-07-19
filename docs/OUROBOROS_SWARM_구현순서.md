@@ -959,7 +959,7 @@ G0를 통과하기 전에는 적 종류, 보스, 실제 ComfyUI API를 늘리지
 
 - 상태: 완료
 - 최근 갱신: 2026-07-19
-- 완료: `OSWaveScheduleRuntime`이 `OSWaveScheduleData`를 세션별로 복사하고 런 시드 13013의 가중 추출, 0~10분 구간, HP `1.12^(elapsed/60)`, Step 15.9에서 완화한 생성률 `1.08^(elapsed/60)`, 목표 활성 수와 180 하드캡을 원본 SO 변경 없이 계산한다. 일반 생성 구간 기본률도 Step 15.9에서 기존 대비 20% 낮췄다. `OSWaveDirector`가 전투 시간과 누적 스폰 티켓을 소유해 카메라 밖·머리 거리 7 이상·월드 경계 안·`WorldBlocker` 밖 후보를 최대 8회 검사하고 실패/상한 시 티켓을 보류하며, 선택 중 시간 정지와 재시작 초기화, 3·6분 정예 각 1회, 9분 보스 경고 1회, Step 14까지 10분 보스 생성을 연기한다. `OSEnemyDebugSpawner`는 비활성화했다. 추적체 분리 조향, 돌진체 0.65초 직선 예고→돌진→회복과 제어 중 상태 정지, 사격체 5~7 거리 유지·0.45초 예고·합산 투사체 120 포화 시 주기 보존, 분열체 사망당 소형 최대 2개와 재분열 금지, 정예 4.5 오라 링·영향 색·이동 ×1.2/공격 주기 ×0.9 비중첩을 구현했다. 6종 적 프리팹과 `EnemyProjectile` 전용 레이어의 적 투사체 64개 풀을 연결했으며 Step 15.1부터 모든 적 이동과 적 투사체는 `WorldBlocker`를 통과하지 않는다. 시간/활성 수/다음 해금/특수 경고 HUD, 재적용 메뉴 `Ouroboros/Setup/Apply Step 13 Timed Waves`와 WebGL 빌드 메뉴를 `20_Game.unity`에 연결했다.
+- 완료: `OSWaveScheduleRuntime`이 `OSWaveScheduleData`를 세션별로 복사하고 런 시드 13013의 가중 추출, 0~10분 구간, HP `1.12^(elapsed/60)`, Step 15.10에서 확정한 0~3분 `1.15^minute`·이후 `1.15^3 × 1.02^(minute-3)` 생성 배율, 목표 활성 수와 180 하드캡을 원본 SO 변경 없이 계산한다. 일반 생성 구간 기본률은 Step 13 원래 값으로 유지한다. `OSWaveDirector`가 전투 시간과 누적 스폰 티켓을 소유해 카메라 밖·머리 거리 7 이상·월드 경계 안·`WorldBlocker` 밖 후보를 최대 8회 검사하고 실패/상한 시 티켓을 보류하며, 선택 중 시간 정지와 재시작 초기화, 3·6분 정예 각 1회, 9분 보스 경고 1회, Step 14까지 10분 보스 생성을 연기한다. `OSEnemyDebugSpawner`는 비활성화했다. 추적체 분리 조향, 돌진체 0.65초 직선 예고→돌진→회복과 제어 중 상태 정지, 사격체 5~7 거리 유지·0.45초 예고·합산 투사체 120 포화 시 주기 보존, 분열체 사망당 소형 최대 2개와 재분열 금지, 정예 4.5 오라 링·영향 색·이동 ×1.2/공격 주기 ×0.9 비중첩을 구현했다. 6종 적 프리팹과 `EnemyProjectile` 전용 레이어의 적 투사체 64개 풀을 연결했으며 Step 15.1부터 모든 적 이동과 적 투사체는 `WorldBlocker`를 통과하지 않는다. 시간/활성 수/다음 해금/특수 경고 HUD, 재적용 메뉴 `Ouroboros/Setup/Apply Step 13 Timed Waves`와 WebGL 빌드 메뉴를 `20_Game.unity`에 연결했다.
 - 남음: 없음. 10:00 실제 보스 생성·클리어·결과 통계는 Step 14 범위다.
 - 검증: Unity 6000.5.1f1 컴파일 오류 0. `Ouroboros.Tests.EditMode` 54/54, `Ouroboros.Tests.PlayMode` 88/88 통과. 신규 `OSWaveScheduleEditModeTests`와 `OSStep13ScenePlayModeTests`로 0~10분 연속 시간표, 결정적 4종 가중 추출, 연속 배율과 SO 불변, 3·6·9분 특수 이벤트, 카메라 밖·장애물/경계 검사, 180 상한 티켓 보류, 선택 정지, 재시작 초기화, 돌진/사격/분열/정예 행동과 오라 비중첩을 검증했다. Step 15.9 이전 G1 기준선의 0~7분 가속 테스트는 평균 활성 적 84.1, 최대 150과 일반 적 4종·정예 2회를 기록했다. WebGL Development Build `Builds/Step13/WebGL/index.html` 성공(135,512,377 bytes, errors 0, warnings 0). `http://127.0.0.1:8113/`에서 index/WASM HTTP 200, WASM MIME `application/wasm`, MainMenu→Shield/Attack→Combat, 시간·활성/목표·CAP 180·다음 해금 HUD와 실제 웨이브 적 스폰, 브라우저 error 0건을 확인했다. Windows 빌드는 실행하지 않았다.
 
@@ -979,7 +979,7 @@ G0를 통과하기 전에는 적 종류, 보스, 실제 ComfyUI API를 늘리지
 7. 사격체 거리 유지→예고→발사
 8. 분열체 사망→소형 2개
 9. 60초 조합 확장
-10. HP ×1.12/분, Step 15.9 기준 생성 압력 ×1.08/분과 기본 생성률 -20% 데이터 적용
+10. HP ×1.12/분, Step 15.10 기준 3분 전후 분리 생성 압력 데이터 적용
 11. 정예체와 오라
 12. 3분·6분 강제 등장
 13. 9분 보스 예고 전 웨이브
@@ -1477,7 +1477,7 @@ Space 포위 폭발을 제거하고, 머리가 진행 방향으로 0.5초 동안
 - 상태: 완료
 - 최근 갱신: 2026-07-19
 - 완료: 일반 생성 구간의 SO 기본 생성률을 기존 대비 20% 낮춘 `0.40/0.60/0.80/0.96/1.12/1.28/1.44/1.60/1.60/1.60`으로 조정하고, 연속 분당 증가 배율을 `1.15`에서 `1.08`로 낮췄다. 같은 수치를 Step 02 재생성 경로와 `Ouroboros/Setup/Apply Step 15.9 Slower Wave Pacing`에 고정했으며, EditMode 수치 회귀와 첫 생성 시점 PlayMode 회귀를 갱신했다.
-- 남음: 없음. Step 전용 커밋·원격 푸시 뒤 Step 16 성능 최적화·WebGL로 진행할 수 있다.
+- 남음: 없음. 이 단계의 초반 기본률 완화는 사용자 피드백에 따라 Step 15.10에서 되돌리고 후반 증가 곡선만 완화했다.
 - 검증: 변경 전 계산상 유효 생성률은 5분 약 3.22/s, 10분 약 8.09/s였고 변경 후 각각 약 1.88/s, 3.45/s로 낮아진다. Unity 6000.5.1f1 최종 컴파일과 도메인 재로드 뒤 Console Error/Exception 0. 집중 `OSWaveScheduleEditModeTests` 6/6 통과(job `2da77f599d8c4c848b76fe0c4e59a34b`), `OSStep13ScenePlayModeTests` 5/5 통과(job `0e4874d60f104604b848dba3dd514128`), 첫 생성 간격을 공유하는 Step 06 회귀 1/1 통과(job `92834b7ec541460b866b6357817829ce`). 전체 `Ouroboros.Tests.EditMode` 62/62 통과(job `d39f1141f70d40e18799bc01ef0bf811`), 전체 `Ouroboros.Tests.PlayMode` 113/113 통과(job `87c0a025366f4b16acf23d1698216c65`). 승인 `WebGL Development` Build Profile의 `Builds/Step15_9/WebGL/` 빌드 성공(135,669,877 bytes, errors 0, warnings 3). `Tools/Serve-WebGL.ps1`로 `http://127.0.0.1:8129/`을 실행해 index/WASM HTTP 200, WASM MIME `application/wasm`, 960×540 Canvas와 MainMenu→Shield/Attack→Combat을 확인했다. 단일 자동 입력 흐름에서 전투 시작 후 1.8초에는 `SWARM 0/25`, 2.9초에는 `SWARM 1/25`로 첫 생성 간격을 확인했다. 브라우저 error 레벨은 0건이고 WebGL 고유 URP FSR 비지원 warning 1건이 기록됐다. Windows 빌드는 실행하지 않았다.
 
 ### 프로그래머 체크
@@ -1499,6 +1499,39 @@ Space 포위 폭발을 제거하고, 머리가 진행 방향으로 0.5초 동안
 
 ---
 
+## 16.10 후반 웨이브 생성 속도 완화 — Step 15.10
+
+### 목표
+
+문제없는 초반 0~3분 생성 페이스는 원래 값으로 복구하고, 3분 이후의 지수 증가만 낮춰 후반 적 과밀을 방지한다.
+
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-19
+- 완료: 일반 생성 구간 SO 기본률을 원래 값 `0.50/0.75/1.00/1.20/1.40/1.60/1.80/2.00/2.00/2.00`으로 복구했다. 생성 배율은 0~3분 `1.15^minute`, 이후 `1.15^3 × 1.02^(minute-3)`인 연속 구간 함수로 바꿨다. Step 02 재생성 경로와 `Ouroboros/Setup/Apply Step 15.10 Late Wave Pacing`, 단계별 WebGL 빌드 경로를 갱신하고 수치 회귀를 보정했다.
+- 남음: 없음. Step 전용 커밋·원격 푸시 뒤 Step 16 성능 최적화·WebGL로 진행할 수 있다.
+- 검증: 계산상 0~3분은 변경 전과 동일하고 5분은 약 3.22/s→2.53/s, 10분은 약 8.09/s→3.49/s로 낮아진다. Unity 6000.5.1f1 최종 컴파일과 도메인 재로드 뒤 Console Error/Exception 0. 집중 `OSWaveScheduleEditModeTests` 6/6 통과(job `6321fc5e1b044114b8b5cf1fef38cc2b`), `OSStep13ScenePlayModeTests`와 Step 06 첫 생성 회귀 6/6 통과(job `c671d71a93bf4aca8d7ca40712e2b3a3`)로 1·2·3분 원래 배율, 3분 경계 연속성, 4·10분 후반 배율, SO 불변과 원래 첫 생성 간격을 확인했다. 전체 `Ouroboros.Tests.EditMode` 62/62 통과(job `4396bc91458743cc8e1bd28a07020af2`), 전체 `Ouroboros.Tests.PlayMode` 113/113 통과(job `196235a4f70b4f05a49a26ebf95c6240`). 승인 `WebGL Development` Build Profile의 `Builds/Step15_10/WebGL/` 빌드 성공(135,669,949 bytes, errors 0, warnings 3). `Tools/Serve-WebGL.ps1`로 `http://127.0.0.1:8130/`을 실행해 index/WASM HTTP 200, WASM MIME `application/wasm`, 960×540 Canvas와 MainMenu→Shield/Attack→Combat, 전투 1초 시점 `SWARM 0/25`와 이후 실제 적 생성을 확인했다. 브라우저 error 레벨은 0건이고 WebGL 고유 URP FSR 비지원 warning 1건이 기록됐다. Windows 빌드는 실행하지 않았다.
+
+### 프로그래머 체크
+
+- [x] 초반 SO 기본 생성률 원래 값 복구
+- [x] 0~3분 기존 `1.15^minute` 배율 유지
+- [x] 3분 이후 `1.02` 성장으로 연속 전환
+- [x] 적 가중치·목표 활성 수·특수 이벤트·안전 스폰 규칙 유지
+- [x] Step 02/Step 15.10 재적용 경로와 수치 회귀 갱신
+- [x] EditMode/PlayMode 전체 회귀
+- [x] WebGL HTTP·Canvas·Console 검증
+
+### 완료 기준
+
+- 0~3분의 구간 기본률과 유효 생성률이 Step 13 원래 값과 같다.
+- 3분 전환점에서 배율이 불연속적으로 튀지 않는다.
+- 5분 유효 생성률은 약 2.53/s, 10분은 약 3.49/s로 기존 후반 생성률보다 낮다.
+- WebGL 전투가 로드되고 초반 첫 적 생성과 실제 웨이브 진행 중 브라우저 error 레벨 로그가 없다.
+
+---
+
 ## 17. 성능 최적화·WebGL — Step 16
 
 ### 목표
@@ -1507,7 +1540,7 @@ Space 포위 폭발을 제거하고, 머리가 진행 방향으로 0.5초 동안
 
 ### 선행 조건
 
-- Step 15.9 적 웨이브 생성 속도 완화와 전체 런 확정
+- Step 15.10 후반 웨이브 생성 속도 완화와 전체 런 확정
 
 ### 측정 순서
 

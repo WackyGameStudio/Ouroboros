@@ -19,7 +19,7 @@ MonoBehaviour:
     enemyWeights:
     - enemyId: enemy_chaser
       weight: 1
-    spawnRate: 0.4
+    spawnRate: 0.5
     specialEvent: 0
     targetActiveEnemies: 25
   - startSeconds: 60
@@ -29,7 +29,7 @@ MonoBehaviour:
       weight: 0.8
     - enemyId: enemy_charger
       weight: 0.2
-    spawnRate: 0.6
+    spawnRate: 0.75
     specialEvent: 0
     targetActiveEnemies: 45
   - startSeconds: 120
@@ -41,7 +41,7 @@ MonoBehaviour:
       weight: 0.2
     - enemyId: enemy_shooter
       weight: 0.15
-    spawnRate: 0.8
+    spawnRate: 1
     specialEvent: 0
     targetActiveEnemies: 65
   - startSeconds: 180
@@ -59,7 +59,7 @@ MonoBehaviour:
       weight: 0.25
     - enemyId: enemy_shooter
       weight: 0.25
-    spawnRate: 0.96
+    spawnRate: 1.2
     specialEvent: 0
     targetActiveEnemies: 85
   - startSeconds: 240
@@ -73,7 +73,7 @@ MonoBehaviour:
       weight: 0.2
     - enemyId: enemy_splitter
       weight: 0.2
-    spawnRate: 1.12
+    spawnRate: 1.4
     specialEvent: 0
     targetActiveEnemies: 105
   - startSeconds: 300
@@ -87,7 +87,7 @@ MonoBehaviour:
       weight: 0.25
     - enemyId: enemy_splitter
       weight: 0.2
-    spawnRate: 1.28
+    spawnRate: 1.6
     specialEvent: 0
     targetActiveEnemies: 125
   - startSeconds: 360
@@ -107,7 +107,7 @@ MonoBehaviour:
       weight: 0.2
     - enemyId: enemy_splitter
       weight: 0.25
-    spawnRate: 1.44
+    spawnRate: 1.8
     specialEvent: 0
     targetActiveEnemies: 150
   - startSeconds: 480
@@ -121,7 +121,7 @@ MonoBehaviour:
       weight: 0.3
     - enemyId: enemy_splitter
       weight: 0.1
-    spawnRate: 1.6
+    spawnRate: 2
     specialEvent: 0
     targetActiveEnemies: 155
   - startSeconds: 540
@@ -135,7 +135,7 @@ MonoBehaviour:
       weight: 0.25
     - enemyId: enemy_splitter
       weight: 0.2
-    spawnRate: 1.6
+    spawnRate: 2
     specialEvent: 2
     targetActiveEnemies: 160
   - startSeconds: 600
@@ -145,6 +145,6 @@ MonoBehaviour:
       weight: 0.45
     - enemyId: enemy_splitter
       weight: 0.55
-    spawnRate: 1.6
+    spawnRate: 2
     specialEvent: 3
     targetActiveEnemies: 180

@@ -19,6 +19,17 @@ namespace Ouroboros.Editor
         [MenuItem("Ouroboros/Setup/Apply Step 15.9 Slower Wave Pacing")]
         public static void ApplyStep15WavePacing()
         {
+            ApplyCurrentWavePacing();
+        }
+
+        [MenuItem("Ouroboros/Setup/Apply Step 15.10 Late Wave Pacing")]
+        public static void ApplyStep15LateWavePacing()
+        {
+            ApplyCurrentWavePacing();
+        }
+
+        private static void ApplyCurrentWavePacing()
+        {
             var waves = AssetDatabase.LoadAssetAtPath<OSWaveScheduleData>(WavePath)
                         ?? throw new InvalidOperationException(
                             $"Wave schedule is missing at '{WavePath}'.");
@@ -36,15 +47,27 @@ namespace Ouroboros.Editor
             }
 
             Debug.Log(
-                "[OUROBOROS][SETUP] Step 15.9 reduced wave base spawn rates by 20% " +
-                "and uses 1.08 per-minute growth.");
+                "[OUROBOROS][SETUP] Step 15.10 keeps the original 0-3 minute pacing " +
+                "and applies 1.02 per-minute growth after the 3 minute transition.");
         }
 
         [MenuItem("Ouroboros/Build/Build Step 15.9 WebGL")]
         public static void BuildStep15WavePacingWebGL()
         {
             ApplyStep15WavePacing();
-            var outputPath = Path.GetFullPath(Path.Combine("Builds", "Step15_9", "WebGL"));
+            BuildWebGL("Step 15.9", "Step15_9");
+        }
+
+        [MenuItem("Ouroboros/Build/Build Step 15.10 WebGL")]
+        public static void BuildStep15LateWavePacingWebGL()
+        {
+            ApplyStep15LateWavePacing();
+            BuildWebGL("Step 15.10", "Step15_10");
+        }
+
+        private static void BuildWebGL(string stepLabel, string outputFolder)
+        {
+            var outputPath = Path.GetFullPath(Path.Combine("Builds", outputFolder, "WebGL"));
             var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(WebGLProfilePath)
                           ?? throw new BuildFailedException(
                               $"WebGL build profile is missing at '{WebGLProfilePath}'.");
@@ -70,12 +93,12 @@ namespace Ouroboros.Editor
             if (summary.result != BuildResult.Succeeded)
             {
                 throw new BuildFailedException(
-                    $"Step 15.9 WebGL build failed: {summary.result}, " +
+                    $"{stepLabel} WebGL build failed: {summary.result}, " +
                     $"errors {summary.totalErrors}.");
             }
 
             Debug.Log(
-                $"[OUROBOROS][BUILD] Step 15.9 WebGL succeeded at '{outputPath}' " +
+                $"[OUROBOROS][BUILD] {stepLabel} WebGL succeeded at '{outputPath}' " +
                 $"with errors {summary.totalErrors}, warnings {summary.totalWarnings}, " +
                 $"size {summary.totalSize} bytes.");
         }

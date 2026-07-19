@@ -50,7 +50,7 @@ namespace Ouroboros.Tests.EditMode
         }
 
         [Test]
-        public void HealthAndReducedSpawnMultipliers_CompoundPerMinuteWithoutMutatingData()
+        public void HealthAndLateSpawnMultipliers_CompoundWithoutMutatingData()
         {
             var before = EditorJsonUtility.ToJson(_waves);
 
@@ -60,19 +60,32 @@ namespace Ouroboros.Tests.EditMode
             Assert.That(OSWaveScheduleRuntime.CalculateHealthMultiplier(600f),
                 Is.EqualTo((float)System.Math.Pow(1.12d, 10d)).Within(0.0001f));
             Assert.That(OSWaveScheduleRuntime.CalculateSpawnRateMultiplier(60f),
-                Is.EqualTo(1.08f).Within(0.0001f));
+                Is.EqualTo(1.15f).Within(0.0001f));
+            Assert.That(OSWaveScheduleRuntime.CalculateSpawnRateMultiplier(120f),
+                Is.EqualTo((float)System.Math.Pow(1.15d, 2d)).Within(0.0001f));
+            Assert.That(OSWaveScheduleRuntime.CalculateSpawnRateMultiplier(180f),
+                Is.EqualTo((float)System.Math.Pow(1.15d, 3d)).Within(0.0001f));
+            var multiplierBeforeTransition =
+                OSWaveScheduleRuntime.CalculateSpawnRateMultiplier(179.99f);
+            var multiplierAfterTransition =
+                OSWaveScheduleRuntime.CalculateSpawnRateMultiplier(180.01f);
+            Assert.That(System.Math.Abs(multiplierAfterTransition - multiplierBeforeTransition),
+                Is.LessThan(0.001f));
+            Assert.That(OSWaveScheduleRuntime.CalculateSpawnRateMultiplier(240f),
+                Is.EqualTo((float)(System.Math.Pow(1.15d, 3d) * 1.02d)).Within(0.0001f));
             Assert.That(OSWaveScheduleRuntime.CalculateSpawnRateMultiplier(600f),
-                Is.EqualTo((float)System.Math.Pow(1.08d, 10d)).Within(0.0001f));
+                Is.EqualTo((float)(System.Math.Pow(1.15d, 3d) *
+                                   System.Math.Pow(1.02d, 7d))).Within(0.0001f));
             Assert.That(EditorJsonUtility.ToJson(_waves), Is.EqualTo(before));
         }
 
         [Test]
-        public void SpawnPacing_UsesStep15Point9ReducedBaseRates()
+        public void SpawnPacing_Step15Point10RestoresOriginalBaseRates()
         {
             var expectedRates = new[]
             {
-                0.4f, 0.6f, 0.8f, 0f, 0.96f, 1.12f,
-                1.28f, 0f, 1.44f, 1.6f, 1.6f, 1.6f
+                0.5f, 0.75f, 1f, 0f, 1.2f, 1.4f,
+                1.6f, 0f, 1.8f, 2f, 2f, 2f
             };
 
             Assert.That(_runtime.Count, Is.EqualTo(expectedRates.Length));
