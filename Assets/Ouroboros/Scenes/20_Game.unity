@@ -2004,6 +2004,7 @@ MonoBehaviour:
   pickupPoolKey: body_fragment_pickup
   capacity: 256
   mergeRadius: 1.5
+  spawnSeparation: 0.55
   magnetRadius: 1.25
 --- !u!4 &154755295
 Transform:

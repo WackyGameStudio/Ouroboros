@@ -87,6 +87,28 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [Test]
+        public void PickupSpawner_SeparatesDifferentTypesSpawnedAtSamePosition()
+        {
+            var rig = CreateGrowthRig(64);
+            CompleteStartSelections(rig);
+            var pickupRig = ConfigurePickupRig(rig, 3);
+
+            var experience = pickupRig.Spawner.Spawn(OSPickupType.Experience, 1, Vector2.zero);
+            var fragment = pickupRig.Spawner.Spawn(OSPickupType.BodyFragment, 1, Vector2.zero);
+            var heal = pickupRig.Spawner.Spawn(OSPickupType.Heal, 1, Vector2.zero);
+
+            Assert.That(experience.IsAccepted, Is.True);
+            Assert.That(fragment.IsAccepted, Is.True);
+            Assert.That(heal.IsAccepted, Is.True);
+            Assert.That(fragment.Payload, Is.Not.SameAs(experience.Payload));
+            Assert.That(heal.Payload, Is.Not.SameAs(experience.Payload));
+            Assert.That(heal.Payload, Is.Not.SameAs(fragment.Payload));
+            AssertSeparated(experience.Payload, fragment.Payload, pickupRig.Spawner.SpawnSeparation);
+            AssertSeparated(experience.Payload, heal.Payload, pickupRig.Spawner.SpawnSeparation);
+            AssertSeparated(fragment.Payload, heal.Payload, pickupRig.Spawner.SpawnSeparation);
+        }
+
+        [Test]
         public void PickupCollection_IsPausedDuringSelectionAndAppliesInCombat()
         {
             var rig = CreateGrowthRig(64);
@@ -184,6 +206,12 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(rig.Growth.ConfirmRole(OSBodyRoleType.Attack).IsAccepted, Is.True);
             Assert.That(rig.Session.State, Is.EqualTo(OSSessionState.Combat));
             Assert.That(rig.Chain.ActiveCount, Is.EqualTo(2));
+        }
+
+        private static void AssertSeparated(OSPickup first, OSPickup second, float minimumDistance)
+        {
+            Assert.That(Vector2.Distance(first.Position, second.Position),
+                Is.GreaterThanOrEqualTo(minimumDistance - 0.0001f));
         }
 
         private static void DestroyImmediate(Object target)

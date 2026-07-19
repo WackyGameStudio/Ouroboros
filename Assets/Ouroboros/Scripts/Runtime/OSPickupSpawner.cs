@@ -13,6 +13,8 @@ namespace Ouroboros.Runtime
     {
         private const string DefaultPoolKey = "body_fragment_pickup";
         private const int DefaultCapacity = 256;
+        private const int ScatterSlotsPerRing = 8;
+        private const int MaxScatterRings = 16;
 
         [SerializeField] private OSPoolRegistry poolRegistry;
         [SerializeField] private OSGameSessionController sessionController;
@@ -23,6 +25,7 @@ namespace Ouroboros.Runtime
         [SerializeField] private string pickupPoolKey = DefaultPoolKey;
         [SerializeField, Min(1)] private int capacity = DefaultCapacity;
         [SerializeField, Min(0f)] private float mergeRadius = 1.5f;
+        [SerializeField, Min(0f)] private float spawnSeparation = 0.55f;
         [SerializeField, Min(0f)] private float magnetRadius = 1.25f;
 
         private OSPickup[] _activePickups = Array.Empty<OSPickup>();
@@ -34,6 +37,7 @@ namespace Ouroboros.Runtime
         public int ActiveCount { get; private set; }
         public int Capacity => _activePickups.Length;
         public float MagnetRadius => EffectiveMagnetRadius;
+        public float SpawnSeparation => spawnSeparation;
 
         private void Awake()
         {
@@ -72,7 +76,8 @@ namespace Ouroboros.Runtime
                 return OSRuleResult<OSPickup>.Accepted(nearby, "pickup.spawn.nearby_merged");
             }
 
-            var rent = poolRegistry.Rent(pickupPoolKey, position, Quaternion.identity);
+            var spawnPosition = ResolveSeparatedSpawnPosition(pickupType, position);
+            var rent = poolRegistry.Rent(pickupPoolKey, spawnPosition, Quaternion.identity);
             if (rent.IsAccepted && rent.Payload is OSPickup pickup)
             {
                 pickup.ConfigurePickup(
@@ -217,7 +222,8 @@ namespace Ouroboros.Runtime
             float pickupMagnetRadius = 1.25f,
             string poolKey = DefaultPoolKey,
             OSLevelUpController levels = null,
-            OSPlayerHealth health = null)
+            OSPlayerHealth health = null,
+            float minimumSpawnSeparation = 0.55f)
         {
             Unsubscribe();
             poolRegistry = pool;
@@ -228,6 +234,7 @@ namespace Ouroboros.Runtime
             collectionTarget = target;
             capacity = Mathf.Max(1, maximumPickups);
             mergeRadius = Mathf.Max(0f, nearbyMergeRadius);
+            spawnSeparation = Mathf.Max(0f, minimumSpawnSeparation);
             magnetRadius = Mathf.Max(0f, pickupMagnetRadius);
             pickupPoolKey = poolKey;
             _activePickups = new OSPickup[capacity];
@@ -294,6 +301,52 @@ namespace Ouroboros.Runtime
             return nearest;
         }
 
+        private Vector2 ResolveSeparatedSpawnPosition(OSPickupType pickupType, Vector2 origin)
+        {
+            if (spawnSeparation <= 0f || IsSpawnPositionClear(origin))
+            {
+                return origin;
+            }
+
+            var angleOffset = ((int)pickupType * 3 + ActiveCount) % ScatterSlotsPerRing;
+            for (var ring = 1; ring <= MaxScatterRings; ring++)
+            {
+                var radius = spawnSeparation * ring;
+                for (var slot = 0; slot < ScatterSlotsPerRing; slot++)
+                {
+                    var angleIndex = (angleOffset + slot) % ScatterSlotsPerRing;
+                    var angle = angleIndex * Mathf.PI * 2f / ScatterSlotsPerRing;
+                    var candidate = origin + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                    if (IsSpawnPositionClear(candidate))
+                    {
+                        return candidate;
+                    }
+                }
+            }
+
+            // A local cluster dense enough to fill every bounded ring is exceptional. Keep the
+            // request amount-preserving and place it just beyond the searched region.
+            var fallbackAngle = angleOffset * Mathf.PI * 2f / ScatterSlotsPerRing;
+            return origin + new Vector2(Mathf.Cos(fallbackAngle), Mathf.Sin(fallbackAngle)) *
+                (spawnSeparation * (MaxScatterRings + 1));
+        }
+
+        private bool IsSpawnPositionClear(Vector2 candidate)
+        {
+            var minimumDistanceSquared = spawnSeparation * spawnSeparation;
+            for (var index = 0; index < ActiveCount; index++)
+            {
+                var pickup = _activePickups[index];
+                if (pickup != null && pickup.IsRented &&
+                    (pickup.Position - candidate).sqrMagnitude < minimumDistanceSquared)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private void EnsureStorage()
         {
             var desired = Mathf.Max(1, capacity);
@@ -341,6 +394,7 @@ namespace Ouroboros.Runtime
         {
             capacity = Mathf.Max(1, capacity);
             mergeRadius = Mathf.Max(0f, mergeRadius);
+            spawnSeparation = Mathf.Max(0f, spawnSeparation);
             magnetRadius = Mathf.Max(0f, magnetRadius);
         }
     }

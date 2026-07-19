@@ -172,6 +172,7 @@ namespace Ouroboros.Editor
                 Assign(spawner, "pickupPoolKey", PickupPoolKey);
                 Assign(spawner, "capacity", encounter.PickupLimit);
                 Assign(spawner, "mergeRadius", 1.5f);
+                Assign(spawner, "spawnSeparation", 0.55f);
                 Assign(spawner, "magnetRadius", playerBalance.MagnetRadius);
 
                 Assign(poolContext, "enemyRegistry", enemyRegistry);
