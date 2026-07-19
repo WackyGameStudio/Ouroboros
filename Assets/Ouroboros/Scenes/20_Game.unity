@@ -2007,6 +2007,7 @@ MonoBehaviour:
   mergeRadius: 1.5
   spawnSeparation: 0.55
   magnetRadius: 1.25
+  dashSuctionSpeed: 24
 --- !u!4 &154755295
 Transform:
   m_ObjectHideFlags: 0
@@ -18545,6 +18546,8 @@ MonoBehaviour:
   playerController: {fileID: 324503144}
   bodyGrowth: {fileID: 1369375146}
   bodyBalance: {fileID: 11400000, guid: 053e0a3fec1a48d4abdfb1992972f6d5, type: 2}
+  pickupSpawner: {fileID: 154755294}
+  pickupCollector: {fileID: 474346590}
 --- !u!4 &1218269551
 Transform:
   m_ObjectHideFlags: 0

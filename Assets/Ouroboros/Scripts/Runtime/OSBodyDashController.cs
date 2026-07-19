@@ -27,7 +27,8 @@ namespace Ouroboros.Runtime
 
     /// <summary>
     /// Replaces the former body-consuming blast with a collision-safe head dash and a temporary
-    /// body convergence visual. Body count, roles, enemy health and player invulnerability are untouched.
+    /// body convergence visual. Existing pickups swept by the effective magnet radius are latched for
+    /// fast homing; body count, roles, enemy health and player invulnerability are untouched.
     /// </summary>
     [DefaultExecutionOrder(9000)]
     [DisallowMultipleComponent]
@@ -42,6 +43,8 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSPlayerController playerController;
         [SerializeField] private OSBodyGrowthController bodyGrowth;
         [SerializeField] private OSBodyBalanceData bodyBalance;
+        [SerializeField] private OSPickupSpawner pickupSpawner;
+        [SerializeField] private OSPickupCollector pickupCollector;
 
         private bool _active;
         private bool _subscribed;
@@ -150,13 +153,17 @@ namespace Ouroboros.Runtime
             OSBodyGrowthController growth = null,
             float duration = DefaultDuration,
             float distance = DefaultDistance,
-            float cooldown = DefaultCooldown)
+            float cooldown = DefaultCooldown,
+            OSPickupSpawner pickups = null,
+            OSPickupCollector collector = null)
         {
             Unsubscribe();
             sessionController = session;
             bodyChain = chain;
             playerController = player;
             bodyGrowth = growth;
+            pickupSpawner = pickups;
+            pickupCollector = collector;
             bodyBalance = null;
             _testDuration = Mathf.Max(OSBodyDashMath.MinimumDuration, duration);
             _testDistance = Mathf.Max(OSBodyDashMath.MinimumDistance, distance);
@@ -216,6 +223,14 @@ namespace Ouroboros.Runtime
             }
         }
 
+        private void HandlePlayerBodyDashSegmentMoved(Vector2 start, Vector2 end)
+        {
+            if (_active)
+            {
+                pickupSpawner?.BeginDashSuctionAlongSegment(start, end, pickupCollector);
+            }
+        }
+
         private void HandleSessionStateChanged(OSSessionState previous, OSSessionState current)
         {
             if (current == OSSessionState.Boot)
@@ -262,6 +277,7 @@ namespace Ouroboros.Runtime
 
             if (playerController != null)
             {
+                playerController.BodyDashSegmentMoved += HandlePlayerBodyDashSegmentMoved;
                 playerController.BodyDashCompleted += HandlePlayerBodyDashCompleted;
             }
 
@@ -283,6 +299,7 @@ namespace Ouroboros.Runtime
 
             if (playerController != null)
             {
+                playerController.BodyDashSegmentMoved -= HandlePlayerBodyDashSegmentMoved;
                 playerController.BodyDashCompleted -= HandlePlayerBodyDashCompleted;
             }
 

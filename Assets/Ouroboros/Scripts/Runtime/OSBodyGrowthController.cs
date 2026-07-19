@@ -129,7 +129,8 @@ namespace Ouroboros.Runtime
             }
 
             if (sessionController == null || bodyChain == null ||
-                sessionController.State != OSSessionState.Combat)
+                sessionController.State is not OSSessionState.Combat and
+                    not OSSessionState.BodyDash)
             {
                 return OSRuleResult<int>.Rejected(
                     OSResultCode.RejectedState,

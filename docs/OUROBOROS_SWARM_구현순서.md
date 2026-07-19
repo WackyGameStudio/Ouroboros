@@ -1661,6 +1661,40 @@ Enter 입력으로 사망·결과 상태를 전환할 때 같은 `UI/Submit` Act
 
 ---
 
+## 16.15 대시 경로 픽업 고속 흡입 — Step 15.15
+
+### 목표
+
+대시가 지나간 실제 경로의 기존 자석 반경 안 픽업을 놓치지 않고, 즉시 소멸시키지 않은 채 머리로 빠르게 빨려 들어오는 움직임을 보장한다.
+
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-20
+- 완료: `OSPlayerController`가 장애물 Cast와 접선 슬라이드로 실제 이동한 각 대시 구간을 발행하고, `OSBodyDashController`가 이를 `OSPickupSpawner`에 전달한다. 스포너는 사전 할당된 활성 픽업 배열을 순회해 현재 유효 자석 반경과 구간이 겹친 모든 기존 픽업을 대시 흡입 상태로 고정한다. 고정된 픽업은 즉시 수집되지 않고 일반 자석 8u/s보다 빠른 24u/s로 머리를 계속 추적하며, 대시가 끝나 반경 밖이어도 놓지 않고 실제 `PickupCollector` 접촉 때 종류별 효과와 절단 몸통 부분 회수를 적용한다. `ReclaimSegments`도 `BodyDash` 상태를 허용하고 `Ouroboros/Setup/Apply Step 15.15 Dash Pickup Suction` 및 전용 WebGL 빌드 메뉴를 추가했다.
+- 남음: 없음. Step 16 성능 최적화·WebGL 착수 가능.
+- 검증: Unity 6000.5.1f1 컴파일 및 최종 Console Error/Exception 0. 집중 `OSBodyDashControllerPlayModeTests` 6/6 통과(job `17ab9b0aed7740a6a8b6b5820cf683b3`)로 대시 실제 경로의 자석 반경 안 픽업 3개 전량 흡입 고정, 범위 밖 픽업 불변, 즉시 소멸하지 않음, 첫 물리 틱의 24u/s 고속 이동과 실제 `PickupCollector` 접촉 수집을 확인했다. 전체 EditMode 62/62(job `2bd78bd759914637b090b27dbc7fb972`)와 PlayMode 118/118(job `6b8e9d39f7f54a37aac487945b00017b`)이 통과했다. `Builds/Step15_15/WebGL/` Development 빌드는 오류 0·경고 5·135,675,760바이트로 성공했고 Windows 빌드는 실행하지 않았다. HTTP에서 `index.html`과 `WebGL.wasm`이 200, wasm MIME `application/wasm`, Canvas 960×540을 확인했다. 브라우저 수동 검증은 전투 중 상향 대시 전 `FRAG 0/6`, `XP 0/15`에서 대시 후 `FRAG 1/6`, `XP 11/15`로 변하고 경로 픽업이 빠르게 끌려오는 것을 확인했으며 Error/Exception 0, 기존 URP FSR 미지원 경고 1건만 남았다.
+
+### 프로그래머 체크
+
+- [x] 실제 Cast·슬라이드 대시 구간 발행
+- [x] 유효 자석 반경을 사용하는 고정 활성 배열 비할당 판정
+- [x] 범위 안 기존 픽업 전량 흡입 고정 및 범위 밖 불변
+- [x] 즉시 소멸 없는 24u/s 추적과 대시 종료 후 추적 유지
+- [x] 기존 종류별 수집·절단 몸통 부분 회수 규칙 유지
+- [x] Step 15.15 재적용·WebGL 빌드 경로
+- [x] EditMode/PlayMode 전체 회귀
+- [x] WebGL HTTP·Canvas·흡입 동작·Console 검증
+
+### 완료 기준
+
+- 한 물리 틱이 커도 실제 대시 이동 구간의 유효 자석 반경 안에 중심이 들어온 모든 기존 픽업이 흡입 상태가 된다.
+- 흡입 픽업은 즉시 사라지지 않고 빠르게 머리로 이동하며, 대시 종료나 이후 거리 증가로 흡입이 해제되지 않는다.
+- 범위 밖 픽업은 이동·상태·수량이 바뀌지 않고, 범위 안 픽업도 머리 접촉 전에는 효과를 적용하지 않는다.
+- WebGL 전투에서 픽업 흡입 움직임이 보이고 브라우저 Error/Exception이 없다.
+
+---
+
 ## 17. 성능 최적화·WebGL — Step 16
 
 ### 목표
@@ -1669,7 +1703,7 @@ Enter 입력으로 사망·결과 상태를 전환할 때 같은 `UI/Submit` Act
 
 ### 선행 조건
 
-- Step 15.14 꼬리 회수 전개·HP HUD와 전체 런 확정
+- Step 15.15 대시 경로 픽업 고속 흡입과 전체 런 확정
 
 ### 측정 순서
 

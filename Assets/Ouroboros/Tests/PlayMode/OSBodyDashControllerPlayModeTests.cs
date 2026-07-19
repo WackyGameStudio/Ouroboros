@@ -1,9 +1,11 @@
+using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Ouroboros.Core;
 using Ouroboros.Runtime;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.TestTools;
 
 namespace Ouroboros.Tests.PlayMode
 {
@@ -146,6 +148,60 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(rig.Controller.RequestBodyDash().IsAccepted, Is.True);
         }
 
+        [UnityTest]
+        public IEnumerator DashSweep_LatchesEveryPickupInsideMagnetRadiusAndPullsThemQuickly()
+        {
+            var rig = CreateRig(2);
+            var sweptA = rig.Pickups.Spawn(OSPickupType.BodyFragment, 1, new Vector2(1f, 1f)).Payload;
+            var sweptB = rig.Pickups.Spawn(OSPickupType.BodyFragment, 1, new Vector2(2.5f, -1f)).Payload;
+            var sweptC = rig.Pickups.Spawn(OSPickupType.BodyFragment, 1, new Vector2(4f, 1f)).Payload;
+            var outside = rig.Pickups.Spawn(OSPickupType.BodyFragment, 1, new Vector2(2.5f, 1.5f)).Payload;
+            var swept = new[] { sweptA, sweptB, sweptC };
+            var startPositions = new[] { sweptA.Position, sweptB.Position, sweptC.Position };
+
+            Assert.That(rig.Controller.RequestBodyDash().IsAccepted, Is.True);
+            rig.Player.SimulateBodyDashStep(0.5f);
+            rig.Head.position = rig.Player.Position;
+            Physics2D.SyncTransforms();
+
+            Assert.That(rig.Session.State, Is.EqualTo(OSSessionState.Combat));
+            Assert.That(rig.Pickups.ActiveCount, Is.EqualTo(4));
+            for (var index = 0; index < swept.Length; index++)
+            {
+                Assert.That(swept[index].IsDashSuctionActive, Is.True);
+                Assert.That(swept[index].Position, Is.EqualTo(startPositions[index]));
+            }
+
+            Assert.That(outside.IsDashSuctionActive, Is.False);
+            var outsidePosition = outside.Position;
+            var distancesBefore = new float[swept.Length];
+            for (var index = 0; index < swept.Length; index++)
+            {
+                distancesBefore[index] = Vector2.Distance(swept[index].Position, rig.Player.Position);
+            }
+
+            yield return new WaitForFixedUpdate();
+
+            for (var index = 0; index < swept.Length; index++)
+            {
+                var distanceAfter = Vector2.Distance(swept[index].Position, rig.Player.Position);
+                Assert.That(distancesBefore[index] - distanceAfter, Is.GreaterThan(0.4f));
+            }
+
+            Assert.That(outside.Position, Is.EqualTo(outsidePosition));
+            for (var step = 0; step < 10; step++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(rig.Pickups.ActiveCount, Is.EqualTo(1));
+            Assert.That(outside.IsRented, Is.True);
+            for (var index = 0; index < swept.Length; index++)
+            {
+                Assert.That(swept[index].IsRented, Is.False);
+            }
+        }
+
         private DashRig CreateRig(int segmentCount)
         {
             var root = Track(new GameObject("BodyDashTestRoot"));
@@ -191,10 +247,70 @@ namespace Ouroboros.Tests.PlayMode
                 64,
                 cutGuardDuration: 0.35f);
 
+            var growthObject = new GameObject("BodyGrowth", typeof(OSBodyGrowthController));
+            growthObject.transform.SetParent(root.transform, false);
+            var growth = growthObject.GetComponent<OSBodyGrowthController>();
+            growth.ConfigureForTesting(session, chain, 12, 64);
+
+            var pickupPrefabObject = Track(new GameObject(
+                "PickupTemplate",
+                typeof(SpriteRenderer),
+                typeof(Rigidbody2D),
+                typeof(CircleCollider2D),
+                typeof(OSPickup)));
+            var pickupBody = pickupPrefabObject.GetComponent<Rigidbody2D>();
+            pickupBody.bodyType = RigidbodyType2D.Kinematic;
+            pickupBody.gravityScale = 0f;
+            var pickupCollider = pickupPrefabObject.GetComponent<CircleCollider2D>();
+            pickupCollider.isTrigger = true;
+            pickupCollider.radius = 0.1f;
+            pickupPrefabObject.SetActive(false);
+
+            var poolObject = new GameObject("PickupPool", typeof(OSPoolRegistry));
+            poolObject.transform.SetParent(root.transform, false);
+            var pool = poolObject.GetComponent<OSPoolRegistry>();
+            pool.ConfigureForTesting(
+                poolObject.transform,
+                null,
+                new OSPoolPrewarmEntry(
+                    "body_fragment_pickup",
+                    pickupPrefabObject.GetComponent<OSPickup>(),
+                    8));
+
+            var collectorObject = new GameObject(
+                "PickupCollector",
+                typeof(CircleCollider2D),
+                typeof(OSPickupCollector));
+            collectorObject.transform.SetParent(headObject.transform, false);
+            var collectorCollider = collectorObject.GetComponent<CircleCollider2D>();
+            collectorCollider.isTrigger = true;
+            collectorCollider.radius = 0.1f;
+            var collector = collectorObject.GetComponent<OSPickupCollector>();
+
+            var spawnerObject = new GameObject("PickupSpawner", typeof(OSPickupSpawner));
+            spawnerObject.transform.SetParent(root.transform, false);
+            var spawner = spawnerObject.GetComponent<OSPickupSpawner>();
+            spawner.ConfigureForTesting(
+                pool,
+                session,
+                growth,
+                headObject.transform,
+                8,
+                nearbyMergeRadius: 0f,
+                pickupMagnetRadius: 1.25f,
+                minimumSpawnSeparation: 0f);
+            spawner.SetDashSuctionSpeedForTesting(24f);
+
             var controllerObject = new GameObject("BodyDashController", typeof(OSBodyDashController));
             controllerObject.transform.SetParent(root.transform, false);
             var controller = controllerObject.GetComponent<OSBodyDashController>();
-            controller.ConfigureForTesting(session, chain, player);
+            controller.ConfigureForTesting(
+                session,
+                chain,
+                player,
+                growth,
+                pickups: spawner,
+                collector: collector);
 
             root.SetActive(true);
             Assert.That(session.BeginSession().IsAccepted, Is.True);
@@ -202,7 +318,15 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(session.CompleteActiveSelection().IsAccepted, Is.True);
             Assert.That(session.State, Is.EqualTo(OSSessionState.Combat));
             Assert.That(chain.SetDebugSegmentCount(segmentCount).IsAccepted, Is.True);
-            return new DashRig(root, session, headObject.transform, player, chain, controller);
+            return new DashRig(
+                root,
+                session,
+                headObject.transform,
+                player,
+                chain,
+                controller,
+                spawner,
+                collector);
         }
 
         private static InputActionAsset CreateActions()
@@ -226,7 +350,8 @@ namespace Ouroboros.Tests.PlayMode
         private readonly struct DashRig
         {
             public DashRig(GameObject root, OSGameSessionController session, Transform head,
-                OSPlayerController player, OSBodyChain chain, OSBodyDashController controller)
+                OSPlayerController player, OSBodyChain chain, OSBodyDashController controller,
+                OSPickupSpawner pickups, OSPickupCollector collector)
             {
                 Root = root;
                 Session = session;
@@ -234,6 +359,8 @@ namespace Ouroboros.Tests.PlayMode
                 Player = player;
                 Chain = chain;
                 Controller = controller;
+                Pickups = pickups;
+                Collector = collector;
             }
 
             public GameObject Root { get; }
@@ -242,6 +369,8 @@ namespace Ouroboros.Tests.PlayMode
             public OSPlayerController Player { get; }
             public OSBodyChain Chain { get; }
             public OSBodyDashController Controller { get; }
+            public OSPickupSpawner Pickups { get; }
+            public OSPickupCollector Collector { get; }
         }
     }
 }

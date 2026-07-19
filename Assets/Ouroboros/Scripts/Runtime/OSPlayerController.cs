@@ -40,6 +40,7 @@ namespace Ouroboros.Runtime
         private float _bodyDashTravelledDistance;
 
         public event Action PositionReset;
+        public event Action<Vector2, Vector2> BodyDashSegmentMoved;
         public event Action<float> BodyDashCompleted;
 
         public Vector2 MoveInput => _moveInput;
@@ -223,7 +224,9 @@ namespace Ouroboros.Runtime
                 _bodyDashDuration,
                 previousElapsed,
                 nextElapsed);
-            _bodyDashTravelledDistance += MoveWithSlide(_bodyDashDirection * stepDistance);
+            _bodyDashTravelledDistance += MoveWithSlide(
+                _bodyDashDirection * stepDistance,
+                true);
             _bodyDashElapsed = nextElapsed;
             if (_bodyDashElapsed + 0.000001f < _bodyDashDuration)
             {
@@ -258,7 +261,7 @@ namespace Ouroboros.Runtime
             MoveWithSlide(displacement);
         }
 
-        private float MoveWithSlide(Vector2 displacement)
+        private float MoveWithSlide(Vector2 displacement, bool publishBodyDashSegments = false)
         {
             var startPosition = body.position;
             var remaining = displacement;
@@ -279,14 +282,18 @@ namespace Ouroboros.Runtime
 
                 if (!TryGetClosestHit(hitCount, direction, out var closestHit))
                 {
+                    var segmentStart = body.position;
                     body.position += remaining;
+                    PublishBodyDashSegment(segmentStart, body.position, publishBodyDashSegments);
                     remaining = Vector2.zero;
                     break;
                 }
 
                 var safeDistance = Mathf.Clamp(closestHit.distance - skinWidth, 0f, distance);
                 var safeMove = direction * safeDistance;
+                var safeSegmentStart = body.position;
                 body.position += safeMove;
+                PublishBodyDashSegment(safeSegmentStart, body.position, publishBodyDashSegments);
 
                 var unresolved = remaining - safeMove;
                 var intoSurface = Vector2.Dot(unresolved, closestHit.normal);
@@ -306,6 +313,17 @@ namespace Ouroboros.Runtime
 
             body.position = ClampToWorld(body.position);
             return Vector2.Distance(startPosition, body.position);
+        }
+
+        private void PublishBodyDashSegment(
+            Vector2 start,
+            Vector2 end,
+            bool publishBodyDashSegments)
+        {
+            if (publishBodyDashSegments && (end - start).sqrMagnitude > MinimumMoveDistance)
+            {
+                BodyDashSegmentMoved?.Invoke(start, end);
+            }
         }
 
         private bool TryGetClosestHit(int hitCount, Vector2 castDirection, out RaycastHit2D closestHit)

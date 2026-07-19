@@ -27,6 +27,7 @@ namespace Ouroboros.Runtime
         [SerializeField, Min(0f)] private float mergeRadius = 1.5f;
         [SerializeField, Min(0f)] private float spawnSeparation = 0.55f;
         [SerializeField, Min(0f)] private float magnetRadius = 1.25f;
+        [SerializeField, Min(0.01f)] private float dashSuctionSpeed = 24f;
 
         private OSPickup[] _activePickups = Array.Empty<OSPickup>();
         private bool _subscribed;
@@ -288,6 +289,44 @@ namespace Ouroboros.Runtime
             return OSRuleResult<int>.Accepted(collectedAmount, "pickup.collect.accepted");
         }
 
+        /// <summary>
+        /// Latches every existing pickup inside the effective magnet radius of an actual dash
+        /// movement segment. Latched pickups keep homing quickly until the head trigger collects them.
+        /// </summary>
+        internal int BeginDashSuctionAlongSegment(
+            Vector2 start,
+            Vector2 end,
+            OSPickupCollector collector)
+        {
+            if (sessionController == null || sessionController.State != OSSessionState.BodyDash ||
+                collector == null || collectionTarget != null && collector.CollectionTarget != collectionTarget ||
+                !float.IsFinite(start.x) || !float.IsFinite(start.y) ||
+                !float.IsFinite(end.x) || !float.IsFinite(end.y))
+            {
+                return 0;
+            }
+
+            var radius = EffectiveMagnetRadius;
+            var radiusSquared = radius * radius;
+            var latched = 0;
+            for (var index = 0; index < ActiveCount; index++)
+            {
+                var pickup = _activePickups[index];
+                if (pickup == null || !pickup.IsRented || pickup.IsDashSuctionActive ||
+                    DistanceToSegmentSquared(pickup.Position, start, end) > radiusSquared)
+                {
+                    continue;
+                }
+
+                if (pickup.BeginDashSuction(dashSuctionSpeed))
+                {
+                    latched++;
+                }
+            }
+
+            return latched;
+        }
+
         internal void Unregister(OSPickup pickup)
         {
             if (pickup == null || pickup.RegistryIndex < 0 || pickup.RegistryIndex >= ActiveCount ||
@@ -337,6 +376,11 @@ namespace Ouroboros.Runtime
             _activePickups = new OSPickup[capacity];
             ActiveCount = 0;
             Subscribe();
+        }
+
+        internal void SetDashSuctionSpeedForTesting(float speed)
+        {
+            dashSuctionSpeed = Mathf.Max(0.01f, speed);
         }
 
         public void ApplyUpgradeModifiers(OSUpgradeModifiers modifiers)
@@ -447,6 +491,20 @@ namespace Ouroboros.Runtime
             return true;
         }
 
+        private static float DistanceToSegmentSquared(Vector2 point, Vector2 start, Vector2 end)
+        {
+            var segment = end - start;
+            var lengthSquared = segment.sqrMagnitude;
+            if (lengthSquared <= 0.000001f)
+            {
+                return (point - start).sqrMagnitude;
+            }
+
+            var progress = Mathf.Clamp01(Vector2.Dot(point - start, segment) / lengthSquared);
+            var closest = start + segment * progress;
+            return (point - closest).sqrMagnitude;
+        }
+
         private void EnsureStorage()
         {
             var desired = Mathf.Max(1, capacity);
@@ -496,6 +554,7 @@ namespace Ouroboros.Runtime
             mergeRadius = Mathf.Max(0f, mergeRadius);
             spawnSeparation = Mathf.Max(0f, spawnSeparation);
             magnetRadius = Mathf.Max(0f, magnetRadius);
+            dashSuctionSpeed = Mathf.Max(0.01f, dashSuctionSpeed);
         }
     }
 }

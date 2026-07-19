@@ -20,6 +20,8 @@ namespace Ouroboros.Runtime
         private OSGameSessionController _session;
         private Transform _target;
         private float _magnetRadius;
+        private bool _dashSuctionActive;
+        private float _dashSuctionSpeed;
 
         public OSPickupType PickupType { get; private set; }
         public OSBodyRoleType BodyRole { get; private set; }
@@ -27,6 +29,7 @@ namespace Ouroboros.Runtime
         public int RegistryIndex { get; internal set; } = -1;
         public Vector2 Position => body != null ? body.position : (Vector2)transform.position;
         public Sprite VisualSprite => bodyRenderer != null ? bodyRenderer.sprite : null;
+        public bool IsDashSuctionActive => _dashSuctionActive;
 
         private void Awake()
         {
@@ -121,6 +124,18 @@ namespace Ouroboros.Runtime
             _magnetRadius = Mathf.Max(0f, radius);
         }
 
+        internal bool BeginDashSuction(float speed)
+        {
+            if (!IsRented || _target == null || !float.IsFinite(speed) || speed <= 0f)
+            {
+                return false;
+            }
+
+            _dashSuctionActive = true;
+            _dashSuctionSpeed = Mathf.Max(magnetSpeed, speed);
+            return true;
+        }
+
         internal void SimulateStep(float deltaTime)
         {
             if (!IsRented || _target == null || !float.IsFinite(deltaTime) || deltaTime <= 0f ||
@@ -130,12 +145,14 @@ namespace Ouroboros.Runtime
             }
 
             var offset = (Vector2)_target.position - Position;
-            if (offset.sqrMagnitude > _magnetRadius * _magnetRadius || offset.sqrMagnitude <= 0.000001f)
+            if ((!_dashSuctionActive && offset.sqrMagnitude > _magnetRadius * _magnetRadius) ||
+                offset.sqrMagnitude <= 0.000001f)
             {
                 return;
             }
 
-            body.MovePosition(Vector2.MoveTowards(Position, _target.position, magnetSpeed * deltaTime));
+            var speed = _dashSuctionActive ? _dashSuctionSpeed : magnetSpeed;
+            body.MovePosition(Vector2.MoveTowards(Position, _target.position, speed * deltaTime));
         }
 
         protected override void OnRented()
@@ -145,6 +162,8 @@ namespace Ouroboros.Runtime
             body.angularVelocity = 0f;
             RegistryIndex = -1;
             Amount = 0;
+            _dashSuctionActive = false;
+            _dashSuctionSpeed = 0f;
         }
 
         protected override void OnReturning()
@@ -159,6 +178,8 @@ namespace Ouroboros.Runtime
             BodyRole = default;
             Amount = 0;
             _magnetRadius = 0f;
+            _dashSuctionActive = false;
+            _dashSuctionSpeed = 0f;
             RegistryIndex = -1;
             if (bodyRenderer != null)
             {
