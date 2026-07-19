@@ -124,6 +124,43 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(_router.IsMapStateValid, Is.True);
         }
 
+        [Test]
+        public void SubmitTransitionWaitsUntilAllPerformedCallbacksComplete()
+        {
+            Assert.That(_session.BeginSession().IsAccepted, Is.True);
+            Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
+            Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
+            Assert.That(_session.RequestDeath().IsAccepted, Is.True);
+
+            var submit = _actions.FindAction("UI/Submit", true);
+            InputDevice observedDevice = null;
+            var callbackCount = 0;
+            System.Action<InputAction.CallbackContext> laterCallback = context =>
+            {
+                observedDevice = context.control.device;
+                callbackCount++;
+            };
+            submit.performed += laterCallback;
+
+            try
+            {
+                Tap(_keyboard.enterKey);
+                Assert.That(callbackCount, Is.EqualTo(1));
+                Assert.That(observedDevice, Is.SameAs(_keyboard));
+                Assert.That(_session.State, Is.EqualTo(OSSessionState.Result));
+
+                Tap(_keyboard.enterKey);
+                Assert.That(callbackCount, Is.EqualTo(2));
+                Assert.That(observedDevice, Is.SameAs(_keyboard));
+                Assert.That(_session.State, Is.EqualTo(OSSessionState.StartBodySelection));
+                Assert.That(_router.IsMapStateValid, Is.True);
+            }
+            finally
+            {
+                submit.performed -= laterCallback;
+            }
+        }
+
         private void Tap(ButtonControl button)
         {
             Press(button);

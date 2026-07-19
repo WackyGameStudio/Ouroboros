@@ -228,6 +228,7 @@ Unity **New Input System**만 사용한다.
 
 - 선택 상태에서는 Player Map을 끄고 UI Map만 켠다.
 - Map 전환 시 이동·대시 입력 상태를 비우며 복귀 후 예약 실행하지 않는다.
+- `UI/Submit`의 `performed` 콜백에서는 요청만 기록하고, 세션 상태 전이와 Action Map Disable/Reset은 같은 입력 업데이트의 모든 `performed` 콜백이 끝난 `InputSystem.onAfterUpdate`에서 실행한다. 활성 UI Map을 Action 콜백 안에서 동기적으로 비활성화하거나 리셋해 다른 구독자의 `CallbackContext`를 무효화하지 않는다.
 - 게임패드와 리바인딩은 P1이다.
 
 ## 3.2 이동

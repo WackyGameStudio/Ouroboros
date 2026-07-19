@@ -306,8 +306,8 @@ OSFeedbackCatalog
 ### 구현 현황
 
 - 상태: 완료
-- 최근 갱신: 2026-07-18
-- 완료: `Assets/Ouroboros/Scripts/Core/OSSelectionQueue.cs`에 Body 우선·동일 우선순위 FIFO 선택 큐를 구현하고, `Assets/Ouroboros/Scripts/Runtime/OSGameSessionController.cs`와 `OSInputRouter.cs`에 상태 전이·시간 소유·Player/UI Map 상호 배타 전환·입력 콜백 생명주기·재시작 초기화를 구현했다. `Assets/Ouroboros/Scripts/UI/OSSessionStatePresenter.cs`와 `Assets/Ouroboros/Scenes/20_Game.unity`에 최소 세션 경로와 상호 배타 선택 패널을 연결했으며 Step 03 재적용 메뉴를 추가했다.
+- 최근 갱신: 2026-07-20
+- 완료: `Assets/Ouroboros/Scripts/Core/OSSelectionQueue.cs`에 Body 우선·동일 우선순위 FIFO 선택 큐를 구현하고, `Assets/Ouroboros/Scripts/Runtime/OSGameSessionController.cs`와 `OSInputRouter.cs`에 상태 전이·시간 소유·Player/UI Map 상호 배타 전환·입력 콜백 생명주기·재시작 초기화를 구현했다. Step 15.12에서 `UI/Submit`은 Action 콜백 중 상태/Map을 바꾸지 않고 같은 입력 업데이트의 `InputSystem.onAfterUpdate`에서 요청을 전달하도록 보강했다. `Assets/Ouroboros/Scripts/UI/OSSessionStatePresenter.cs`와 `Assets/Ouroboros/Scenes/20_Game.unity`에 최소 세션 경로와 상호 배타 선택 패널을 연결했으며 Step 03 재적용 메뉴를 추가했다.
 - 남음: 없음. Step 04 머리 이동과 카메라 구현을 시작할 수 있다.
 - 검증: Unity 컴파일 및 최종 Console Error/Exception 0. `Ouroboros.Tests.EditMode` 16/16 통과(선택 큐 Body 우선·FIFO·중복 방지와 기반 회귀), `Ouroboros.Tests.PlayMode` 6/6 통과(입력 구독 회귀, Space 재실행 방지, 선택 중 세션 시간 정지와 unscaled UI 시간, 사망 입력 차단, 재시작 복원, Body 2 + LevelUp 2 순서, 선택 패널 상호 배타). WebGL Development Build `Builds/Step03/WebGL/index.html` 성공(errors 0, warnings 3), Windows Development Build `Builds/Step03/Windows/OuroborosSwarm.exe` 성공(errors 0, warnings 2).
 
@@ -1564,6 +1564,38 @@ Space 포위 폭발을 제거하고, 머리가 진행 방향으로 0.5초 동안
 
 ---
 
+## 16.12 UI Submit 콜백 안전 전환 — Step 15.12
+
+### 목표
+
+Enter 입력으로 사망·결과 상태를 전환할 때 같은 `UI/Submit` Action을 구독한 이후 콜백의 `CallbackContext`가 무효화되지 않게 하고 Input System UI 예외를 제거한다.
+
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-20
+- 완료: `OSInputRouter`의 `UI/Submit.performed`는 요청 플래그만 기록하고 같은 입력 업데이트의 모든 Action 콜백이 끝나는 `InputSystem.onAfterUpdate`에서 `SubmitRequested`를 전달한다. 활성/비활성 생명주기에 맞춰 정적 이벤트를 한 번만 구독·해제하고 비활성화 시 보류 Submit을 폐기한다. `OSInputRouterPlayModeTests`에 Router보다 늦게 실행되는 Submit 구독자가 `context.control.device`를 읽는 중에도 Dead→Result와 Result→StartBodySelection 전환이 예외 없이 완료되는 회귀를 추가했다. 승인 WebGL Build Profile을 `Builds/Step15_12/WebGL/`로 출력하는 전용 빌드 메뉴를 추가했다.
+- 남음: 없음. Step 전용 커밋·원격 푸시 뒤 Step 16 성능 최적화·WebGL로 진행할 수 있다.
+- 검증: Unity 6000.5.1f1 컴파일과 도메인 재로드 뒤 최종 Console Error/Exception 0. 집중 `OSInputRouterPlayModeTests` 4/4 통과(job `d5f60b306a804d3ca644f519bce72066`)로 기존 입력 구독·일반 Submit 계약과 늦은 Submit 콜백의 Control 안전성을 확인했다. 전체 `Ouroboros.Tests.EditMode` 62/62 통과(job `76c7b40a2fb84746b17aeab5f22c2607`), 전체 `Ouroboros.Tests.PlayMode` 114/114 통과(job `4d410ae7fa39472d8b21f69f22a47740`). 승인 `WebGL Development` Build Profile의 `Builds/Step15_12/WebGL/` 빌드 성공(135,670,903 bytes, errors 0, warnings 5; TMP IL2CPP 대형 메서드 분리 정보 3건 포함). `Tools/Serve-WebGL.ps1`로 `http://127.0.0.1:8132/`을 실행해 index/WASM HTTP 200, WASM MIME `application/wasm`, 960×540 Canvas, Enter MainMenu 시작, 키보드 Submit 역할 선택과 Shield/Attack 선택 후 Combat 진입을 확인했다. 브라우저 error 레벨은 0건이고 WebGL 고유 URP FSR 비지원 warning 1건만 기록됐다. Windows 빌드는 실행하지 않았다.
+
+### 프로그래머 체크
+
+- [x] `UI/Submit.performed` 안에서 세션 상태·Action Map을 동기 변경하지 않음
+- [x] 같은 입력 업데이트의 `InputSystem.onAfterUpdate`에서 Submit 요청 전달
+- [x] 라우터보다 늦은 구독자의 `CallbackContext.control` 안전 회귀
+- [x] 선택 화면의 일반 Submit 비확정 계약과 재시작 전환 유지
+- [x] EditMode/PlayMode 전체 회귀
+- [x] WebGL HTTP·Canvas·Console 검증
+
+### 완료 기준
+
+- Dead→Result와 Result→재시작 Enter 입력에서 `IndexOutOfRangeException`이 발생하지 않는다.
+- 같은 `UI/Submit` Action의 이후 `performed` 구독자가 유효한 Control/Device를 읽을 수 있다.
+- Submit 요청은 입력 프레임 안에서 1회만 전달되고 입력 구독과 Map 상호 배타 계약이 유지된다.
+- WebGL 전투가 로드되고 브라우저 error 레벨 로그가 없다.
+
+---
+
 ## 17. 성능 최적화·WebGL — Step 16
 
 ### 목표
@@ -1572,7 +1604,7 @@ Space 포위 폭발을 제거하고, 머리가 진행 방향으로 0.5초 동안
 
 ### 선행 조건
 
-- Step 15.11 게임 카메라 시야 확대와 전체 런 확정
+- Step 15.12 UI Submit 콜백 안전 전환과 전체 런 확정
 
 ### 측정 순서
 

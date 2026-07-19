@@ -30,6 +30,8 @@ namespace Ouroboros.Runtime
         private InputAction _submitAction;
         private InputAction _cancelAction;
         private bool _isBound;
+        private bool _afterInputUpdateSubscribed;
+        private bool _submitPending;
         private Vector2 _moveValue;
 
         public event Action<Vector2> MoveChanged;
@@ -64,11 +66,14 @@ namespace Ouroboros.Runtime
             }
 
             BindActions();
+            SubscribeAfterInputUpdate();
             ApplyInputMode();
         }
 
         private void OnDisable()
         {
+            UnsubscribeAfterInputUpdate();
+            _submitPending = false;
             UnbindActions();
             DisableAllMaps();
             CurrentMode = OSInputMode.None;
@@ -95,6 +100,7 @@ namespace Ouroboros.Runtime
             if (wasActive && IsConfigured)
             {
                 BindActions();
+                SubscribeAfterInputUpdate();
                 ApplyInputMode();
             }
         }
@@ -135,6 +141,7 @@ namespace Ouroboros.Runtime
             if (isActiveAndEnabled)
             {
                 BindActions();
+                SubscribeAfterInputUpdate();
             }
 
             ApplyInputMode();
@@ -272,6 +279,42 @@ namespace Ouroboros.Runtime
         private void HandleSubmitPerformed(InputAction.CallbackContext context)
         {
             if (CurrentMode == OSInputMode.UI)
+            {
+                _submitPending = true;
+            }
+        }
+
+        private void SubscribeAfterInputUpdate()
+        {
+            if (_afterInputUpdateSubscribed)
+            {
+                return;
+            }
+
+            InputSystem.onAfterUpdate += HandleAfterInputUpdate;
+            _afterInputUpdateSubscribed = true;
+        }
+
+        private void UnsubscribeAfterInputUpdate()
+        {
+            if (!_afterInputUpdateSubscribed)
+            {
+                return;
+            }
+
+            InputSystem.onAfterUpdate -= HandleAfterInputUpdate;
+            _afterInputUpdateSubscribed = false;
+        }
+
+        private void HandleAfterInputUpdate()
+        {
+            if (!_submitPending)
+            {
+                return;
+            }
+
+            _submitPending = false;
+            if (isActiveAndEnabled && CurrentMode == OSInputMode.UI)
             {
                 SubmitRequested?.Invoke();
             }
