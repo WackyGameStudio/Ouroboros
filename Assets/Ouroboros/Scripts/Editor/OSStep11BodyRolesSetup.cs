@@ -27,7 +27,7 @@ namespace Ouroboros.Editor
         [MenuItem("Ouroboros/Setup/Apply Step 11 Body Roles")]
         public static void ApplyStep11BodyRoles()
         {
-            OSStep10ExplosionSetup.ApplyStep10EncirclementExplosion();
+            OSStep10BodyDashSetup.ApplyStep10BodyDash();
             var projectileLayer = RequireLayer("PlayerProjectile");
             var worldBlockerLayer = RequireLayer("WorldBlocker");
             var enemyHurtboxLayer = RequireLayer("EnemyHurtbox");

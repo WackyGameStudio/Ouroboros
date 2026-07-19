@@ -9,8 +9,8 @@ namespace Ouroboros.Core
         AutoAttack,
         WaitForFragment,
         BodyGrowth,
-        WaitForBodyFour,
-        Blast,
+        WaitForBodyDash,
+        BodyDash,
         WaitForCut,
         CutDifference,
         Completed
@@ -22,14 +22,14 @@ namespace Ouroboros.Core
     public sealed class OSTutorialProgress
     {
         private const float RequiredMovementSeconds = 1f;
-        private const float BlastTimeoutSeconds = 20f;
+        private const float BodyDashTimeoutSeconds = 20f;
         private const float CutMessageSeconds = 3f;
 
         private float _stageElapsed;
         private float _movementElapsed;
         private bool _fragmentSeen;
         private bool _roleConfirmed;
-        private bool _explosionSeen;
+        private bool _bodyDashSeen;
         private bool _cutSeen;
         private int _largestBodyCount;
 
@@ -37,7 +37,7 @@ namespace Ouroboros.Core
         public bool HasStarted { get; private set; }
         public bool IsVisible => Stage is OSTutorialStage.Movement or
             OSTutorialStage.AutoAttack or OSTutorialStage.BodyGrowth or
-            OSTutorialStage.Blast or OSTutorialStage.CutDifference;
+            OSTutorialStage.BodyDash or OSTutorialStage.CutDifference;
         public float StageElapsed => _stageElapsed;
         public float MovementElapsed => _movementElapsed;
 
@@ -73,8 +73,8 @@ namespace Ouroboros.Core
                     SetStage(OSTutorialStage.AutoAttack);
                 }
             }
-            else if (Stage == OSTutorialStage.Blast &&
-                     (_explosionSeen || _stageElapsed >= BlastTimeoutSeconds))
+            else if (Stage == OSTutorialStage.BodyDash &&
+                     (_bodyDashSeen || _stageElapsed >= BodyDashTimeoutSeconds))
             {
                 EnterWaitForCut();
             }
@@ -133,15 +133,15 @@ namespace Ouroboros.Core
             ResolveBodyGrowthProgress();
         }
 
-        public void NotifyExplosionResolved()
+        public void NotifyBodyDashResolved()
         {
             if (!HasStarted)
             {
                 return;
             }
 
-            _explosionSeen = true;
-            if (Stage == OSTutorialStage.Blast)
+            _bodyDashSeen = true;
+            if (Stage == OSTutorialStage.BodyDash)
             {
                 EnterWaitForCut();
             }
@@ -163,7 +163,7 @@ namespace Ouroboros.Core
 
         private void ResolveBodyGrowthProgress()
         {
-            if (Stage != OSTutorialStage.BodyGrowth && Stage != OSTutorialStage.WaitForBodyFour)
+            if (Stage != OSTutorialStage.BodyGrowth && Stage != OSTutorialStage.WaitForBodyDash)
             {
                 return;
             }
@@ -173,13 +173,13 @@ namespace Ouroboros.Core
                 return;
             }
 
-            if (_largestBodyCount >= 4)
+            if (_roleConfirmed)
             {
-                SetStage(OSTutorialStage.Blast);
+                SetStage(OSTutorialStage.BodyDash);
             }
             else if (Stage == OSTutorialStage.BodyGrowth)
             {
-                SetStage(OSTutorialStage.WaitForBodyFour);
+                SetStage(OSTutorialStage.WaitForBodyDash);
             }
         }
 

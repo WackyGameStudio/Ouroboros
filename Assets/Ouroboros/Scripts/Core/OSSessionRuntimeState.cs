@@ -37,24 +37,20 @@ namespace Ouroboros.Core
         public float EliteControlDuration { get; }
     }
 
-    public readonly struct OSExplosionRuntimeSettings
+    public readonly struct OSBodyDashRuntimeSettings
     {
-        public OSExplosionRuntimeSettings(OSExplosionSettings source)
+        public OSBodyDashRuntimeSettings(OSBodyDashSettings source)
         {
-            MinimumSegments = source.MinimumSegments;
-            ConsumeRate = source.ConsumeRate;
-            TelegraphDuration = source.TelegraphDuration;
-            Radius = source.Radius;
-            DamagePerSegment = source.DamagePerSegment;
-            HeadInvulnerability = source.HeadInvulnerability;
+            Duration = source.Duration;
+            Distance = source.Distance;
+            Cooldown = source.Cooldown;
+            BodyRecoveryDuration = source.BodyRecoveryDuration;
         }
 
-        public int MinimumSegments { get; }
-        public float ConsumeRate { get; }
-        public float TelegraphDuration { get; }
-        public float Radius { get; }
-        public float DamagePerSegment { get; }
-        public float HeadInvulnerability { get; }
+        public float Duration { get; }
+        public float Distance { get; }
+        public float Cooldown { get; }
+        public float BodyRecoveryDuration { get; }
     }
 
     public readonly struct OSDropRuntimeData
@@ -221,7 +217,7 @@ namespace Ouroboros.Core
             PathReserveDistance = body.PathReserveDistance;
             BodyDamageRate = body.BodyDamageRate;
             CutGuardDuration = body.CutGuardDuration;
-            Explosion = new OSExplosionRuntimeSettings(body.Explosion);
+            BodyDash = new OSBodyDashRuntimeSettings(body.BodyDash);
             BodyRoles = CopyBodyRoles(body.RoleDefinitions);
 
             ActiveEnemyLimit = encounter.ActiveEnemyLimit;
@@ -254,7 +250,7 @@ namespace Ouroboros.Core
         public float PathReserveDistance { get; }
         public float BodyDamageRate { get; internal set; }
         public float CutGuardDuration { get; }
-        public OSExplosionRuntimeSettings Explosion { get; internal set; }
+        public OSBodyDashRuntimeSettings BodyDash { get; internal set; }
         public IReadOnlyList<OSBodyRoleRuntimeDefinition> BodyRoles { get; }
         public int ActiveEnemyLimit { get; }
         public int ProjectileLimit { get; }

@@ -41,9 +41,9 @@ MonoBehaviour:
   telegraphKeys:
   - charger_line
   - laser_line
-  - explosion_reserved
+  - body_dash
   audioKeys:
   - ui_select
   - hit_head
   - cut_body
-  - explosion
+  - body_dash

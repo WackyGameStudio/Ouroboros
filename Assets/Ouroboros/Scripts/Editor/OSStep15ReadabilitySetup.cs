@@ -105,7 +105,7 @@ namespace Ouroboros.Editor
                 var laser = RequireComponent<OSLaserBodyRole>(systems);
                 var control = RequireComponent<OSControlBodyRole>(systems);
                 var shield = RequireComponent<OSShieldBodyRole>(systems);
-                var explosion = RequireComponent<OSExplosionController>(systems);
+                var bodyDash = RequireComponent<OSBodyDashController>(systems);
                 var level = RequireComponent<OSLevelUpController>(systems);
                 var wave = RequireComponent<OSWaveDirector>(systems);
                 var boss = RequireComponent<OSBossEncounterController>(systems);
@@ -142,16 +142,16 @@ namespace Ouroboros.Editor
                 var hud = GetOrAdd<OSCombatHudPresenter>(readability.gameObject);
                 hud.Configure(
                     session, health, chain, growth, roles, attack, laser, control, shield,
-                    explosion, level, wave, boss, primary, action, threat);
+                    bodyDash, level, wave, boss, primary, action, threat);
 
                 var tutorialPresenter = GetOrAdd<OSTutorialPresenter>(tutorialPanel.gameObject);
-                tutorialPresenter.Configure(session, player, growth, chain, explosion, summary, tutorial);
+                tutorialPresenter.Configure(session, player, growth, chain, bodyDash, summary, tutorial);
 
                 var markerRoot = GetOrCreateChild(gameRoot.transform, "ReadabilityFeedback");
                 var cutBoundary = CreateLine(markerRoot, "CutBoundary", true, 0.11f, 185);
                 var tailDirection = CreateLine(markerRoot, "TailDirection", true, 0.08f, 184);
                 var combatFeedback = GetOrAdd<OSCombatFeedbackPresenter>(feedbackPanel.gameObject);
-                combatFeedback.Configure(health, chain, explosion, shield, level, feedback, cutBoundary, tailDirection);
+                combatFeedback.Configure(health, chain, bodyDash, shield, level, feedback, cutBoundary, tailDirection);
 
                 ConfigureSelectionPanel(canvas, "BodyRoleSelectionPanel");
                 ConfigureSelectionPanel(canvas, "LevelUpPanel");
@@ -251,11 +251,6 @@ namespace Ouroboros.Editor
                 {
                     line.sortingOrder = 198;
                 }
-                else if (line.name.StartsWith("ExplosionReservation", StringComparison.Ordinal) ||
-                         line.transform.parent != null && line.transform.parent.name == "OSExplosionTelegraphView")
-                {
-                    line.sortingOrder = 190;
-                }
                 else if (line.name.StartsWith("Shield_", StringComparison.Ordinal))
                 {
                     line.sortingOrder = 175;
@@ -316,7 +311,8 @@ namespace Ouroboros.Editor
             var names = new[]
             {
                 "HealthLabel", "DamageFeedbackLabel", "BodyGrowthLabel", "RoleCombatStatusLabel",
-                "ExplosionStatusLabel", "ExplosionFeedbackLabel", "LevelProgressLabel", "UpgradeFeedbackLabel",
+                "BodyDashStatusLabel", "BodyDashFeedbackLabel", "ExplosionStatusLabel", "ExplosionFeedbackLabel",
+                "LevelProgressLabel", "UpgradeFeedbackLabel",
                 "WaveStatusLabel", "WaveEventLabel", "BossStatusLabel", "BossPatternLabel"
             };
             foreach (var label in canvas.GetComponentsInChildren<TMP_Text>(true))

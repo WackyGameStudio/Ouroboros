@@ -83,11 +83,11 @@ namespace Ouroboros.Tests.PlayMode
                 }));
             Assert.That(session.State, Is.EqualTo(OSSessionState.Combat));
 
-            var explosionCount = 0;
-            session.ExplosionRequested += () => explosionCount++;
+            var dashCount = 0;
+            session.BodyDashRequested += () => dashCount++;
             Assert.That(session.RequestDeath().IsAccepted, Is.True);
-            Assert.That(session.TryRequestExplosion().Code, Is.EqualTo(OSResultCode.RejectedState));
-            Assert.That(explosionCount, Is.Zero);
+            Assert.That(session.TryRequestBodyDash().Code, Is.EqualTo(OSResultCode.RejectedState));
+            Assert.That(dashCount, Is.Zero);
             Assert.That(Time.timeScale, Is.Zero);
             Assert.That(router.CurrentMode, Is.EqualTo(OSInputMode.UI));
 

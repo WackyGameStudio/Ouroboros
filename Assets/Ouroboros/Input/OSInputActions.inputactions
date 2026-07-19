@@ -15,7 +15,7 @@
           "initialStateCheck": true
         },
         {
-          "name": "Explosion",
+          "name": "BodyDash",
           "type": "Button",
           "id": "99745d0a-a5fd-4ab6-993f-a394af7c54c9",
           "expectedControlType": "Button",
@@ -142,7 +142,7 @@
           "interactions": "Press",
           "processors": "",
           "groups": "Keyboard&Mouse",
-          "action": "Explosion",
+          "action": "BodyDash",
           "isComposite": false,
           "isPartOfComposite": false
         }

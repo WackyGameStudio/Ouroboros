@@ -193,7 +193,7 @@ namespace Ouroboros.Editor
                 var health = head.GetComponent<OSPlayerHealth>();
                 var chain = gameRoot.GetComponentInChildren<OSBodyChain>(true);
                 var roles = systems.GetComponentInChildren<OSBodyRoleRegistry>(true);
-                var explosion = systems.GetComponentInChildren<OSExplosionController>(true);
+                var bodyDash = systems.GetComponentInChildren<OSBodyDashController>(true);
                 var level = systems.GetComponentInChildren<OSLevelUpController>(true);
                 var pickups = systems.GetComponentInChildren<OSPickupSpawner>(true);
                 var resolver = systems.GetComponentInChildren<OSPlayerCombatResolver>(true);
@@ -210,7 +210,7 @@ namespace Ouroboros.Editor
                     health,
                     chain,
                     roles,
-                    explosion,
+                    bodyDash,
                     level,
                     encounter,
                     waves);

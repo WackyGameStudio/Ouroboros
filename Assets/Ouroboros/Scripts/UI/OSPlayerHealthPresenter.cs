@@ -140,7 +140,7 @@ namespace Ouroboros.UI
             if (healthLabel != null)
             {
                 var invulnerability = playerHealth.IsInvulnerable
-                    ? $"  |  INVULN {Mathf.Max(playerHealth.HitInvulnerabilityRemaining, playerHealth.ExplosionInvulnerabilityRemaining):0.0}s"
+                    ? $"  |  INVULN {playerHealth.HitInvulnerabilityRemaining:0.0}s"
                     : string.Empty;
                 healthLabel.text = $"CORE HP  {playerHealth.CurrentHealth:0} / {playerHealth.MaxHealth:0}{invulnerability}";
             }

@@ -271,7 +271,7 @@ namespace Ouroboros.Editor
             CreatePanel(canvas.transform, "Background", new Color32(12, 18, 32, 255));
             CreateText(canvas.transform, "Title", "OUROBOROS: SWARM", 74, TextAlignmentOptions.Center,
                 new Vector2(0.5f, 0.72f), new Vector2(1200f, 120f), Vector2.zero);
-            CreateText(canvas.transform, "Subtitle", "ACCUMULATE  •  CUT  •  DETONATE  •  REGROW", 24,
+            CreateText(canvas.transform, "Subtitle", "ACCUMULATE  •  CUT  •  DASH  •  REGROW", 24,
                 TextAlignmentOptions.Center, new Vector2(0.5f, 0.62f), new Vector2(1000f, 60f), Vector2.zero);
             var button = CreateButton(canvas.transform, "StartButton", "START", new Vector2(0.5f, 0.43f),
                 new Vector2(360f, 88f));

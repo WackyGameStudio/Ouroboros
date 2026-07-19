@@ -18,7 +18,7 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSHeadWeapon headWeapon;
         [SerializeField] private OSBodyGrowthController bodyGrowth;
         [SerializeField] private OSPickupSpawner pickupSpawner;
-        [SerializeField] private OSExplosionController explosionController;
+        [SerializeField] private OSBodyDashController bodyDashController;
         [SerializeField] private OSAttackBodyRole attackBodyRole;
         [SerializeField] private OSLaserBodyRole laserBodyRole;
         [SerializeField] private OSControlBodyRole controlBodyRole;
@@ -218,9 +218,9 @@ namespace Ouroboros.Runtime
                 "body_fragment_efficiency" => "GROWTH EFFICIENCY",
                 "body_damage_rate" => "LINK AMPLIFIER",
                 "role_overclock" => "ROLE OVERCLOCK",
-                "explosion_radius" => "WAVE EXPANSION",
-                "explosion_damage" => "CHAIN OVERLOAD",
-                "explosion_efficiency" => "TISSUE PRESERVATION",
+                "dash_distance" => "SURGE EXTENSION",
+                "dash_cooldown" => "SURGE RECOVERY",
+                "dash_recovery" => "TAIL REFORM",
                 "max_health" => "CORE REINFORCEMENT",
                 "move_speed" => "FLEX NERVES",
                 "heal_amount" => "REGEN TISSUE",
@@ -237,7 +237,7 @@ namespace Ouroboros.Runtime
             {
                 OSUpgradeCategory.Firepower => "FIREPOWER",
                 OSUpgradeCategory.Body => "BODY",
-                OSUpgradeCategory.Explosion => "EXPLOSION",
+                OSUpgradeCategory.Dash => "DASH",
                 OSUpgradeCategory.Survival => "SURVIVAL",
                 OSUpgradeCategory.Utility => "UTILITY",
                 _ => category.ToString().ToUpperInvariant()
@@ -263,12 +263,12 @@ namespace Ouroboros.Runtime
                     $"PER BODY  {BodyDamageRate(value, level):0}% → {BodyDamageRate(value, next):0}%",
                 OSUpgradeOperation.AddRoleCooldownMultiplier =>
                     $"ROLE CD  {Percent(1f + (value * level))} → {Percent(1f + (value * next))}",
-                OSUpgradeOperation.AddExplosionRadiusMultiplier =>
-                    $"BLAST R  {ExplosionRadius(value, level):0.00} → {ExplosionRadius(value, next):0.00}",
-                OSUpgradeOperation.AddExplosionDamageMultiplier =>
-                    $"BLAST/SEG  {ExplosionDamage(value, level):0} → {ExplosionDamage(value, next):0}",
-                OSUpgradeOperation.AddExplosionConsumeRate =>
-                    $"CONSUME  {ExplosionConsume(value, level):0}% → {ExplosionConsume(value, next):0}%",
+                OSUpgradeOperation.AddDashDistanceMultiplier =>
+                    $"DASH DIST  {DashDistance(value, level):0.00} → {DashDistance(value, next):0.00}",
+                OSUpgradeOperation.AddDashCooldownMultiplier =>
+                    $"DASH CD  {DashCooldown(value, level):0.00}s → {DashCooldown(value, next):0.00}s",
+                OSUpgradeOperation.AddDashRecoveryDuration =>
+                    $"TAIL REFORM  {DashRecovery(value, level):0.00}s → {DashRecovery(value, next):0.00}s",
                 OSUpgradeOperation.AddMaxHealth =>
                     $"MAX HP  {MaxHealth(value, level):0} → {MaxHealth(value, next):0}",
                 OSUpgradeOperation.AddMoveSpeedMultiplier =>
@@ -304,7 +304,7 @@ namespace Ouroboros.Runtime
             headWeapon?.ApplyUpgradeModifiers(modifiers);
             bodyGrowth?.ApplyUpgradeModifiers(modifiers);
             pickupSpawner?.ApplyUpgradeModifiers(modifiers);
-            explosionController?.ApplyUpgradeModifiers(modifiers);
+            bodyDashController?.ApplyUpgradeModifiers(modifiers);
             attackBodyRole?.ApplyUpgradeModifiers(modifiers);
             laserBodyRole?.ApplyUpgradeModifiers(modifiers);
             controlBodyRole?.ApplyUpgradeModifiers(modifiers);
@@ -404,22 +404,22 @@ namespace Ouroboros.Runtime
             return Mathf.Min(0.06f, baseRate + (value * level)) * 100f;
         }
 
-        private float ExplosionRadius(float value, int level)
+        private float DashDistance(float value, int level)
         {
-            var radius = bodyBalance != null ? bodyBalance.Explosion.Radius : 1.8f;
-            return radius * (1f + (value * level));
+            var distance = bodyBalance != null ? bodyBalance.BodyDash.Distance : 4.5f;
+            return OSBodyDashMath.CalculateDistance(distance, 1f + (value * level));
         }
 
-        private float ExplosionDamage(float value, int level)
+        private float DashCooldown(float value, int level)
         {
-            var damage = bodyBalance != null ? bodyBalance.Explosion.DamagePerSegment : 35f;
-            return damage * (1f + (value * level));
+            var cooldown = bodyBalance != null ? bodyBalance.BodyDash.Cooldown : 2f;
+            return OSBodyDashMath.CalculateCooldown(cooldown, 1f + (value * level));
         }
 
-        private float ExplosionConsume(float value, int level)
+        private float DashRecovery(float value, int level)
         {
-            var rate = bodyBalance != null ? bodyBalance.Explosion.ConsumeRate : 0.3f;
-            return OSUpgradeMath.CalculateExplosionConsumeRate(rate, value * level) * 100f;
+            var recovery = bodyBalance != null ? bodyBalance.BodyDash.BodyRecoveryDuration : 0.25f;
+            return OSBodyDashMath.CalculateRecoveryDuration(recovery, value * level);
         }
 
         private float MaxHealth(float value, int level)

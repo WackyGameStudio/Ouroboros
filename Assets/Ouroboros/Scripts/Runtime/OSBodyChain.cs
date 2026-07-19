@@ -8,8 +8,7 @@ namespace Ouroboros.Runtime
     public enum OSBodyRemovalCause
     {
         Cut,
-        Tail,
-        Explosion
+        Tail
     }
 
     public readonly struct OSBodyRemovalEvent
@@ -68,6 +67,11 @@ namespace Ouroboros.Runtime
         private int _nextStableId = 1;
         private bool _subscribed;
         private bool _started;
+        private readonly Vector2[] _bodyConvergenceStarts = new Vector2[DefaultTechnicalGuard];
+        private bool _bodyConvergenceActive;
+        private float _bodyConvergenceDuration;
+        private float _bodyRecoveryDuration;
+        private float _bodyConvergenceElapsed;
 
         public event Action<int, int, OSBodyRoleType> SegmentAppended;
         public event Action<OSBodyRemovalEvent> SegmentsRemoving;
@@ -81,6 +85,10 @@ namespace Ouroboros.Runtime
         public int PathCapacity => _path?.Capacity ?? 0;
         public int PathSampleCount => _path?.Count ?? 0;
         public float CutGuardRemaining => _cutGuardRemaining;
+        public bool IsBodyConvergenceActive => _bodyConvergenceActive;
+        public float BodyConvergenceProgress => !_bodyConvergenceActive || _bodyConvergenceDuration <= 0f
+            ? 0f
+            : Mathf.Clamp01(_bodyConvergenceElapsed / _bodyConvergenceDuration);
         public float SegmentSpacing => bodyBalance != null
             ? bodyBalance.SegmentSpacing
             : DefaultSegmentSpacing;
@@ -120,7 +128,9 @@ namespace Ouroboros.Runtime
                 return;
             }
 
-            SimulatePathStep(head.position);
+            RecordHeadPosition(ResolveCurrentHeadPosition());
+            SimulateBodyConvergence(Time.fixedDeltaTime);
+            ApplySegmentPoses();
         }
 
         private void OnDisable()
@@ -208,6 +218,29 @@ namespace Ouroboros.Runtime
             return OSRuleResult<int>.Accepted(ActiveCount, "body.debug_count.accepted");
         }
 
+        public void BeginBodyConvergence(float duration, float recoveryDuration)
+        {
+            _bodyConvergenceDuration = Mathf.Max(OSBodyDashMath.MinimumDuration, duration);
+            _bodyRecoveryDuration = Mathf.Max(0f, recoveryDuration);
+            _bodyConvergenceElapsed = 0f;
+            _bodyConvergenceActive = true;
+            for (var index = 0; index < ActiveCount && index < _bodyConvergenceStarts.Length; index++)
+            {
+                _bodyConvergenceStarts[index] = _poolViews[index] != null
+                    ? (Vector2)_poolViews[index].transform.position
+                    : _currentHeadPosition;
+            }
+        }
+
+        public void CancelBodyConvergence()
+        {
+            _bodyConvergenceActive = false;
+            _bodyConvergenceDuration = 0f;
+            _bodyRecoveryDuration = 0f;
+            _bodyConvergenceElapsed = 0f;
+            ApplySegmentPoses();
+        }
+
         /// <summary>
         /// Removes a requested number of tail segments in reverse order and reports the new count.
         /// </summary>
@@ -223,40 +256,6 @@ namespace Ouroboros.Runtime
 
             RemoveFrom(ActiveCount - removeCount, OSBodyRemovalCause.Tail, Vector2.zero);
             return OSRuleResult<int>.Accepted(ActiveCount, "body.remove_tail.accepted");
-        }
-
-        internal bool AreReservedIdsCurrentTail(int[] reservedStableIds, int count)
-        {
-            if (reservedStableIds == null || count <= 0 || count > reservedStableIds.Length ||
-                count > ActiveCount)
-            {
-                return false;
-            }
-
-            var startIndex = ActiveCount - count;
-            for (var index = 0; index < count; index++)
-            {
-                if (_runtimeSlots[startIndex + index].StableId != reservedStableIds[index])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        internal OSRuleResult<int> ConsumeReservedTail(int[] reservedStableIds, int count)
-        {
-            if (!AreReservedIdsCurrentTail(reservedStableIds, count))
-            {
-                return OSRuleResult<int>.Rejected(
-                    OSResultCode.CancelledNoReservedSegment,
-                    "body.explosion.reservation_mismatch",
-                    ActiveCount);
-            }
-
-            var removal = RemoveFrom(ActiveCount - count, OSBodyRemovalCause.Explosion, Vector2.zero);
-            return OSRuleResult<int>.Accepted(removal.RemovedCount, "body.explosion.consume.accepted");
         }
 
         /// <summary>
@@ -397,6 +396,17 @@ namespace Ouroboros.Runtime
             ApplySegmentPoses();
         }
 
+        internal void SimulateBodyConvergenceForTesting(float deltaTime)
+        {
+            if (head != null)
+            {
+                RecordHeadPosition(ResolveCurrentHeadPosition());
+            }
+
+            SimulateBodyConvergence(deltaTime);
+            ApplySegmentPoses();
+        }
+
         internal void SimulateCutGuardForTesting(float deltaTime)
         {
             SimulateCutGuard(deltaTime);
@@ -437,6 +447,7 @@ namespace Ouroboros.Runtime
 
         private void ClearSegments()
         {
+            CancelBodyConvergence();
             for (var index = 0; index < ActiveCount; index++)
             {
                 _poolViews[index]?.Deactivate();
@@ -497,6 +508,20 @@ namespace Ouroboros.Runtime
             }
 
             _cutGuardRemaining = Mathf.Max(0f, _cutGuardRemaining - deltaTime);
+        }
+
+        private void SimulateBodyConvergence(float deltaTime)
+        {
+            if (!_bodyConvergenceActive || !float.IsFinite(deltaTime) || deltaTime <= 0f)
+            {
+                return;
+            }
+
+            _bodyConvergenceElapsed += deltaTime;
+            if (_bodyConvergenceElapsed >= _bodyConvergenceDuration + _bodyRecoveryDuration)
+            {
+                _bodyConvergenceActive = false;
+            }
         }
 
         private void BuildPool()
@@ -579,7 +604,7 @@ namespace Ouroboros.Runtime
                 _path.Clear();
             }
 
-            _currentHeadPosition = head.position;
+            _currentHeadPosition = ResolveCurrentHeadPosition();
             _lastHeadPosition = _currentHeadPosition;
             _lastForward = playerController != null && playerController.LastDirection.sqrMagnitude > PositionEpsilon
                 ? playerController.LastDirection.normalized
@@ -635,8 +660,33 @@ namespace Ouroboros.Runtime
                 var targetDistance = _headCumulativeDistance -
                                      ((chainIndex + 1) * EffectiveSegmentSpacing);
                 var sample = EvaluateTarget(targetDistance, ref newerIndex);
-                _poolViews[chainIndex].SetPose(sample.Position, sample.Forward);
+                var visualPosition = ResolveBodyConvergencePosition(chainIndex, sample.Position);
+                _poolViews[chainIndex].SetPose(visualPosition, sample.Forward);
             }
+        }
+
+        private Vector2 ResolveBodyConvergencePosition(int chainIndex, Vector2 normalPosition)
+        {
+            if (!_bodyConvergenceActive || (uint)chainIndex >= (uint)_bodyConvergenceStarts.Length)
+            {
+                return normalPosition;
+            }
+
+            if (_bodyConvergenceElapsed <= _bodyConvergenceDuration)
+            {
+                var progress = OSBodyDashMath.EaseOutCubic(
+                    _bodyConvergenceElapsed / Mathf.Max(OSBodyDashMath.MinimumDuration, _bodyConvergenceDuration));
+                return Vector2.Lerp(_bodyConvergenceStarts[chainIndex], _currentHeadPosition, progress);
+            }
+
+            if (_bodyRecoveryDuration <= 0f)
+            {
+                return normalPosition;
+            }
+
+            var recoveryProgress = OSBodyDashMath.EaseOutCubic(
+                (_bodyConvergenceElapsed - _bodyConvergenceDuration) / _bodyRecoveryDuration);
+            return Vector2.Lerp(_currentHeadPosition, normalPosition, recoveryProgress);
         }
 
         private OSPathSample EvaluateTarget(float targetDistance, ref int newerIndex)
@@ -689,6 +739,13 @@ namespace Ouroboros.Runtime
             playerController ??= head != null ? head.GetComponent<OSPlayerController>() : null;
         }
 
+        private Vector2 ResolveCurrentHeadPosition()
+        {
+            return playerController != null
+                ? playerController.Position
+                : head != null ? (Vector2)head.position : _currentHeadPosition;
+        }
+
         private void Subscribe()
         {
             if (_subscribed || !isActiveAndEnabled)
@@ -739,6 +796,10 @@ namespace Ouroboros.Runtime
             if (current == OSSessionState.Boot && _started)
             {
                 ResetDebugChain();
+            }
+            else if (current is OSSessionState.Dead or OSSessionState.Cleared or OSSessionState.Result)
+            {
+                CancelBodyConvergence();
             }
         }
 

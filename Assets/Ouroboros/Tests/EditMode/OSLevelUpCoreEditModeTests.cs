@@ -108,9 +108,9 @@ namespace Ouroboros.Tests.EditMode
             Assert.That(modifiers.FragmentRequirementMultiplier, Is.EqualTo(0.83f).Within(0.0001f));
             Assert.That(modifiers.BodyDamageRateBonus, Is.EqualTo(0.01f).Within(0.0001f));
             Assert.That(modifiers.RoleCooldownMultiplier, Is.EqualTo(0.92f).Within(0.0001f));
-            Assert.That(modifiers.ExplosionRadiusMultiplier, Is.EqualTo(1.15f).Within(0.0001f));
-            Assert.That(modifiers.ExplosionDamageMultiplier, Is.EqualTo(1.2f).Within(0.0001f));
-            Assert.That(modifiers.ExplosionConsumeRateDelta, Is.EqualTo(-0.05f).Within(0.0001f));
+            Assert.That(modifiers.DashDistanceMultiplier, Is.EqualTo(1.15f).Within(0.0001f));
+            Assert.That(modifiers.DashCooldownMultiplier, Is.EqualTo(0.88f).Within(0.0001f));
+            Assert.That(modifiers.DashRecoveryDurationDelta, Is.EqualTo(-0.05f).Within(0.0001f));
             Assert.That(modifiers.MaxHealthMultiplier, Is.EqualTo(1.2f).Within(0.0001f));
             Assert.That(modifiers.MoveSpeedMultiplier, Is.EqualTo(1.08f).Within(0.0001f));
             Assert.That(modifiers.HealMultiplier, Is.EqualTo(1.25f).Within(0.0001f));
@@ -121,11 +121,11 @@ namespace Ouroboros.Tests.EditMode
         }
 
         [Test]
-        public void UpgradeMath_EnforcesFireRateFragmentConsumeAndMoveClamps()
+        public void UpgradeMath_EnforcesFireRateFragmentDashAndMoveClamps()
         {
             Assert.That(OSUpgradeMath.CalculateHeadFireInterval(0.5f, 100f), Is.EqualTo(0.15f));
             Assert.That(OSUpgradeMath.CalculateFragmentRequirement(6f, 0.01f), Is.EqualTo(4));
-            Assert.That(OSUpgradeMath.CalculateExplosionConsumeRate(0.3f, -1f), Is.EqualTo(0.15f));
+            Assert.That(OSBodyDashMath.CalculateCooldown(2f, -1f), Is.EqualTo(0.5f));
             Assert.That(OSUpgradeMath.CalculateMoveSpeed(7f, 2f), Is.EqualTo(7.5f));
         }
 

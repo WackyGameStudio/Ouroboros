@@ -24,7 +24,7 @@ namespace Ouroboros.Runtime
         public const string MainMenuScene = "10_MainMenu";
         public const string GameScene = "20_Game";
 
-        private static readonly string[] RequiredPlayerActions = { "Move", "Explosion" };
+        private static readonly string[] RequiredPlayerActions = { "Move", "BodyDash" };
         private static readonly string[] RequiredUIActions = { "Point", "Click", "Navigate", "Submit", "Cancel" };
 
         public static OSProjectValidationResult Validate(InputActionAsset inputActions)

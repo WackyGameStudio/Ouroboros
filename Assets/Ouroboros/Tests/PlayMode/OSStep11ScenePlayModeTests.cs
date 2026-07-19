@@ -80,7 +80,7 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator GameScene_CutAndExplosionRemoveOnlyLostRoleStatesAndLengthFirepower()
+        public IEnumerator GameScene_CutRemovesLostRolesWhileBodyDashPreservesRemainingRolesAndFirepower()
         {
             yield return SceneManager.LoadSceneAsync("20_Game", LoadSceneMode.Single);
             yield return null;
@@ -91,7 +91,8 @@ namespace Ouroboros.Tests.PlayMode
             var laser = Object.FindAnyObjectByType<OSLaserBodyRole>();
             var control = Object.FindAnyObjectByType<OSControlBodyRole>();
             var shield = Object.FindAnyObjectByType<OSShieldBodyRole>();
-            var explosion = Object.FindAnyObjectByType<OSExplosionController>();
+            var bodyDash = Object.FindAnyObjectByType<OSBodyDashController>();
+            var player = Object.FindAnyObjectByType<OSPlayerController>();
             var headWeapon = Object.FindAnyObjectByType<OSHeadWeapon>();
 
             Assert.That(growth.ConfirmRole(OSBodyRoleType.Shield).IsAccepted, Is.True);
@@ -111,14 +112,20 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(laser.ActiveSegmentCount, Is.EqualTo(2));
             Assert.That(shield.ActiveSegmentCount, Is.EqualTo(2));
 
-            Assert.That(explosion.RequestExplosion().Payload, Is.EqualTo(3));
-            explosion.SimulateTelegraphForTesting(0.25f);
+            var bodyCountBeforeDash = chain.ActiveCount;
+            var damageBeforeDash = headWeapon.Damage;
+            Assert.That(bodyDash.RequestBodyDash().Payload, Is.EqualTo(bodyCountBeforeDash));
+            for (var step = 0; step < 25; step++)
+            {
+                player.SimulateBodyDashStep(0.02f);
+            }
 
-            Assert.That(chain.ActiveCount, Is.EqualTo(4));
-            Assert.That(attack.ActiveSegmentCount, Is.EqualTo(1));
-            Assert.That(laser.ActiveSegmentCount, Is.EqualTo(1));
+            Assert.That(chain.ActiveCount, Is.EqualTo(bodyCountBeforeDash));
+            Assert.That(attack.ActiveSegmentCount, Is.EqualTo(2));
+            Assert.That(laser.ActiveSegmentCount, Is.EqualTo(2));
             Assert.That(control.ActiveSegmentCount, Is.EqualTo(1));
-            Assert.That(shield.ActiveSegmentCount, Is.EqualTo(1));
+            Assert.That(shield.ActiveSegmentCount, Is.EqualTo(2));
+            Assert.That(headWeapon.Damage, Is.EqualTo(damageBeforeDash));
             Assert.That(headWeapon.Damage, Is.LessThan(damageAtEight));
         }
     }

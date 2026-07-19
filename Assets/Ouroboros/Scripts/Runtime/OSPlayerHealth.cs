@@ -29,9 +29,7 @@ namespace Ouroboros.Runtime
         public float MaxHealth => _maxHealth;
         public float HealMultiplier => _healMultiplier;
         public float HitInvulnerabilityRemaining { get; private set; }
-        public float ExplosionInvulnerabilityRemaining { get; private set; }
-        public bool IsInvulnerable => HitInvulnerabilityRemaining > 0f ||
-                                      ExplosionInvulnerabilityRemaining > 0f;
+        public bool IsInvulnerable => HitInvulnerabilityRemaining > 0f;
         public float LastAppliedDamage { get; private set; }
 
         private void Awake()
@@ -140,22 +138,6 @@ namespace Ouroboros.Runtime
             HealthChanged?.Invoke(CurrentHealth, _maxHealth);
         }
 
-        public OSRuleResult<float> GrantExplosionInvulnerability(float duration)
-        {
-            if (!float.IsFinite(duration) || duration <= 0f)
-            {
-                return OSRuleResult<float>.Rejected(
-                    OSResultCode.RejectedRequirement,
-                    "player_health.explosion_invulnerability.invalid",
-                    ExplosionInvulnerabilityRemaining);
-            }
-
-            ExplosionInvulnerabilityRemaining = Mathf.Max(ExplosionInvulnerabilityRemaining, duration);
-            return OSRuleResult<float>.Accepted(
-                ExplosionInvulnerabilityRemaining,
-                "player_health.explosion_invulnerability.accepted");
-        }
-
         internal void ConfigureForTesting(
             OSGameSessionController session,
             float maxHealth = DefaultMaxHealth,
@@ -193,7 +175,6 @@ namespace Ouroboros.Runtime
             ResolveBalance();
             CurrentHealth = _maxHealth;
             HitInvulnerabilityRemaining = 0f;
-            ExplosionInvulnerabilityRemaining = 0f;
             LastAppliedDamage = 0f;
             HealthChanged?.Invoke(CurrentHealth, _maxHealth);
         }
@@ -206,7 +187,6 @@ namespace Ouroboros.Runtime
             }
 
             HitInvulnerabilityRemaining = Mathf.Max(0f, HitInvulnerabilityRemaining - deltaTime);
-            ExplosionInvulnerabilityRemaining = Mathf.Max(0f, ExplosionInvulnerabilityRemaining - deltaTime);
         }
 
         private void Subscribe()

@@ -69,10 +69,8 @@ MonoBehaviour:
     telegraphDuration: 0
     normalControlDuration: 1
     eliteControlDuration: 0.5
-  explosion:
-    minimumSegments: 4
-    consumeRate: 0.3
-    telegraphDuration: 0.25
-    radius: 1.8
-    damagePerSegment: 35
-    headInvulnerability: 0.4
+  bodyDash:
+    duration: 0.5
+    distance: 4.5
+    cooldown: 2
+    bodyRecoveryDuration: 0.25

@@ -146,7 +146,7 @@ namespace Ouroboros.UI
                     : "BODY GROWTH";
                 var hint = sessionController.State == OSSessionState.BodyRoleSelection &&
                            !_tailConsumptionHintShown
-                    ? "  |  BLAST CONSUMES THE TAIL FIRST"
+                    ? "  |  DASH PRESERVES EVERY BODY ROLE"
                     : string.Empty;
                 titleLabel.text = $"{prefix}  |  CHOOSE A ROLE{hint}\nOne patterned segment is added to the tail";
                 if (sessionController.State == OSSessionState.BodyRoleSelection)

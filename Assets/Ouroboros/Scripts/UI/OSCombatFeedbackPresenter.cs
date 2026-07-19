@@ -13,7 +13,7 @@ namespace Ouroboros.UI
 
         [SerializeField] private OSPlayerHealth playerHealth;
         [SerializeField] private OSBodyChain bodyChain;
-        [SerializeField] private OSExplosionController explosionController;
+        [SerializeField] private OSBodyDashController bodyDashController;
         [SerializeField] private OSShieldBodyRole shieldRole;
         [SerializeField] private OSLevelUpController levelUpController;
         [SerializeField] private TMP_Text feedbackLabel;
@@ -74,7 +74,7 @@ namespace Ouroboros.UI
         public void Configure(
             OSPlayerHealth health,
             OSBodyChain chain,
-            OSExplosionController explosion,
+            OSBodyDashController bodyDash,
             OSShieldBodyRole shield,
             OSLevelUpController level,
             TMP_Text label,
@@ -84,7 +84,7 @@ namespace Ouroboros.UI
             Unsubscribe();
             playerHealth = health;
             bodyChain = chain;
-            explosionController = explosion;
+            bodyDashController = bodyDash;
             shieldRole = shield;
             levelUpController = level;
             feedbackLabel = label;
@@ -142,12 +142,12 @@ namespace Ouroboros.UI
                 DefaultFeedbackDuration);
         }
 
-        private void HandleExplosionResolved(OSExplosionResolution resolution)
+        private void HandleBodyDashResolved(OSBodyDashResolution resolution)
         {
             ShowFeedback(
                 resolution.WasCancelled
-                    ? "BLAST CANCELLED  |  RESERVED TAIL WAS LOST"
-                    : $"BLAST COMPLETE  |  TAIL -{resolution.ConsumedCount}  HIT {resolution.HitCount}  KILL {resolution.KillCount}",
+                    ? "DASH CANCELLED"
+                    : $"DASH COMPLETE  |  {resolution.TravelledDistance:0.0}u  BODY {resolution.ConvergedBodyCount}",
                 80,
                 DefaultFeedbackDuration);
         }
@@ -294,9 +294,9 @@ namespace Ouroboros.UI
                 bodyChain.SegmentsRemoving += HandleSegmentsRemoving;
             }
 
-            if (explosionController != null)
+            if (bodyDashController != null)
             {
-                explosionController.ExplosionResolved += HandleExplosionResolved;
+                bodyDashController.DashCompleted += HandleBodyDashResolved;
             }
 
             if (shieldRole != null)
@@ -330,9 +330,9 @@ namespace Ouroboros.UI
                 bodyChain.SegmentsRemoving -= HandleSegmentsRemoving;
             }
 
-            if (explosionController != null)
+            if (bodyDashController != null)
             {
-                explosionController.ExplosionResolved -= HandleExplosionResolved;
+                bodyDashController.DashCompleted -= HandleBodyDashResolved;
             }
 
             if (shieldRole != null)

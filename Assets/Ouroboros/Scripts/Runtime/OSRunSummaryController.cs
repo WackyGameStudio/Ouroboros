@@ -12,7 +12,7 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSPlayerHealth playerHealth;
         [SerializeField] private OSBodyChain bodyChain;
         [SerializeField] private OSBodyRoleRegistry roleRegistry;
-        [SerializeField] private OSExplosionController explosionController;
+        [SerializeField] private OSBodyDashController bodyDashController;
         [SerializeField] private OSLevelUpController levelUpController;
         [SerializeField] private OSEncounterBalanceData encounterBalance;
         [SerializeField] private OSWaveScheduleData waveSchedule;
@@ -20,11 +20,11 @@ namespace Ouroboros.Runtime
         private bool _subscribed;
         private int _totalKills;
         private int _eliteKills;
-        private int _explosionKills;
+        private int _dashUseCount;
         private int _maxBodyCount;
         private int _acquiredBodyCount;
         private int _cutBodyCount;
-        private int _explosionConsumedBodyCount;
+        private int _dashConvergedBodyCount;
         private float _receivedHeadDamage;
         private OSRoleCountSnapshot _maxRoleCounts;
 
@@ -35,7 +35,7 @@ namespace Ouroboros.Runtime
         public OSSessionSummary Summary { get; private set; }
         public int TotalKills => _totalKills;
         public int EliteKills => _eliteKills;
-        public int ExplosionKills => _explosionKills;
+        public int DashUseCount => _dashUseCount;
 
         private void OnEnable()
         {
@@ -57,7 +57,7 @@ namespace Ouroboros.Runtime
             OSPlayerHealth health,
             OSBodyChain chain,
             OSBodyRoleRegistry roles,
-            OSExplosionController explosion,
+            OSBodyDashController bodyDash,
             OSLevelUpController level,
             OSEncounterBalanceData encounter,
             OSWaveScheduleData waves)
@@ -67,7 +67,7 @@ namespace Ouroboros.Runtime
             playerHealth = health;
             bodyChain = chain;
             roleRegistry = roles;
-            explosionController = explosion;
+            bodyDashController = bodyDash;
             levelUpController = level;
             encounterBalance = encounter;
             waveSchedule = waves;
@@ -102,11 +102,11 @@ namespace Ouroboros.Runtime
             Summary = default;
             _totalKills = 0;
             _eliteKills = 0;
-            _explosionKills = 0;
+            _dashUseCount = 0;
             _maxBodyCount = bodyChain != null ? bodyChain.ActiveCount : 0;
             _acquiredBodyCount = 0;
             _cutBodyCount = 0;
-            _explosionConsumedBodyCount = 0;
+            _dashConvergedBodyCount = 0;
             _receivedHeadDamage = 0f;
             _maxRoleCounts = CaptureRoleCounts();
         }
@@ -125,12 +125,12 @@ namespace Ouroboros.Runtime
                 sessionController.SessionElapsedTime,
                 _totalKills,
                 _eliteKills,
-                _explosionKills,
+                _dashUseCount,
                 _maxBodyCount,
                 bodyChain != null ? bodyChain.ActiveCount : 0,
                 _acquiredBodyCount,
                 _cutBodyCount,
-                _explosionConsumedBodyCount,
+                _dashConvergedBodyCount,
                 _receivedHeadDamage,
                 _maxRoleCounts,
                 finalRoles,
@@ -209,11 +209,6 @@ namespace Ouroboros.Runtime
             {
                 _cutBodyCount += removal.RemovedCount;
             }
-            else if (removal.Cause == OSBodyRemovalCause.Explosion)
-            {
-                _explosionConsumedBodyCount += removal.RemovedCount;
-            }
-
             UpdateRoleMaximums();
         }
 
@@ -233,11 +228,12 @@ namespace Ouroboros.Runtime
             }
         }
 
-        private void HandleExplosionResolved(OSExplosionResolution resolution)
+        private void HandleBodyDashCompleted(OSBodyDashResolution resolution)
         {
             if (!HasSummary && !resolution.WasCancelled)
             {
-                _explosionKills += Mathf.Max(0, resolution.KillCount);
+                _dashUseCount++;
+                _dashConvergedBodyCount += Mathf.Max(0, resolution.ConvergedBodyCount);
             }
         }
 
@@ -269,9 +265,9 @@ namespace Ouroboros.Runtime
                 playerHealth.HeadDamaged += HandleHeadDamaged;
             }
 
-            if (explosionController != null)
+            if (bodyDashController != null)
             {
-                explosionController.ExplosionResolved += HandleExplosionResolved;
+                bodyDashController.DashCompleted += HandleBodyDashCompleted;
             }
 
             _subscribed = true;
@@ -305,9 +301,9 @@ namespace Ouroboros.Runtime
                 playerHealth.HeadDamaged -= HandleHeadDamaged;
             }
 
-            if (explosionController != null)
+            if (bodyDashController != null)
             {
-                explosionController.ExplosionResolved -= HandleExplosionResolved;
+                bodyDashController.DashCompleted -= HandleBodyDashCompleted;
             }
 
             _subscribed = false;

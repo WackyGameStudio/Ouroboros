@@ -109,7 +109,7 @@ namespace Ouroboros.Runtime
 
             if (sessionController == null ||
                 sessionController.State is not Core.OSSessionState.Combat and
-                    not Core.OSSessionState.ExplosionTelegraph)
+                    not Core.OSSessionState.BodyDash)
             {
                 return;
             }

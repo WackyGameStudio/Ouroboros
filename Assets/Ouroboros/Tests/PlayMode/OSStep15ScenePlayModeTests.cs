@@ -77,8 +77,8 @@ namespace Ouroboros.Tests.PlayMode
 
             Assert.That(chain.SetDebugSegmentCount(4).IsAccepted, Is.True);
             yield return null;
-            Assert.That(hud.ActionText, Does.Contain("BLAST READY"));
-            Assert.That(hud.ActionText, Does.Contain("x2 -> BODY 2"));
+            Assert.That(hud.ActionText, Does.Contain("DASH READY"));
+            Assert.That(hud.ActionText, Does.Contain("4.5u / 0.5s"));
         }
 
         [UnityTest]

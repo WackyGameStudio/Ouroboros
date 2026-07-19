@@ -14,7 +14,7 @@ namespace Ouroboros.UI
         [SerializeField] private OSPlayerController playerController;
         [SerializeField] private OSBodyGrowthController bodyGrowth;
         [SerializeField] private OSBodyChain bodyChain;
-        [SerializeField] private OSExplosionController explosionController;
+        [SerializeField] private OSBodyDashController bodyDashController;
         [SerializeField] private OSRunSummaryController runSummary;
         [SerializeField] private TMP_Text tutorialLabel;
 
@@ -61,7 +61,7 @@ namespace Ouroboros.UI
             OSPlayerController player,
             OSBodyGrowthController growth,
             OSBodyChain chain,
-            OSExplosionController explosion,
+            OSBodyDashController bodyDash,
             OSRunSummaryController summary,
             TMP_Text label)
         {
@@ -70,7 +70,7 @@ namespace Ouroboros.UI
             playerController = player;
             bodyGrowth = growth;
             bodyChain = chain;
-            explosionController = explosion;
+            bodyDashController = bodyDash;
             runSummary = summary;
             tutorialLabel = label;
             Subscribe();
@@ -129,11 +129,11 @@ namespace Ouroboros.UI
             Refresh();
         }
 
-        private void HandleExplosionResolved(OSExplosionResolution resolution)
+        private void HandleBodyDashResolved(OSBodyDashResolution resolution)
         {
             if (!resolution.WasCancelled)
             {
-                _progress.NotifyExplosionResolved();
+                _progress.NotifyBodyDashResolved();
             }
 
             Refresh();
@@ -158,7 +158,7 @@ namespace Ouroboros.UI
                 OSTutorialStage.Movement => "MOVE  [WASD / ARROWS]  |  Keep moving for 1 second",
                 OSTutorialStage.AutoAttack => "AUTO ATTACK  [NO BUTTON]  |  Enter range and defeat one enemy",
                 OSTutorialStage.BodyGrowth => "BODY FRAGMENTS  12 -> +1 ROLE SEGMENT  |  Choose a tail role",
-                OSTutorialStage.Blast => "BLAST  [SPACE]  |  Previewed tail segments are consumed first",
+                OSTutorialStage.BodyDash => "BODY DASH  [SPACE]  |  Tail converges while the head surges forward",
                 OSTutorialStage.CutDifference => "CORE HIT = HP LOSS  |  BODY HIT = CUT FROM IMPACT TO TAIL",
                 _ => string.Empty
             };
@@ -194,9 +194,9 @@ namespace Ouroboros.UI
                 bodyChain.SegmentsCut += HandleBodyCut;
             }
 
-            if (explosionController != null)
+            if (bodyDashController != null)
             {
-                explosionController.ExplosionResolved += HandleExplosionResolved;
+                bodyDashController.DashCompleted += HandleBodyDashResolved;
             }
 
             _subscribed = true;
@@ -231,9 +231,9 @@ namespace Ouroboros.UI
                 bodyChain.SegmentsCut -= HandleBodyCut;
             }
 
-            if (explosionController != null)
+            if (bodyDashController != null)
             {
-                explosionController.ExplosionResolved -= HandleExplosionResolved;
+                bodyDashController.DashCompleted -= HandleBodyDashResolved;
             }
 
             _subscribed = false;

@@ -32,16 +32,28 @@ namespace Ouroboros.Runtime
         private bool _spawnCaptured;
         private bool _subscribed;
         private float _moveSpeedMultiplier = 1f;
+        private bool _bodyDashActive;
+        private Vector2 _bodyDashDirection = Vector2.right;
+        private float _bodyDashDuration;
+        private float _bodyDashDistance;
+        private float _bodyDashElapsed;
+        private float _bodyDashTravelledDistance;
 
         public event Action PositionReset;
+        public event Action<float> BodyDashCompleted;
 
         public Vector2 MoveInput => _moveInput;
         public Vector2 LastDirection => _lastDirection;
         public Vector2 WorldMin => worldMin;
         public Vector2 WorldMax => worldMax;
+        public Vector2 Position => body != null ? body.position : transform.position;
         public float MoveSpeed => OSUpgradeMath.CalculateMoveSpeed(
             playerBalance != null ? playerBalance.MoveSpeed : DefaultMoveSpeed,
             _moveSpeedMultiplier);
+        public bool IsBodyDashActive => _bodyDashActive;
+        public float BodyDashRemaining => _bodyDashActive
+            ? Mathf.Max(0f, _bodyDashDuration - _bodyDashElapsed)
+            : 0f;
         public bool IsMovementAllowed => sessionController != null && sessionController.IsSimulationRunning &&
                                          inputRouter != null && inputRouter.CurrentMode == OSInputMode.Player;
 
@@ -67,7 +79,14 @@ namespace Ouroboros.Runtime
 
         private void FixedUpdate()
         {
-            SimulateMovementStep(_moveInput, Time.fixedDeltaTime);
+            if (_bodyDashActive)
+            {
+                SimulateBodyDashStep(Time.fixedDeltaTime);
+            }
+            else
+            {
+                SimulateMovementStep(_moveInput, Time.fixedDeltaTime);
+            }
         }
 
         /// <summary>
@@ -139,9 +158,38 @@ namespace Ouroboros.Runtime
             body.position = ClampToWorld(_spawnPosition);
             body.linearVelocity = Vector2.zero;
             body.angularVelocity = 0f;
+            CancelBodyDash();
             _moveInput = Vector2.zero;
             _lastDirection = Vector2.right;
             PositionReset?.Invoke();
+        }
+
+        public bool TryStartBodyDash(Vector2 direction, float duration, float distance)
+        {
+            if (_bodyDashActive || !IsMovementAllowed || body == null || solidCollider == null ||
+                !float.IsFinite(duration) || !float.IsFinite(distance) ||
+                duration < OSBodyDashMath.MinimumDuration || distance < OSBodyDashMath.MinimumDistance)
+            {
+                return false;
+            }
+
+            _bodyDashDirection = OSBodyDashMath.ResolveDirection(direction, _lastDirection);
+            _lastDirection = _bodyDashDirection;
+            _bodyDashDuration = duration;
+            _bodyDashDistance = distance;
+            _bodyDashElapsed = 0f;
+            _bodyDashTravelledDistance = 0f;
+            _bodyDashActive = true;
+            return true;
+        }
+
+        public void CancelBodyDash()
+        {
+            _bodyDashActive = false;
+            _bodyDashDuration = 0f;
+            _bodyDashDistance = 0f;
+            _bodyDashElapsed = 0f;
+            _bodyDashTravelledDistance = 0f;
         }
 
         /// <summary>
@@ -158,6 +206,33 @@ namespace Ouroboros.Runtime
 
             MoveWithSlide(displacement);
             return true;
+        }
+
+        internal void SimulateBodyDashStep(float deltaTime)
+        {
+            if (!_bodyDashActive || !IsMovementAllowed || body == null || solidCollider == null ||
+                !float.IsFinite(deltaTime) || deltaTime <= 0f)
+            {
+                return;
+            }
+
+            var previousElapsed = _bodyDashElapsed;
+            var nextElapsed = Mathf.Min(_bodyDashDuration, previousElapsed + deltaTime);
+            var stepDistance = OSBodyDashMath.CalculateStepDistance(
+                _bodyDashDistance,
+                _bodyDashDuration,
+                previousElapsed,
+                nextElapsed);
+            _bodyDashTravelledDistance += MoveWithSlide(_bodyDashDirection * stepDistance);
+            _bodyDashElapsed = nextElapsed;
+            if (_bodyDashElapsed + 0.000001f < _bodyDashDuration)
+            {
+                return;
+            }
+
+            var travelledDistance = _bodyDashTravelledDistance;
+            CancelBodyDash();
+            BodyDashCompleted?.Invoke(travelledDistance);
         }
 
         internal void SimulateMovementStep(Vector2 rawInput, float deltaTime)
@@ -183,8 +258,9 @@ namespace Ouroboros.Runtime
             MoveWithSlide(displacement);
         }
 
-        private void MoveWithSlide(Vector2 displacement)
+        private float MoveWithSlide(Vector2 displacement)
         {
+            var startPosition = body.position;
             var remaining = displacement;
             for (var iteration = 0; iteration < maxSlideIterations; iteration++)
             {
@@ -229,6 +305,7 @@ namespace Ouroboros.Runtime
             }
 
             body.position = ClampToWorld(body.position);
+            return Vector2.Distance(startPosition, body.position);
         }
 
         private bool TryGetClosestHit(int hitCount, Vector2 castDirection, out RaycastHit2D closestHit)
@@ -358,9 +435,10 @@ namespace Ouroboros.Runtime
 
         private void HandleStateChanged(OSSessionState previous, OSSessionState current)
         {
-            if (current is not OSSessionState.Combat and not OSSessionState.ExplosionTelegraph)
+            if (current is not OSSessionState.Combat and not OSSessionState.BodyDash)
             {
                 _moveInput = Vector2.zero;
+                CancelBodyDash();
             }
 
             if (current == OSSessionState.Boot ||

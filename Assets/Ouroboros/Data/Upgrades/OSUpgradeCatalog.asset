@@ -62,7 +62,7 @@ MonoBehaviour:
     clampMinimum: 0.5
     clampMaximum: 1
     candidateWeight: 1
-  - id: explosion_radius
+  - id: dash_distance
     category: 2
     maxLevel: 3
     operation: 6
@@ -70,21 +70,21 @@ MonoBehaviour:
     clampMinimum: 1
     clampMaximum: 3
     candidateWeight: 1
-  - id: explosion_damage
+  - id: dash_cooldown
     category: 2
     maxLevel: 3
     operation: 7
-    perLevelValue: 0.2
-    clampMinimum: 1
-    clampMaximum: 3
+    perLevelValue: -0.12
+    clampMinimum: 0.5
+    clampMaximum: 1
     candidateWeight: 1
-  - id: explosion_efficiency
+  - id: dash_recovery
     category: 2
     maxLevel: 3
     operation: 8
     perLevelValue: -0.05
-    clampMinimum: 0.15
-    clampMaximum: 0.3
+    clampMinimum: 0.1
+    clampMaximum: 0.25
     candidateWeight: 1
   - id: max_health
     category: 3

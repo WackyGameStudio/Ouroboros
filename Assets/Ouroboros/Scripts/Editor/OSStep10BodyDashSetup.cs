@@ -14,21 +14,19 @@ using UnityEngine.SceneManagement;
 
 namespace Ouroboros.Editor
 {
-    public static class OSStep10ExplosionSetup
+    public static class OSStep10BodyDashSetup
     {
         private const string GameScenePath = "Assets/Ouroboros/Scenes/20_Game.unity";
         private const string BodyBalancePath = "Assets/Ouroboros/Data/Balance/OSBodyBalance.asset";
-        private const int TelegraphCircleCapacity = 20;
-
-        [MenuItem("Ouroboros/Setup/Apply Step 10 Encirclement Explosion")]
-        public static void ApplyStep10EncirclementExplosion()
+        [MenuItem("Ouroboros/Setup/Apply Step 10 Body Convergence Dash")]
+        public static void ApplyStep10BodyDash()
         {
             OSStep09DamageSetup.ApplyStep09DamageAndCutting();
             var bodyBalance = LoadRequired<OSBodyBalanceData>(BodyBalancePath);
             ConfigureScene(bodyBalance);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[OUROBOROS][SETUP] Step 10 encirclement explosion applied.");
+            Debug.Log("[OUROBOROS][SETUP] Step 10 body convergence dash applied.");
         }
 
         [MenuItem("Ouroboros/Build/Build Step 10 WebGL")]
@@ -82,43 +80,31 @@ namespace Ouroboros.Editor
                 var canvas = RequireTransform(gameRoot.transform, "Canvas");
                 var bodyChain = RequireComponent<OSBodyChain>(gameRoot.transform, "PlayerRoot/BodyChain");
                 var session = RequireComponent<OSGameSessionController>(systems, "OSGameSessionController");
-                var registry = RequireComponent<OSEnemyRegistry>(systems, "OSEnemyRegistry");
                 var growth = RequireComponent<OSBodyGrowthController>(systems, "OSBodyGrowthController");
-                var health = head.GetComponent<OSPlayerHealth>()
-                             ?? throw new InvalidOperationException("Head is missing OSPlayerHealth.");
+                var player = head.GetComponent<OSPlayerController>()
+                             ?? throw new InvalidOperationException("Head is missing OSPlayerController.");
 
-                var controllerObject = GetOrCreateChild(systems, "OSExplosionController").gameObject;
-                var controller = GetOrAdd<OSExplosionController>(controllerObject);
+                var controllerTransform = systems.Find("OSBodyDashController") ??
+                                          systems.Find("OSExplosionController") ??
+                                          GetOrCreateChild(systems, "OSBodyDashController");
+                controllerTransform.name = "OSBodyDashController";
+                var controller = GetOrAdd<OSBodyDashController>(controllerTransform.gameObject);
                 Assign(controller, "sessionController", session);
                 Assign(controller, "bodyChain", bodyChain);
-                Assign(controller, "enemyRegistry", registry);
-                Assign(controller, "playerHealth", health);
+                Assign(controller, "playerController", player);
                 Assign(controller, "bodyGrowth", growth);
                 Assign(controller, "bodyBalance", bodyBalance);
 
-                var circleRoot = GetOrCreateChild(systems, "OSExplosionTelegraphView");
-                for (var index = circleRoot.childCount - 1; index >= 0; index--)
+                var legacyTelegraph = systems.Find("OSExplosionTelegraphView");
+                if (legacyTelegraph != null)
                 {
-                    UnityEngine.Object.DestroyImmediate(circleRoot.GetChild(index).gameObject);
+                    UnityEngine.Object.DestroyImmediate(legacyTelegraph.gameObject);
                 }
 
-                var headRenderer = head.GetComponent<SpriteRenderer>();
-                var circles = new LineRenderer[TelegraphCircleCapacity];
-                for (var index = 0; index < circles.Length; index++)
-                {
-                    var circleObject = new GameObject($"ReservedCircle_{index:00}", typeof(LineRenderer));
-                    circleObject.transform.SetParent(circleRoot, false);
-                    var line = circleObject.GetComponent<LineRenderer>();
-                    line.enabled = false;
-                    line.sortingOrder = 120;
-                    line.sharedMaterial = headRenderer != null ? headRenderer.sharedMaterial : null;
-                    circles[index] = line;
-                }
-
-                ConfigureHud(canvas, controller, bodyChain, circles);
+                ConfigureHud(canvas, controller, bodyChain);
 
                 var foundationLabel = RequireComponent<TMP_Text>(canvas, "FoundationLabel");
-                foundationLabel.text = "STEP 10  |  RESERVE → TELEGRAPH → BLAST → REGROW";
+                foundationLabel.text = "STEP 10  |  BODY CONVERGE → HEAD DASH → REFORM";
                 EditorUtility.SetDirty(foundationLabel);
 
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -135,15 +121,16 @@ namespace Ouroboros.Editor
 
         private static void ConfigureHud(
             Transform canvas,
-            OSExplosionController controller,
-            OSBodyChain bodyChain,
-            LineRenderer[] circles)
+            OSBodyDashController controller,
+            OSBodyChain bodyChain)
         {
             var combatHud = RequireTransform(canvas, "CombatHUD");
             var font = RequireComponent<TMP_Text>(canvas, "FoundationLabel").font;
-            var hudRoot = GetOrCreateRectChild(combatHud, "ExplosionHUD");
+            var hudRoot = combatHud.Find("BodyDashHUD") ?? combatHud.Find("ExplosionHUD") ??
+                          GetOrCreateRectChild(combatHud, "BodyDashHUD");
+            hudRoot.name = "BodyDashHUD";
             var rootRect = hudRoot as RectTransform
-                           ?? throw new InvalidOperationException("ExplosionHUD must use RectTransform.");
+                           ?? throw new InvalidOperationException("BodyDashHUD must use RectTransform.");
             SetRect(rootRect, new Vector2(0f, -36f), new Vector2(510f, 66f));
 
             for (var index = hudRoot.childCount - 1; index >= 0; index--)
@@ -153,8 +140,8 @@ namespace Ouroboros.Editor
 
             var status = CreateText(
                 hudRoot,
-                "ExplosionStatusLabel",
-                "BLAST [SPACE]  |  BODY 0/4",
+                "BodyDashStatusLabel",
+                "DASH READY [SPACE]  |  4.5u / 0.5s",
                 font,
                 18f,
                 TextAlignmentOptions.Center);
@@ -163,7 +150,7 @@ namespace Ouroboros.Editor
 
             var feedback = CreateText(
                 hudRoot,
-                "ExplosionFeedbackLabel",
+                "BodyDashFeedbackLabel",
                 string.Empty,
                 font,
                 16f,
@@ -171,12 +158,8 @@ namespace Ouroboros.Editor
             feedback.color = new Color32(255, 126, 92, 255);
             SetRect(feedback.rectTransform, new Vector2(0f, -14f), new Vector2(510f, 26f));
 
-            var presenter = GetOrAdd<OSExplosionPresenter>(hudRoot.gameObject);
-            Assign(presenter, "explosionController", controller);
-            Assign(presenter, "bodyChain", bodyChain);
-            Assign(presenter, "statusLabel", status);
-            Assign(presenter, "feedbackLabel", feedback);
-            AssignArray(presenter, "reservationCircles", circles);
+            var presenter = GetOrAdd<OSBodyDashPresenter>(hudRoot.gameObject);
+            presenter.Configure(controller, bodyChain, status, feedback);
             EditorUtility.SetDirty(hudRoot.gameObject);
         }
 
@@ -289,21 +272,5 @@ namespace Ouroboros.Editor
             EditorUtility.SetDirty(target);
         }
 
-        private static void AssignArray<T>(UnityEngine.Object target, string propertyName, T[] values)
-            where T : UnityEngine.Object
-        {
-            var serialized = new SerializedObject(target);
-            var property = serialized.FindProperty(propertyName)
-                           ?? throw new InvalidOperationException(
-                               $"Serialized property '{propertyName}' is missing from '{target.name}'.");
-            property.arraySize = values?.Length ?? 0;
-            for (var index = 0; index < property.arraySize; index++)
-            {
-                property.GetArrayElementAtIndex(index).objectReferenceValue = values[index];
-            }
-
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            EditorUtility.SetDirty(target);
-        }
     }
 }

@@ -378,7 +378,10 @@ namespace Ouroboros.Tests.PlayMode
             var resolver = AddResolver(rig, health, shield);
             var shieldId = rig.Chain.GetActiveSegment(0).StableId;
 
-            health.GrantExplosionInvulnerability(0.4f);
+            Assert.That(
+                health.TryApplyHeadDamage(HeadDamage(40, rig.Chain.GetActiveSegment(0).View.transform.position))
+                    .IsAccepted,
+                Is.True);
             resolver.EnqueueDamage(HeadDamage(4, rig.Chain.GetActiveSegment(0).View.transform.position));
             resolver.ProcessPendingForTesting();
             Assert.That(shield.GetChargesForTesting(shieldId), Is.EqualTo(1));

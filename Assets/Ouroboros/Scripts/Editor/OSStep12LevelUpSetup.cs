@@ -137,8 +137,8 @@ namespace Ouroboros.Editor
                              ?? throw new InvalidOperationException("OSBodyGrowthController is missing.");
                 var pickupSpawner = systems.GetComponentInChildren<OSPickupSpawner>(true)
                                     ?? throw new InvalidOperationException("OSPickupSpawner is missing.");
-                var explosion = systems.GetComponentInChildren<OSExplosionController>(true)
-                                ?? throw new InvalidOperationException("OSExplosionController is missing.");
+                var bodyDash = systems.GetComponentInChildren<OSBodyDashController>(true)
+                               ?? throw new InvalidOperationException("OSBodyDashController is missing.");
                 var attack = systems.GetComponentInChildren<OSAttackBodyRole>(true)
                              ?? throw new InvalidOperationException("OSAttackBodyRole is missing.");
                 var laser = systems.GetComponentInChildren<OSLaserBodyRole>(true)
@@ -159,7 +159,7 @@ namespace Ouroboros.Editor
                 Assign(levelController, "headWeapon", headWeapon);
                 Assign(levelController, "bodyGrowth", growth);
                 Assign(levelController, "pickupSpawner", pickupSpawner);
-                Assign(levelController, "explosionController", explosion);
+                Assign(levelController, "bodyDashController", bodyDash);
                 Assign(levelController, "attackBodyRole", attack);
                 Assign(levelController, "laserBodyRole", laser);
                 Assign(levelController, "controlBodyRole", control);

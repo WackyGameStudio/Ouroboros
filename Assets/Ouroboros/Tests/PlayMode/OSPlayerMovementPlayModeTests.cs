@@ -202,7 +202,7 @@ namespace Ouroboros.Tests.PlayMode
                 .With("Down", "<Keyboard>/downArrow")
                 .With("Left", "<Keyboard>/leftArrow")
                 .With("Right", "<Keyboard>/rightArrow");
-            player.AddAction("Explosion", InputActionType.Button, "<Keyboard>/space", interactions: "Press");
+            player.AddAction("BodyDash", InputActionType.Button, "<Keyboard>/space", interactions: "Press");
 
             var ui = actions.AddActionMap("UI");
             ui.AddAction("Submit", InputActionType.Button, "<Keyboard>/enter", interactions: "Press");

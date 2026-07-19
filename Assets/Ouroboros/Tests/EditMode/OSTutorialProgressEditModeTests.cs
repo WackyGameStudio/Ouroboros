@@ -20,10 +20,9 @@ namespace Ouroboros.Tests.EditMode
             progress.NotifyFragmentCollected();
             Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.BodyGrowth));
             progress.NotifyRoleConfirmed();
-            progress.NotifyBodyCount(4);
-            Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.Blast));
+            Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.BodyDash));
 
-            progress.NotifyExplosionResolved();
+            progress.NotifyBodyDashResolved();
             Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.WaitForCut));
             progress.NotifyBodyCut();
             Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.CutDifference));
@@ -46,23 +45,23 @@ namespace Ouroboros.Tests.EditMode
         }
 
         [Test]
-        public void BlastHint_TimesOutAfterTwentyUnscaledSeconds()
+        public void BodyDashHint_TimesOutAfterTwentyUnscaledSeconds()
         {
-            var progress = ReachBlast();
+            var progress = ReachBodyDash();
 
             progress.Advance(19.99f, false);
-            Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.Blast));
+            Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.BodyDash));
             progress.Advance(0.01f, false);
 
             Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.WaitForCut));
         }
 
         [Test]
-        public void EarlyCut_IsRememberedUntilBlastHintEnds()
+        public void EarlyCut_IsRememberedUntilBodyDashHintEnds()
         {
-            var progress = ReachBlast();
+            var progress = ReachBodyDash();
             progress.NotifyBodyCut();
-            progress.NotifyExplosionResolved();
+            progress.NotifyBodyDashResolved();
 
             Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.CutDifference));
         }
@@ -78,7 +77,7 @@ namespace Ouroboros.Tests.EditMode
             Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.AutoAttack));
         }
 
-        private static OSTutorialProgress ReachBlast()
+        private static OSTutorialProgress ReachBodyDash()
         {
             var progress = new OSTutorialProgress();
             progress.BeginFirstSession();
@@ -86,8 +85,7 @@ namespace Ouroboros.Tests.EditMode
             progress.NotifyFragmentCollected();
             progress.NotifyEnemyDefeated();
             progress.NotifyRoleConfirmed();
-            progress.NotifyBodyCount(4);
-            Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.Blast));
+            Assert.That(progress.Stage, Is.EqualTo(OSTutorialStage.BodyDash));
             return progress;
         }
     }

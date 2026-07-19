@@ -26,14 +26,14 @@ namespace Ouroboros.Runtime
         private InputActionMap _playerMap;
         private InputActionMap _uiMap;
         private InputAction _moveAction;
-        private InputAction _explosionAction;
+        private InputAction _bodyDashAction;
         private InputAction _submitAction;
         private InputAction _cancelAction;
         private bool _isBound;
         private Vector2 _moveValue;
 
         public event Action<Vector2> MoveChanged;
-        public event Action ExplosionRequested;
+        public event Action BodyDashRequested;
         public event Action SubmitRequested;
         public event Action CancelRequested;
 
@@ -107,7 +107,7 @@ namespace Ouroboros.Runtime
             var mode = state switch
             {
                 OSSessionState.Combat => OSInputMode.Player,
-                OSSessionState.ExplosionTelegraph => OSInputMode.Player,
+                OSSessionState.BodyDash => OSInputMode.Player,
                 OSSessionState.StartBodySelection => OSInputMode.UI,
                 OSSessionState.BodyRoleSelection => OSInputMode.UI,
                 OSSessionState.LevelUpSelection => OSInputMode.UI,
@@ -150,11 +150,11 @@ namespace Ouroboros.Runtime
             _playerMap ??= inputActions.FindActionMap(PlayerMapName, false);
             _uiMap ??= inputActions.FindActionMap(UiMapName, false);
             _moveAction ??= _playerMap?.FindAction("Move", false);
-            _explosionAction ??= _playerMap?.FindAction("Explosion", false);
+            _bodyDashAction ??= _playerMap?.FindAction("BodyDash", false);
             _submitAction ??= _uiMap?.FindAction("Submit", false);
             _cancelAction ??= _uiMap?.FindAction("Cancel", false);
             return _playerMap != null && _uiMap != null && _moveAction != null &&
-                   _explosionAction != null && _submitAction != null && _cancelAction != null;
+                   _bodyDashAction != null && _submitAction != null && _cancelAction != null;
         }
 
         private void ClearResolvedActions()
@@ -162,7 +162,7 @@ namespace Ouroboros.Runtime
             _playerMap = null;
             _uiMap = null;
             _moveAction = null;
-            _explosionAction = null;
+            _bodyDashAction = null;
             _submitAction = null;
             _cancelAction = null;
             _isBound = false;
@@ -177,7 +177,7 @@ namespace Ouroboros.Runtime
 
             _moveAction.performed += HandleMovePerformed;
             _moveAction.canceled += HandleMoveCanceled;
-            _explosionAction.performed += HandleExplosionPerformed;
+            _bodyDashAction.performed += HandleBodyDashPerformed;
             _submitAction.performed += HandleSubmitPerformed;
             _cancelAction.performed += HandleCancelPerformed;
             _isBound = true;
@@ -192,7 +192,7 @@ namespace Ouroboros.Runtime
 
             _moveAction.performed -= HandleMovePerformed;
             _moveAction.canceled -= HandleMoveCanceled;
-            _explosionAction.performed -= HandleExplosionPerformed;
+            _bodyDashAction.performed -= HandleBodyDashPerformed;
             _submitAction.performed -= HandleSubmitPerformed;
             _cancelAction.performed -= HandleCancelPerformed;
             _isBound = false;
@@ -234,7 +234,7 @@ namespace Ouroboros.Runtime
         private void ResetActionPhases()
         {
             _moveAction?.Reset();
-            _explosionAction?.Reset();
+            _bodyDashAction?.Reset();
             _submitAction?.Reset();
             _cancelAction?.Reset();
         }
@@ -261,11 +261,11 @@ namespace Ouroboros.Runtime
             ResetMoveValue();
         }
 
-        private void HandleExplosionPerformed(InputAction.CallbackContext context)
+        private void HandleBodyDashPerformed(InputAction.CallbackContext context)
         {
             if (CurrentMode == OSInputMode.Player)
             {
-                ExplosionRequested?.Invoke();
+                BodyDashRequested?.Invoke();
             }
         }
 

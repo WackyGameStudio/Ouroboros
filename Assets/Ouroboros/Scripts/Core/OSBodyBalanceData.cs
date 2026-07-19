@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Ouroboros.Core
 {
@@ -103,43 +104,26 @@ namespace Ouroboros.Core
     }
 
     [Serializable]
-    public sealed class OSExplosionSettings
+    public sealed class OSBodyDashSettings
     {
-        [SerializeField] private int minimumSegments = 4;
-        [SerializeField] private float consumeRate = 0.3f;
-        [SerializeField] private float telegraphDuration = 0.25f;
-        [SerializeField] private float radius = 1.8f;
-        [SerializeField] private float damagePerSegment = 35f;
-        [SerializeField] private float headInvulnerability = 0.4f;
+        [SerializeField] private float duration = 0.5f;
+        [SerializeField] private float distance = 4.5f;
+        [SerializeField] private float cooldown = 2f;
+        [SerializeField] private float bodyRecoveryDuration = 0.25f;
 
-        public int MinimumSegments => minimumSegments;
-        public float ConsumeRate => consumeRate;
-        public float TelegraphDuration => telegraphDuration;
-        public float Radius => radius;
-        public float DamagePerSegment => damagePerSegment;
-        public float HeadInvulnerability => headInvulnerability;
+        public float Duration => duration;
+        public float Distance => distance;
+        public float Cooldown => cooldown;
+        public float BodyRecoveryDuration => bodyRecoveryDuration;
 
         internal void CollectValidationErrors(List<string> errors, string path)
         {
-            OSValidationUtility.RequireAtLeastOne(minimumSegments, $"{path}.minimumSegments", errors);
-            OSValidationUtility.RequireFinitePositive(consumeRate, $"{path}.consumeRate", errors);
-            if (OSValidationUtility.IsFinite(consumeRate) && consumeRate > 1f)
-            {
-                errors.Add($"{path}.consumeRate: expected a value no greater than 1, actual {consumeRate}.");
-            }
-
+            OSValidationUtility.RequireFinitePositive(duration, $"{path}.duration", errors);
+            OSValidationUtility.RequireFinitePositive(distance, $"{path}.distance", errors);
+            OSValidationUtility.RequireFinitePositive(cooldown, $"{path}.cooldown", errors);
             OSValidationUtility.RequireFiniteNonNegative(
-                telegraphDuration,
-                $"{path}.telegraphDuration",
-                errors);
-            OSValidationUtility.RequireFinitePositive(radius, $"{path}.radius", errors);
-            OSValidationUtility.RequireFinitePositive(
-                damagePerSegment,
-                $"{path}.damagePerSegment",
-                errors);
-            OSValidationUtility.RequireFiniteNonNegative(
-                headInvulnerability,
-                $"{path}.headInvulnerability",
+                bodyRecoveryDuration,
+                $"{path}.bodyRecoveryDuration",
                 errors);
         }
     }
@@ -156,7 +140,8 @@ namespace Ouroboros.Core
         [SerializeField] private float bodyDamageRate = 0.04f;
         [SerializeField] private float cutGuardDuration = 0.35f;
         [SerializeField] private List<OSBodyRoleDefinition> roleDefinitions = new();
-        [SerializeField] private OSExplosionSettings explosion = new();
+        [FormerlySerializedAs("explosion")]
+        [SerializeField] private OSBodyDashSettings bodyDash = new();
 
         [NonSerialized] private OSDataValidationReport _lastValidationReport;
 
@@ -169,7 +154,7 @@ namespace Ouroboros.Core
         public float BodyDamageRate => bodyDamageRate;
         public float CutGuardDuration => cutGuardDuration;
         public IReadOnlyList<OSBodyRoleDefinition> RoleDefinitions => roleDefinitions;
-        public OSExplosionSettings Explosion => explosion;
+        public OSBodyDashSettings BodyDash => bodyDash;
         public string LastValidationMessage => _lastValidationReport?.Message ?? string.Empty;
 
         public OSBodyRoleDefinition GetRoleDefinition(OSBodyRoleType role)
@@ -257,13 +242,13 @@ namespace Ouroboros.Core
                 }
             }
 
-            if (explosion == null)
+            if (bodyDash == null)
             {
-                errors.Add($"{path}.explosion: settings are missing.");
+                errors.Add($"{path}.bodyDash: settings are missing.");
             }
             else
             {
-                explosion.CollectValidationErrors(errors, $"{path}.explosion");
+                bodyDash.CollectValidationErrors(errors, $"{path}.bodyDash");
             }
         }
 

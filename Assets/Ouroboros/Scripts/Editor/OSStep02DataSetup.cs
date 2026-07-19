@@ -114,13 +114,11 @@ namespace Ouroboros.Editor
                 range: 6f, damage: 0f, interval: 4f, radius: 0f, charges: 0,
                 recharge: 0f, beamWidth: 0f, telegraph: 0f, normalControl: 1f, eliteControl: 0.5f);
 
-            var explosion = Require(serialized, "explosion");
-            explosion.FindPropertyRelative("minimumSegments").intValue = 4;
-            explosion.FindPropertyRelative("consumeRate").floatValue = 0.3f;
-            explosion.FindPropertyRelative("telegraphDuration").floatValue = 0.25f;
-            explosion.FindPropertyRelative("radius").floatValue = 1.8f;
-            explosion.FindPropertyRelative("damagePerSegment").floatValue = 35f;
-            explosion.FindPropertyRelative("headInvulnerability").floatValue = 0.4f;
+            var bodyDash = Require(serialized, "bodyDash");
+            bodyDash.FindPropertyRelative("duration").floatValue = 0.5f;
+            bodyDash.FindPropertyRelative("distance").floatValue = 4.5f;
+            bodyDash.FindPropertyRelative("cooldown").floatValue = 2f;
+            bodyDash.FindPropertyRelative("bodyRecoveryDuration").floatValue = 0.25f;
         }
 
         private static void ConfigureRole(
@@ -289,12 +287,12 @@ namespace Ouroboros.Editor
                 OSUpgradeOperation.AddBodyDamageRate, 0.01f, 2, 0.04f, 0.06f);
             ConfigureUpgrade(entries, 5, "role_overclock", OSUpgradeCategory.Body,
                 OSUpgradeOperation.AddRoleCooldownMultiplier, -0.08f, 3, 0.5f, 1f);
-            ConfigureUpgrade(entries, 6, "explosion_radius", OSUpgradeCategory.Explosion,
-                OSUpgradeOperation.AddExplosionRadiusMultiplier, 0.15f, 3, 1f, 3f);
-            ConfigureUpgrade(entries, 7, "explosion_damage", OSUpgradeCategory.Explosion,
-                OSUpgradeOperation.AddExplosionDamageMultiplier, 0.2f, 3, 1f, 3f);
-            ConfigureUpgrade(entries, 8, "explosion_efficiency", OSUpgradeCategory.Explosion,
-                OSUpgradeOperation.AddExplosionConsumeRate, -0.05f, 3, 0.15f, 0.3f);
+            ConfigureUpgrade(entries, 6, "dash_distance", OSUpgradeCategory.Dash,
+                OSUpgradeOperation.AddDashDistanceMultiplier, 0.15f, 3, 1f, 3f);
+            ConfigureUpgrade(entries, 7, "dash_cooldown", OSUpgradeCategory.Dash,
+                OSUpgradeOperation.AddDashCooldownMultiplier, -0.12f, 3, 0.5f, 1f);
+            ConfigureUpgrade(entries, 8, "dash_recovery", OSUpgradeCategory.Dash,
+                OSUpgradeOperation.AddDashRecoveryDuration, -0.05f, 3, 0.1f, 0.25f);
             ConfigureUpgrade(entries, 9, "max_health", OSUpgradeCategory.Survival,
                 OSUpgradeOperation.AddMaxHealth, 0.2f, 2, 0f, 10f);
             ConfigureUpgrade(entries, 10, "move_speed", OSUpgradeCategory.Survival,
@@ -345,8 +343,8 @@ namespace Ouroboros.Editor
             ConfigureVisual(visuals.GetArrayElementAtIndex(3), "control", OSBodyRoleType.Control,
                 "Body_Control", "diamond_cross", new Color32(65, 230, 145, 255));
             SetStringArray(serialized, "attackVfxKeys", "head_projectile", "body_projectile", "laser_beam");
-            SetStringArray(serialized, "telegraphKeys", "charger_line", "laser_line", "explosion_reserved");
-            SetStringArray(serialized, "audioKeys", "ui_select", "hit_head", "cut_body", "explosion");
+            SetStringArray(serialized, "telegraphKeys", "charger_line", "laser_line", "body_dash");
+            SetStringArray(serialized, "audioKeys", "ui_select", "hit_head", "cut_body", "body_dash");
         }
 
         private static void ConfigureVisual(

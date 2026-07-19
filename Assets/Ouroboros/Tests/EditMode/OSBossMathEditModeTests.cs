@@ -73,7 +73,8 @@ namespace Ouroboros.Tests.EditMode
                 "head_damage LV3");
 
             Assert.That(summary.ResultKind, Is.EqualTo(OSSessionResultKind.BossDefeated));
-            Assert.That(summary.ExplosionConsumedBodyCount, Is.EqualTo(8));
+            Assert.That(summary.DashUseCount, Is.EqualTo(80));
+            Assert.That(summary.DashConvergedBodyCount, Is.EqualTo(8));
             Assert.That(summary.MaxRoleCounts.Attack, Is.EqualTo(4));
             Assert.That(summary.FinalRoleCounts.Shield, Is.EqualTo(1));
             Assert.That(summary.AppliedUpgradeCount, Is.EqualTo(7));

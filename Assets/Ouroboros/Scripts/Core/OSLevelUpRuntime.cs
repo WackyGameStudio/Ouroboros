@@ -81,9 +81,9 @@ namespace Ouroboros.Core
             float fragmentRequirementMultiplier,
             float bodyDamageRateBonus,
             float roleCooldownMultiplier,
-            float explosionRadiusMultiplier,
-            float explosionDamageMultiplier,
-            float explosionConsumeRateDelta,
+            float dashDistanceMultiplier,
+            float dashCooldownMultiplier,
+            float dashRecoveryDurationDelta,
             float maxHealthMultiplier,
             float moveSpeedMultiplier,
             float healMultiplier,
@@ -97,9 +97,9 @@ namespace Ouroboros.Core
             FragmentRequirementMultiplier = fragmentRequirementMultiplier;
             BodyDamageRateBonus = bodyDamageRateBonus;
             RoleCooldownMultiplier = roleCooldownMultiplier;
-            ExplosionRadiusMultiplier = explosionRadiusMultiplier;
-            ExplosionDamageMultiplier = explosionDamageMultiplier;
-            ExplosionConsumeRateDelta = explosionConsumeRateDelta;
+            DashDistanceMultiplier = dashDistanceMultiplier;
+            DashCooldownMultiplier = dashCooldownMultiplier;
+            DashRecoveryDurationDelta = dashRecoveryDurationDelta;
             MaxHealthMultiplier = maxHealthMultiplier;
             MoveSpeedMultiplier = moveSpeedMultiplier;
             HealMultiplier = healMultiplier;
@@ -131,9 +131,9 @@ namespace Ouroboros.Core
         public float FragmentRequirementMultiplier { get; }
         public float BodyDamageRateBonus { get; }
         public float RoleCooldownMultiplier { get; }
-        public float ExplosionRadiusMultiplier { get; }
-        public float ExplosionDamageMultiplier { get; }
-        public float ExplosionConsumeRateDelta { get; }
+        public float DashDistanceMultiplier { get; }
+        public float DashCooldownMultiplier { get; }
+        public float DashRecoveryDurationDelta { get; }
         public float MaxHealthMultiplier { get; }
         public float MoveSpeedMultiplier { get; }
         public float HealMultiplier { get; }
@@ -381,9 +381,9 @@ namespace Ouroboros.Core
             var fragmentRequirement = 1f;
             var bodyDamageRate = 0f;
             var roleCooldown = 1f;
-            var explosionRadius = 1f;
-            var explosionDamage = 1f;
-            var explosionConsumeRate = 0f;
+            var dashDistance = 1f;
+            var dashCooldown = 1f;
+            var dashRecoveryDuration = 0f;
             var maxHealth = 1f;
             var moveSpeed = 1f;
             var heal = 1f;
@@ -420,14 +420,14 @@ namespace Ouroboros.Core
                     case OSUpgradeOperation.AddRoleCooldownMultiplier:
                         roleCooldown += value;
                         break;
-                    case OSUpgradeOperation.AddExplosionRadiusMultiplier:
-                        explosionRadius += value;
+                    case OSUpgradeOperation.AddDashDistanceMultiplier:
+                        dashDistance += value;
                         break;
-                    case OSUpgradeOperation.AddExplosionDamageMultiplier:
-                        explosionDamage += value;
+                    case OSUpgradeOperation.AddDashCooldownMultiplier:
+                        dashCooldown += value;
                         break;
-                    case OSUpgradeOperation.AddExplosionConsumeRate:
-                        explosionConsumeRate += value;
+                    case OSUpgradeOperation.AddDashRecoveryDuration:
+                        dashRecoveryDuration += value;
                         break;
                     case OSUpgradeOperation.AddMaxHealth:
                         maxHealth += value;
@@ -457,9 +457,9 @@ namespace Ouroboros.Core
                 Math.Max(0.01f, fragmentRequirement),
                 Math.Max(0f, bodyDamageRate),
                 Math.Clamp(roleCooldown, 0.5f, 1f),
-                Math.Max(0.01f, explosionRadius),
-                Math.Max(0.01f, explosionDamage),
-                explosionConsumeRate,
+                Math.Max(0.01f, dashDistance),
+                Math.Clamp(dashCooldown, 0.5f, 1f),
+                dashRecoveryDuration,
                 Math.Max(0.01f, maxHealth),
                 Math.Max(0.01f, moveSpeed),
                 Math.Max(0.01f, heal),
@@ -532,16 +532,6 @@ namespace Ouroboros.Core
             }
 
             return Math.Max(4, (int)Math.Ceiling(Math.Max(1f, baseRequirement) * Math.Max(0.01f, multiplier)));
-        }
-
-        public static float CalculateExplosionConsumeRate(float baseRate, float delta)
-        {
-            if (!float.IsFinite(baseRate) || !float.IsFinite(delta))
-            {
-                return 0.15f;
-            }
-
-            return Math.Clamp(baseRate + delta, 0.15f, 1f);
         }
 
         public static float CalculateMoveSpeed(float baseSpeed, float multiplier)

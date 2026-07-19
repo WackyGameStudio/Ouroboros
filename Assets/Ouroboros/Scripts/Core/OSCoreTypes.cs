@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Ouroboros.Core
@@ -8,7 +7,7 @@ namespace Ouroboros.Core
         Boot,
         StartBodySelection,
         Combat,
-        ExplosionTelegraph,
+        BodyDash,
         BodyRoleSelection,
         LevelUpSelection,
         Dead,
@@ -60,7 +59,7 @@ namespace Ouroboros.Core
     {
         Damage,
         Pickup,
-        ExplosionCompleted,
+        BodyDashCompleted,
         EnemyDefeated,
         BossDefeated
     }
@@ -73,9 +72,9 @@ namespace Ouroboros.Core
         AddFragmentRequirementMultiplier,
         AddBodyDamageRate,
         AddRoleCooldownMultiplier,
-        AddExplosionRadiusMultiplier,
-        AddExplosionDamageMultiplier,
-        AddExplosionConsumeRate,
+        AddDashDistanceMultiplier,
+        AddDashCooldownMultiplier,
+        AddDashRecoveryDuration,
         AddMaxHealth,
         AddMoveSpeedMultiplier,
         AddHealMultiplier,
@@ -88,7 +87,7 @@ namespace Ouroboros.Core
     {
         Firepower,
         Body,
-        Explosion,
+        Dash,
         Survival,
         Utility
     }
@@ -227,24 +226,27 @@ namespace Ouroboros.Core
         public int CreatedTick { get; }
     }
 
-    public readonly struct OSExplosionSnapshot
+    public readonly struct OSBodyDashSnapshot
     {
-        public OSExplosionSnapshot(
+        public OSBodyDashSnapshot(
             int requestId,
-            int consumeCount,
-            IReadOnlyList<int> reservedSegmentIds,
-            IReadOnlyList<Vector2> centers)
+            float duration,
+            float distance,
+            Vector2 direction,
+            int bodyCount)
         {
             RequestId = requestId;
-            ConsumeCount = consumeCount;
-            ReservedSegmentIds = reservedSegmentIds;
-            Centers = centers;
+            Duration = duration;
+            Distance = distance;
+            Direction = direction;
+            BodyCount = bodyCount;
         }
 
         public int RequestId { get; }
-        public int ConsumeCount { get; }
-        public IReadOnlyList<int> ReservedSegmentIds { get; }
-        public IReadOnlyList<Vector2> Centers { get; }
+        public float Duration { get; }
+        public float Distance { get; }
+        public Vector2 Direction { get; }
+        public int BodyCount { get; }
     }
 
     public readonly struct OSSessionSummary
@@ -255,12 +257,12 @@ namespace Ouroboros.Core
             float durationSeconds,
             int totalKills,
             int eliteKills,
-            int explosionKills,
+            int dashUseCount,
             int maxBodyCount,
             int finalBodyCount,
             int acquiredBodyCount,
             int cutBodyCount,
-            int explosionConsumedBodyCount,
+            int dashConvergedBodyCount,
             float receivedHeadDamage,
             OSRoleCountSnapshot maxRoleCounts,
             OSRoleCountSnapshot finalRoleCounts,
@@ -275,12 +277,12 @@ namespace Ouroboros.Core
             DurationSeconds = durationSeconds;
             TotalKills = totalKills;
             EliteKills = eliteKills;
-            ExplosionKills = explosionKills;
+            DashUseCount = dashUseCount;
             MaxBodyCount = maxBodyCount;
             FinalBodyCount = finalBodyCount;
             AcquiredBodyCount = acquiredBodyCount;
             CutBodyCount = cutBodyCount;
-            ExplosionConsumedBodyCount = explosionConsumedBodyCount;
+            DashConvergedBodyCount = dashConvergedBodyCount;
             ReceivedHeadDamage = receivedHeadDamage;
             MaxRoleCounts = maxRoleCounts;
             FinalRoleCounts = finalRoleCounts;
@@ -296,12 +298,12 @@ namespace Ouroboros.Core
         public float DurationSeconds { get; }
         public int TotalKills { get; }
         public int EliteKills { get; }
-        public int ExplosionKills { get; }
+        public int DashUseCount { get; }
         public int MaxBodyCount { get; }
         public int FinalBodyCount { get; }
         public int AcquiredBodyCount { get; }
         public int CutBodyCount { get; }
-        public int ExplosionConsumedBodyCount { get; }
+        public int DashConvergedBodyCount { get; }
         public float ReceivedHeadDamage { get; }
         public OSRoleCountSnapshot MaxRoleCounts { get; }
         public OSRoleCountSnapshot FinalRoleCounts { get; }

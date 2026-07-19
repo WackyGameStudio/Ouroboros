@@ -20,7 +20,7 @@ namespace Ouroboros.UI
         [SerializeField] private OSLaserBodyRole laserRole;
         [SerializeField] private OSControlBodyRole controlRole;
         [SerializeField] private OSShieldBodyRole shieldRole;
-        [SerializeField] private OSExplosionController explosionController;
+        [SerializeField] private OSBodyDashController bodyDashController;
         [SerializeField] private OSLevelUpController levelUpController;
         [SerializeField] private OSWaveDirector waveDirector;
         [SerializeField] private OSBossEncounterController bossEncounter;
@@ -89,7 +89,7 @@ namespace Ouroboros.UI
             OSLaserBodyRole laser,
             OSControlBodyRole control,
             OSShieldBodyRole shield,
-            OSExplosionController explosion,
+            OSBodyDashController bodyDash,
             OSLevelUpController level,
             OSWaveDirector wave,
             OSBossEncounterController boss,
@@ -107,7 +107,7 @@ namespace Ouroboros.UI
             laserRole = laser;
             controlRole = control;
             shieldRole = shield;
-            explosionController = explosion;
+            bodyDashController = bodyDash;
             levelUpController = level;
             waveDirector = wave;
             bossEncounter = boss;
@@ -150,7 +150,7 @@ namespace Ouroboros.UI
             if (primaryLabel != null)
             {
                 var invulnerability = playerHealth != null && playerHealth.IsInvulnerable
-                    ? $"  INVULN {Mathf.Max(playerHealth.HitInvulnerabilityRemaining, playerHealth.ExplosionInvulnerabilityRemaining):0.0}s"
+                    ? $"  INVULN {playerHealth.HitInvulnerabilityRemaining:0.0}s"
                     : string.Empty;
                 primaryLabel.text =
                     $"CORE  {playerHealth?.CurrentHealth ?? 0f:0}/{playerHealth?.MaxHealth ?? 0f:0}{invulnerability}\n" +
@@ -161,21 +161,15 @@ namespace Ouroboros.UI
 
             if (actionLabel != null)
             {
-                var bodyCount = bodyChain?.ActiveCount ?? 0;
-                var activeBlast = explosionController != null && explosionController.IsTelegraphActive;
-                var reserve = activeBlast
-                    ? explosionController.ReservedCount
-                    : bodyCount >= 4 && explosionController != null
-                        ? OSExplosionMath.CalculateConsumeCount(bodyCount, explosionController.ConsumeRate)
-                        : 0;
-                var after = Mathf.Max(0, bodyCount - reserve);
-                var blastText = activeBlast
-                    ? $"BLAST WARNING  x{reserve} -> BODY {after}  {explosionController.TelegraphRemaining:0.0}s"
-                    : bodyCount >= 4
-                        ? $"BLAST READY [SPACE]  x{reserve} -> BODY {after}"
-                        : $"BLAST LOCKED  BODY {bodyCount}/4";
+                var dashText = bodyDashController == null
+                    ? "DASH OFFLINE"
+                    : bodyDashController.IsDashActive
+                        ? $"DASHING  {bodyDashController.DashRemaining:0.0}s  |  BODY CONVERGING"
+                        : bodyDashController.CooldownRemaining > 0f
+                            ? $"DASH COOLDOWN  {bodyDashController.CooldownRemaining:0.0}s"
+                            : $"DASH READY [SPACE]  {bodyDashController.Distance:0.0}u / {bodyDashController.Duration:0.0}s";
                 actionLabel.text =
-                    $"{blastText}\n" +
+                    $"{dashText}\n" +
                     $"SHIELD [O] {shieldRole?.ChargedCount ?? 0}/{shieldCount}   " +
                     $"ATTACK [>] {attackRole?.ShotsFired ?? 0}   LASER [=] {laserRole?.BeamsFired ?? 0}   " +
                     $"CONTROL [+] {controlRole?.ControlsApplied ?? 0}";
@@ -280,11 +274,10 @@ namespace Ouroboros.UI
                 shieldRole.ShieldRecharged += HandleShieldChanged;
             }
 
-            if (explosionController != null)
+            if (bodyDashController != null)
             {
-                explosionController.TelegraphStarted += HandleExplosionSnapshot;
-                explosionController.ReservationChanged += HandleExplosionSnapshot;
-                explosionController.ExplosionResolved += HandleExplosionResolved;
+                bodyDashController.DashStarted += HandleBodyDashSnapshot;
+                bodyDashController.DashCompleted += HandleBodyDashResolved;
             }
 
             if (levelUpController != null)
@@ -350,11 +343,10 @@ namespace Ouroboros.UI
                 shieldRole.ShieldRecharged -= HandleShieldChanged;
             }
 
-            if (explosionController != null)
+            if (bodyDashController != null)
             {
-                explosionController.TelegraphStarted -= HandleExplosionSnapshot;
-                explosionController.ReservationChanged -= HandleExplosionSnapshot;
-                explosionController.ExplosionResolved -= HandleExplosionResolved;
+                bodyDashController.DashStarted -= HandleBodyDashSnapshot;
+                bodyDashController.DashCompleted -= HandleBodyDashResolved;
             }
 
             if (levelUpController != null)
@@ -387,8 +379,8 @@ namespace Ouroboros.UI
         private void HandleProgressChanged(int progress, int required) => MarkDirty();
         private void HandleRoleConfirmed(OSBodyRoleType role, int stableId) => MarkDirty();
         private void HandleShieldChanged(OSShieldChargeEvent chargeEvent) => MarkDirty();
-        private void HandleExplosionSnapshot(OSExplosionSnapshot snapshot) => MarkDirty();
-        private void HandleExplosionResolved(OSExplosionResolution resolution) => MarkDirty();
+        private void HandleBodyDashSnapshot(OSBodyDashSnapshot snapshot) => MarkDirty();
+        private void HandleBodyDashResolved(OSBodyDashResolution resolution) => MarkDirty();
         private void HandleExperienceChanged(int level, float current, int required) => MarkDirty();
         private void HandleUpgradeApplied(OSUpgradeCandidate candidate, OSUpgradeModifiers modifiers) => MarkDirty();
         private void HandleEnemySpawned(OSEnemyController enemy) => MarkDirty();

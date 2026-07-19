@@ -104,7 +104,7 @@ namespace Ouroboros.Tests.PlayMode
             var weapon = Object.FindAnyObjectByType<OSHeadWeapon>();
             var growth = Object.FindAnyObjectByType<OSBodyGrowthController>();
             var pickups = Object.FindAnyObjectByType<OSPickupSpawner>();
-            var explosion = Object.FindAnyObjectByType<OSExplosionController>();
+            var bodyDash = Object.FindAnyObjectByType<OSBodyDashController>();
             var attack = Object.FindAnyObjectByType<OSAttackBodyRole>();
             var laser = Object.FindAnyObjectByType<OSLaserBodyRole>();
             var shield = Object.FindAnyObjectByType<OSShieldBodyRole>();
@@ -114,8 +114,9 @@ namespace Ouroboros.Tests.PlayMode
             var baseDamage = weapon.Damage;
             var baseFireInterval = weapon.FireInterval;
             var baseMagnet = pickups.MagnetRadius;
-            var baseExplosionRadius = explosion.Radius;
-            var baseExplosionDamage = explosion.DamagePerSegment;
+            var baseDashDistance = bodyDash.Distance;
+            var baseDashCooldown = bodyDash.Cooldown;
+            var baseDashRecovery = bodyDash.RecoveryDuration;
             var baseAttackInterval = attack.Interval;
             var baseLaserInterval = laser.Interval;
             var baseShieldRecharge = shield.RechargeDuration;
@@ -128,7 +129,7 @@ namespace Ouroboros.Tests.PlayMode
                 0.01f,
                 0.92f,
                 1.15f,
-                1.2f,
+                0.88f,
                 -0.05f,
                 1.2f,
                 1.08f,
@@ -142,7 +143,7 @@ namespace Ouroboros.Tests.PlayMode
             weapon.ApplyUpgradeModifiers(modifiers);
             growth.ApplyUpgradeModifiers(modifiers);
             pickups.ApplyUpgradeModifiers(modifiers);
-            explosion.ApplyUpgradeModifiers(modifiers);
+            bodyDash.ApplyUpgradeModifiers(modifiers);
             attack.ApplyUpgradeModifiers(modifiers);
             laser.ApplyUpgradeModifiers(modifiers);
             shield.ApplyUpgradeModifiers(modifiers);
@@ -157,9 +158,9 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(weapon.ElitePriority, Is.True);
             Assert.That(growth.FragmentRequirement, Is.EqualTo(5));
             Assert.That(pickups.MagnetRadius, Is.EqualTo(baseMagnet * 1.3f).Within(0.001f));
-            Assert.That(explosion.Radius, Is.EqualTo(baseExplosionRadius * 1.15f).Within(0.001f));
-            Assert.That(explosion.DamagePerSegment, Is.EqualTo(baseExplosionDamage * 1.2f).Within(0.001f));
-            Assert.That(explosion.ConsumeRate, Is.EqualTo(0.25f).Within(0.001f));
+            Assert.That(bodyDash.Distance, Is.EqualTo(baseDashDistance * 1.15f).Within(0.001f));
+            Assert.That(bodyDash.Cooldown, Is.EqualTo(baseDashCooldown * 0.88f).Within(0.001f));
+            Assert.That(bodyDash.RecoveryDuration, Is.EqualTo(baseDashRecovery - 0.05f).Within(0.001f));
             Assert.That(attack.Interval, Is.EqualTo(baseAttackInterval * 0.92f).Within(0.001f));
             Assert.That(laser.Interval, Is.EqualTo(baseLaserInterval * 0.92f).Within(0.001f));
             Assert.That(shield.RechargeDuration, Is.EqualTo(baseShieldRecharge * 0.92f).Within(0.001f));

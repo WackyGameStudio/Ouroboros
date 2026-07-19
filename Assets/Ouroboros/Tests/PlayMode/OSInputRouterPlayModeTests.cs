@@ -74,8 +74,8 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
             Assert.That(_session.State, Is.EqualTo(OSSessionState.Combat));
 
-            var explosionCount = 0;
-            _session.ExplosionRequested += () => explosionCount++;
+            var dashCount = 0;
+            _session.BodyDashRequested += () => dashCount++;
             Assert.That(_session.QueueSelection(OSSelectionKind.BodyRole).IsAccepted, Is.True);
             Assert.That(_session.ProcessPendingSelection().IsAccepted, Is.True);
             Assert.That(_router.CurrentMode, Is.EqualTo(OSInputMode.UI));
@@ -83,11 +83,11 @@ namespace Ouroboros.Tests.PlayMode
             Press(_keyboard.spaceKey);
             Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
             InputSystem.Update();
-            Assert.That(explosionCount, Is.Zero);
+            Assert.That(dashCount, Is.Zero);
 
             Release(_keyboard.spaceKey);
             Press(_keyboard.spaceKey);
-            Assert.That(explosionCount, Is.EqualTo(1));
+            Assert.That(dashCount, Is.EqualTo(1));
             Release(_keyboard.spaceKey);
         }
 
@@ -108,7 +108,7 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(_router.CurrentMode, Is.EqualTo(OSInputMode.Player));
 
             Assert.That(_session.RequestDeath().IsAccepted, Is.True);
-            Assert.That(_session.TryRequestExplosion().Code, Is.EqualTo(OSResultCode.RejectedState));
+            Assert.That(_session.TryRequestBodyDash().Code, Is.EqualTo(OSResultCode.RejectedState));
             Tap(_keyboard.enterKey);
             Assert.That(_session.State, Is.EqualTo(OSSessionState.Result));
             Tap(_keyboard.enterKey);
@@ -135,7 +135,7 @@ namespace Ouroboros.Tests.PlayMode
             var actions = ScriptableObject.CreateInstance<InputActionAsset>();
             var player = actions.AddActionMap("Player");
             player.AddAction("Move", InputActionType.Value, expectedControlLayout: "Vector2");
-            player.AddAction("Explosion", InputActionType.Button, "<Keyboard>/space", interactions: "Press");
+            player.AddAction("BodyDash", InputActionType.Button, "<Keyboard>/space", interactions: "Press");
 
             var ui = actions.AddActionMap("UI");
             ui.AddAction("Submit", InputActionType.Button, "<Keyboard>/enter", interactions: "Press");
