@@ -252,35 +252,76 @@ namespace Ouroboros.Runtime
             return candidate.Definition.Operation switch
             {
                 OSUpgradeOperation.AddHeadDamageMultiplier =>
-                    $"HEAD DMG  {Percent(1f + (value * level))} → {Percent(1f + (value * next))}",
+                    $"HEAD DAMAGE  {Percent(1f + (value * level))} → {Percent(1f + (value * next))}",
                 OSUpgradeOperation.AddHeadRateMultiplier =>
-                    $"HEAD RATE  {HeadInterval(value, level):0.00}s → {HeadInterval(value, next):0.00}s",
+                    $"FIRE INTERVAL  {HeadInterval(value, level):0.00}s → {HeadInterval(value, next):0.00}s",
                 OSUpgradeOperation.AddHeadPierce =>
-                    $"PIERCE  {Mathf.RoundToInt(value * level)} → {Mathf.RoundToInt(value * next)}",
+                    $"EXTRA ENEMIES HIT  {Mathf.RoundToInt(value * level)} → {Mathf.RoundToInt(value * next)}",
                 OSUpgradeOperation.AddFragmentRequirementMultiplier =>
-                    $"FRAGMENTS  {FragmentRequirement(value, level)} → {FragmentRequirement(value, next)}",
+                    $"FRAGMENTS PER SEGMENT  {FragmentRequirement(value, level)} → {FragmentRequirement(value, next)}",
                 OSUpgradeOperation.AddBodyDamageRate =>
-                    $"PER BODY  {BodyDamageRate(value, level):0}% → {BodyDamageRate(value, next):0}%",
+                    $"HEAD DAMAGE PER BODY  {BodyDamageRate(value, level):0}% → {BodyDamageRate(value, next):0}%",
                 OSUpgradeOperation.AddRoleCooldownMultiplier =>
-                    $"ROLE CD  {Percent(1f + (value * level))} → {Percent(1f + (value * next))}",
+                    $"ROLE COOLDOWN TIME  {Percent(1f + (value * level))} → {Percent(1f + (value * next))}",
                 OSUpgradeOperation.AddDashDistanceMultiplier =>
-                    $"DASH DIST  {DashDistance(value, level):0.00} → {DashDistance(value, next):0.00}",
+                    $"DASH DISTANCE  {DashDistance(value, level):0.00} → {DashDistance(value, next):0.00}",
                 OSUpgradeOperation.AddDashCooldownMultiplier =>
-                    $"DASH CD  {DashCooldown(value, level):0.00}s → {DashCooldown(value, next):0.00}s",
+                    $"DASH COOLDOWN  {DashCooldown(value, level):0.00}s → {DashCooldown(value, next):0.00}s",
                 OSUpgradeOperation.AddDashCooldownDelta =>
-                    $"DASH CD  {DashCooldownDelta(value, level):0.00}s → {DashCooldownDelta(value, next):0.00}s",
+                    $"DASH COOLDOWN  {DashCooldownDelta(value, level):0.00}s → {DashCooldownDelta(value, next):0.00}s",
                 OSUpgradeOperation.AddMaxHealth =>
                     $"MAX HP  {MaxHealth(value, level):0} → {MaxHealth(value, next):0}",
                 OSUpgradeOperation.AddMoveSpeedMultiplier =>
-                    $"MOVE  {MoveSpeed(value, level):0.00} → {MoveSpeed(value, next):0.00}",
+                    $"MOVE SPEED  {MoveSpeed(value, level):0.00} → {MoveSpeed(value, next):0.00}",
                 OSUpgradeOperation.AddHealMultiplier =>
-                    $"HEAL  {Percent(1f + (value * level))} → {Percent(1f + (value * next))}",
+                    $"HEALING AMOUNT  {Percent(1f + (value * level))} → {Percent(1f + (value * next))}",
                 OSUpgradeOperation.AddMagnetMultiplier =>
-                    $"MAGNET R  {MagnetRadius(value, level):0.00} → {MagnetRadius(value, next):0.00}",
+                    $"PICKUP RANGE  {MagnetRadius(value, level):0.00} → {MagnetRadius(value, next):0.00}",
                 OSUpgradeOperation.AddExperienceMultiplier =>
                     $"XP GAIN  {Percent(1f + (value * level))} → {Percent(1f + (value * next))}",
-                OSUpgradeOperation.EnableElitePriority => "TARGETING  NEAREST → ELITE FIRST",
+                OSUpgradeOperation.EnableElitePriority => "AUTO-AIM PRIORITY  NEAREST → ELITE / BOSS",
                 _ => $"LEVEL {level} → {next}"
+            };
+        }
+
+        public string GetEffectDescription(OSUpgradeCandidate candidate)
+        {
+            var level = candidate.CurrentLevel;
+            var next = candidate.NextLevel;
+            var value = Mathf.Abs(candidate.Definition.PerLevelValue);
+            return candidate.Definition.Operation switch
+            {
+                OSUpgradeOperation.AddHeadDamageMultiplier =>
+                    $"Head projectiles deal {PercentValue(value)} more damage.",
+                OSUpgradeOperation.AddHeadRateMultiplier =>
+                    $"Head auto-fire rate increases {PercentValue(value)}.",
+                OSUpgradeOperation.AddHeadPierce =>
+                    $"Each head projectile can pierce {Mathf.RoundToInt(value)} more enemy.",
+                OSUpgradeOperation.AddFragmentRequirementMultiplier =>
+                    FragmentSavingDescription(candidate.Definition.PerLevelValue, level, next),
+                OSUpgradeOperation.AddBodyDamageRate =>
+                    $"Each body segment adds {PercentPointValue(value)} head projectile damage.",
+                OSUpgradeOperation.AddRoleCooldownMultiplier =>
+                    $"Body-role weapons and Shield recharge take {PercentValue(value)} less time.",
+                OSUpgradeOperation.AddDashDistanceMultiplier =>
+                    $"Dash travels {PercentValue(value)} farther.",
+                OSUpgradeOperation.AddDashCooldownMultiplier =>
+                    $"Dash cooldown takes {PercentValue(value)} less time.",
+                OSUpgradeOperation.AddDashCooldownDelta =>
+                    $"Dash cooldown becomes {value:0.00}s shorter (minimum 0.50s).",
+                OSUpgradeOperation.AddMaxHealth =>
+                    $"Maximum HP rises {PercentValue(value)} and the added HP is restored.",
+                OSUpgradeOperation.AddMoveSpeedMultiplier =>
+                    $"Movement speed rises {PercentValue(value)} (maximum 7.50).",
+                OSUpgradeOperation.AddHealMultiplier =>
+                    $"Healing pickups restore {PercentValue(value)} more HP.",
+                OSUpgradeOperation.AddMagnetMultiplier =>
+                    $"Pickup attraction range grows {PercentValue(value)}.",
+                OSUpgradeOperation.AddExperienceMultiplier =>
+                    $"Experience pickups grant {PercentValue(value)} more XP.",
+                OSUpgradeOperation.EnableElitePriority =>
+                    "Head auto-fire prioritizes Elite and Boss targets.",
+                _ => "Improves this upgrade by one level."
             };
         }
 
@@ -398,6 +439,16 @@ namespace Ouroboros.Runtime
             return OSUpgradeMath.CalculateFragmentRequirement(baseRequirement, 1f + (value * level));
         }
 
+        private string FragmentSavingDescription(float value, int level, int next)
+        {
+            var saved = Mathf.Max(
+                0,
+                FragmentRequirement(value, level) - FragmentRequirement(value, next));
+            return saved == 1
+                ? "Grow each new body segment with 1 fewer fragment."
+                : $"Grow each new body segment with {saved} fewer fragments.";
+        }
+
         private float BodyDamageRate(float value, int level)
         {
             var baseRate = bodyBalance != null ? bodyBalance.BodyDamageRate : 0.04f;
@@ -443,6 +494,16 @@ namespace Ouroboros.Runtime
         private static string Percent(float multiplier)
         {
             return $"{multiplier * 100f:0}%";
+        }
+
+        private static string PercentValue(float value)
+        {
+            return $"{value * 100f:0}%";
+        }
+
+        private static string PercentPointValue(float value)
+        {
+            return $"+{value * 100f:0}%p";
         }
     }
 }

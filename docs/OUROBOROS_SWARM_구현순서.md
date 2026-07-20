@@ -1796,6 +1796,39 @@ HP 수치만 변하고 막대가 가득 찬 채로 남는 회귀를 수정하고
 
 ---
 
+## 16.19 레벨업 보상 설명 개선 — Step 15.19
+
+### 목표
+
+레벨업 보상 3택 카드만 보고도 무엇이 얼마나 좋아지는지 바로 이해할 수 있도록 효과 설명과 실제 전후 수치를 명확하게 표시한다.
+
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-20
+- 완료: `OSLevelUpController`에 15종 업그레이드별 쉬운 효과 문장을 추가해 영향을 받는 대상과 단계당 변화량을 설명한다. 약어 중심 비교 레이블을 `FIRE INTERVAL`, `FRAGMENTS PER SEGMENT`, `HEAD DAMAGE PER BODY`, `PICKUP RANGE`, `AUTO-AIM PRIORITY`처럼 의미가 드러나는 이름으로 바꾸고, 기존 밸런스 SO·하한·상한을 반영한 실제 현재→적용 후 값은 유지했다. `OSLevelUpPanel`은 계열·이름·효과 문장·`CURRENT → AFTER`·현재/다음/최대 단계·선택 순으로 카드를 구성한다. 카드 3개의 자동 글꼴 범위와 줄 간격을 긴 설명에 맞추고 `Ouroboros/Setup/Apply Step 15.19 Reward Clarity`, `Ouroboros/Build/Build Step 15.19 WebGL` 경로를 추가했다.
+- 남음: 없음. Step 전용 커밋·원격 푸시 뒤 Step 16 성능 최적화·WebGL 착수 가능.
+- 검증: Unity 6000.5.1f1 컴파일과 최종 Console Error/Exception 0. `OSLevelUpCoreEditModeTests` 집중 7/7 통과(job `21b8a0bce64b4388a364376be4f0a81c`)로 15종 전부의 효과 문장·전후 비교 매핑을 확인했고, `OSLevelUpPlayModeTests`+`OSStep12ScenePlayModeTests` 집중 5/5 통과(job `b3b82d5db6db4d44bba8010431f6933e`)로 실제 후보 3장의 설명·수치·단계와 레이아웃을 확인했다. 최종 전체 EditMode 63/63(job `095542578f654a1c90bd7e725f1fae0f`)와 PlayMode 118/118(job `5c8781752eca4529b8f789fa9bea91db`)이 통과했다. `Builds/Step15_19/WebGL/` Development 빌드는 오류 0·경고 5·135,685,165바이트로 성공했고 Windows 빌드는 실행하지 않았다. HTTP에서 `index.html`과 `WebGL.wasm` 200, wasm MIME `application/wasm`, Canvas 960×540을 확인했다. 실제 레벨 2 보상 화면에서 `CORE REINFORCEMENT`, `CORE OVERDRIVE`, `LINK AMPLIFIER` 카드의 효과 문장과 전후 수치·최대 단계가 잘림 없이 표시됐다. 브라우저 Error는 0건이고 현재 WebGL의 기존 URP FSR 비지원 Warning 1건만 기록됐다.
+
+### 프로그래머 체크
+
+- [x] 15종 업그레이드별 대상·변화량을 설명하는 쉬운 효과 문장
+- [x] 의미와 단위가 드러나는 현재→적용 후 비교 레이블
+- [x] 현재/다음/최대 단계와 선택 동작 유지
+- [x] 긴 설명을 위한 카드 자동 글꼴·줄바꿈·오버플로 레이아웃
+- [x] Step 15.19 전용 재적용·WebGL 빌드 경로
+- [x] 15종 매핑 집중 테스트와 전체 EditMode/PlayMode 회귀
+- [x] WebGL HTTP·Canvas·실제 레벨업 화면·Console 검증
+
+### 완료 기준
+
+- 각 후보 카드가 내부 ID 없이 강화 대상, 변화 방향, 단계당 효과를 한 문장으로 설명한다.
+- 각 후보 카드가 현재 값과 적용 후 값을 의미·단위와 함께 표시하고 하한·상한 관련 주의를 누락하지 않는다.
+- 960×540 WebGL Canvas의 후보 3장에서 문장·수치·단계·선택 문구가 잘리거나 서로 겹치지 않는다.
+- 기존 후보 생성·선택 정지·1회 확정 규칙과 전체 회귀가 유지된다.
+
+---
+
 ## 17. 성능 최적화·WebGL — Step 16
 
 ### 목표
@@ -1804,7 +1837,7 @@ HP 수치만 변하고 막대가 가득 찬 채로 남는 회귀를 수정하고
 
 ### 선행 조건
 
-- Step 15.18 플레이어 HP 바 시각 갱신 복구와 전체 런 확정
+- Step 15.19 레벨업 보상 설명 개선과 전체 런 확정
 
 ### 측정 순서
 

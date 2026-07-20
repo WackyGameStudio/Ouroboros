@@ -135,8 +135,11 @@ namespace Ouroboros.UI
         {
             return $"{levelUpController.GetCategoryName(candidate.Category)}\n" +
                    $"{levelUpController.GetDisplayName(candidate.Id)}\n\n" +
-                   $"LV {candidate.CurrentLevel} → {candidate.NextLevel} / {candidate.MaxLevel}\n" +
-                   levelUpController.GetComparison(candidate) + "\n\n[ APPLY ]";
+                   levelUpController.GetEffectDescription(candidate) + "\n\n" +
+                   "CURRENT → AFTER\n" +
+                   levelUpController.GetComparison(candidate) + "\n" +
+                   $"LEVEL {candidate.CurrentLevel} → {candidate.NextLevel} / MAX {candidate.MaxLevel}\n\n" +
+                   "[ SELECT ]";
         }
 
         private void SelectFirstButton()

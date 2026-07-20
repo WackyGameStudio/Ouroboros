@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace Ouroboros.Tests.PlayMode
 {
@@ -46,6 +47,22 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(candidates.Select(candidate => candidate.Category), Does.Contain(OSUpgradeCategory.Firepower));
             Assert.That(candidates.Select(candidate => candidate.Category), Does.Contain(OSUpgradeCategory.Body));
             Assert.That(candidates.Select(candidate => candidate.Category), Does.Contain(OSUpgradeCategory.Survival));
+
+            var cardLabels = panel.GetComponentsInChildren<Button>(true)
+                .OrderBy(button => button.transform.GetSiblingIndex())
+                .Select(button => button.GetComponentInChildren<TMP_Text>(true))
+                .ToArray();
+            Assert.That(cardLabels.Length, Is.EqualTo(OSUpgradeRunState.CandidateCount));
+            for (var index = 0; index < candidates.Length; index++)
+            {
+                Assert.That(cardLabels[index], Is.Not.Null);
+                Assert.That(cardLabels[index].text,
+                    Does.Contain(level.GetEffectDescription(candidates[index])));
+                Assert.That(cardLabels[index].text,
+                    Does.Contain(level.GetComparison(candidates[index])));
+                Assert.That(cardLabels[index].text, Does.Contain("CURRENT → AFTER"));
+                Assert.That(cardLabels[index].text, Does.Contain("MAX"));
+            }
 
             yield return new WaitForSecondsRealtime(0.15f);
             Assert.That(headWeapon.ShotsFired, Is.EqualTo(shotsBefore));

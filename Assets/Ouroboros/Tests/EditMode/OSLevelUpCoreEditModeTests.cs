@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using Ouroboros.Core;
+using Ouroboros.Runtime;
 using UnityEditor;
+using UnityEngine;
 
 namespace Ouroboros.Tests.EditMode
 {
@@ -129,6 +131,35 @@ namespace Ouroboros.Tests.EditMode
             Assert.That(OSBodyDashMath.CalculateCooldown(2f, 0.88f, -0.2f),
                 Is.EqualTo(1.56f).Within(0.0001f));
             Assert.That(OSUpgradeMath.CalculateMoveSpeed(7f, 2f), Is.EqualTo(7.5f));
+        }
+
+        [Test]
+        public void RewardDescriptions_CoverAllUpgradeOperationsWithReadableEffectsAndComparisons()
+        {
+            var host = new GameObject("LevelUpDescriptionTest");
+            try
+            {
+                var controller = host.AddComponent<OSLevelUpController>();
+                foreach (var definition in _catalog.Entries)
+                {
+                    var candidate = new OSUpgradeCandidate(
+                        new OSUpgradeRuntimeDefinition(definition),
+                        0);
+                    var description = controller.GetEffectDescription(candidate);
+                    var comparison = controller.GetComparison(candidate);
+
+                    Assert.That(description, Is.Not.Empty, definition.Id);
+                    Assert.That(description, Does.EndWith("."), definition.Id);
+                    Assert.That(description, Does.Not.Contain("_"), definition.Id);
+                    Assert.That(description, Is.Not.EqualTo("Improves this upgrade by one level."),
+                        definition.Id);
+                    Assert.That(comparison, Does.Contain("→"), definition.Id);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
         }
 
         private static bool ContainsCategory(
