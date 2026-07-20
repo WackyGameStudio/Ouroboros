@@ -125,6 +125,9 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(view.enabled, Is.True);
             Assert.That((Vector2)view.GetPosition(0), Is.EqualTo(snapshot.Origin));
             Assert.That((Vector2)view.GetPosition(1), Is.EqualTo(snapshot.End));
+            Assert.That(view.widthMultiplier, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(view.startWidth, Is.EqualTo(snapshot.Width).Within(0.0001f));
+            Assert.That(view.endWidth, Is.EqualTo(snapshot.Width).Within(0.0001f));
 
             laser.SimulateStep(0.2f);
             Assert.That(first.CurrentHealth, Is.EqualTo(28f));

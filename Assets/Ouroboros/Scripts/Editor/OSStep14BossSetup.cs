@@ -200,7 +200,7 @@ namespace Ouroboros.Editor
 
                 var bossRoot = GetOrCreateChild(systems, "OSBossEncounterSystem");
                 var bossEncounter = GetOrAdd<OSBossEncounterController>(bossRoot.gameObject);
-                bossEncounter.Configure(session, pools, player, 90f);
+                bossEncounter.Configure(session, pools, player, 150f);
                 EditorUtility.SetDirty(bossEncounter);
 
                 var summaryRoot = GetOrCreateChild(systems, "OSRunSummarySystem");

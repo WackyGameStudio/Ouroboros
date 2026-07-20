@@ -81,7 +81,7 @@ namespace Ouroboros.UI
             var title = summary.ResultKind switch
             {
                 OSSessionResultKind.BossDefeated => "SWARM CORE DESTROYED  |  RUN CLEARED",
-                OSSessionResultKind.BossTimeout => "CORE BREACH FAILED  |  90s TIMEOUT",
+                OSSessionResultKind.BossTimeout => "CORE BREACH FAILED  |  150s TIMEOUT",
                 _ => "CORE LOST  |  RUN FAILED"
             };
             var prompt = sessionController != null && sessionController.State == OSSessionState.Result

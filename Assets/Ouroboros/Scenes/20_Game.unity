@@ -9628,7 +9628,7 @@ MonoBehaviour:
   sessionController: {fileID: 1136375590}
   poolRegistry: {fileID: 758536718}
   playerController: {fileID: 324503144}
-  timeLimitSeconds: 90
+  timeLimitSeconds: 150
   spawnPosition: {x: 0, y: 6}
 --- !u!4 &658076957
 Transform:

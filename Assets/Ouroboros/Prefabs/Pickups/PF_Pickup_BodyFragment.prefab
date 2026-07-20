@@ -173,6 +173,9 @@ MonoBehaviour:
   body: {fileID: 3490054824668557237}
   bodyRenderer: {fileID: 2530807915212612838}
   pickupSprite: {fileID: 21300000, guid: ffbd4a2ccb4658546822df0ebd0e8265, type: 3}
+  bodyFragmentSprite: {fileID: 21300000, guid: 7c4116984039fcf41a34f55f09345f55, type: 3}
+  experienceSprite: {fileID: 21300000, guid: 9f550022cef71e44d8328cfc72afba8e, type: 3}
+  healSprite: {fileID: 21300000, guid: ffbd4a2ccb4658546822df0ebd0e8265, type: 3}
   severedBodyRoleSprites:
   - {fileID: 21300000, guid: ed7dcbf96ef9a53419f8d77d169f148c, type: 3}
   - {fileID: 21300000, guid: c2a6a444aad7d5848b38fc1435351931, type: 3}

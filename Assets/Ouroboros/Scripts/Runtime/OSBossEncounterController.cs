@@ -9,7 +9,7 @@ namespace Ouroboros.Runtime
     public sealed class OSBossEncounterController : MonoBehaviour
     {
         private const string BossPoolKey = "boss_swarm_core";
-        private const float DefaultTimeLimit = 90f;
+        private const float DefaultTimeLimit = 150f;
 
         [SerializeField] private OSGameSessionController sessionController;
         [SerializeField] private OSPoolRegistry poolRegistry;
@@ -49,6 +49,7 @@ namespace Ouroboros.Runtime
             ? _bossController.TelegraphRemaining
             : 0f;
         public float EncounterElapsedSeconds { get; private set; }
+        public float TimeLimitSeconds => timeLimitSeconds;
         public float TimeRemaining => OSBossMath.GetRemainingTime(
             timeLimitSeconds,
             EncounterElapsedSeconds);

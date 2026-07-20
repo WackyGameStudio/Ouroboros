@@ -13,6 +13,9 @@ namespace Ouroboros.Runtime
         [SerializeField] private Rigidbody2D body;
         [SerializeField] private SpriteRenderer bodyRenderer;
         [SerializeField] private Sprite pickupSprite;
+        [SerializeField] private Sprite bodyFragmentSprite;
+        [SerializeField] private Sprite experienceSprite;
+        [SerializeField] private Sprite healSprite;
         [SerializeField] private Sprite[] severedBodyRoleSprites = new Sprite[4];
         [SerializeField, Min(0.01f)] private float magnetSpeed = 8f;
 
@@ -29,6 +32,7 @@ namespace Ouroboros.Runtime
         public int RegistryIndex { get; internal set; } = -1;
         public Vector2 Position => body != null ? body.position : (Vector2)transform.position;
         public Sprite VisualSprite => bodyRenderer != null ? bodyRenderer.sprite : null;
+        public Color VisualColor => bodyRenderer != null ? bodyRenderer.color : Color.clear;
         public bool IsDashSuctionActive => _dashSuctionActive;
 
         private void Awake()
@@ -225,12 +229,25 @@ namespace Ouroboros.Runtime
                 return;
             }
 
-            bodyRenderer.sprite = pickupSprite;
+            bodyRenderer.sprite = pickupType switch
+            {
+                OSPickupType.BodyFragment => bodyFragmentSprite != null
+                    ? bodyFragmentSprite
+                    : pickupSprite,
+                OSPickupType.Experience => experienceSprite != null
+                    ? experienceSprite
+                    : pickupSprite,
+                OSPickupType.Heal => healSprite != null
+                    ? healSprite
+                    : pickupSprite,
+                _ => pickupSprite
+            };
             bodyRenderer.color = pickupType switch
             {
-                OSPickupType.Experience => new Color32(255, 220, 76, 255),
-                OSPickupType.Heal => new Color32(76, 255, 176, 255),
-                _ => new Color32(109, 255, 211, 255)
+                OSPickupType.BodyFragment => new Color32(73, 218, 255, 255),
+                OSPickupType.Experience => new Color32(255, 205, 63, 255),
+                OSPickupType.Heal => new Color32(83, 255, 135, 255),
+                _ => Color.white
             };
         }
 

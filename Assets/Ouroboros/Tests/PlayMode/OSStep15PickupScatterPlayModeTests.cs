@@ -36,6 +36,21 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(experience.IsAccepted, Is.True, experience.ReasonKey);
             Assert.That(fragment.IsAccepted, Is.True, fragment.ReasonKey);
             Assert.That(heal.IsAccepted, Is.True, heal.ReasonKey);
+            CollectionAssert.AllItemsAreUnique(new[]
+            {
+                experience.Payload.VisualSprite.name,
+                fragment.Payload.VisualSprite.name,
+                heal.Payload.VisualSprite.name
+            });
+            CollectionAssert.AllItemsAreUnique(new[]
+            {
+                experience.Payload.VisualColor,
+                fragment.Payload.VisualColor,
+                heal.Payload.VisualColor
+            });
+            Assert.That(experience.Payload.VisualSprite.name, Does.StartWith("Projectile"));
+            Assert.That(fragment.Payload.VisualSprite.name, Does.StartWith("Body_Control"));
+            Assert.That(heal.Payload.VisualSprite.name, Does.StartWith("Pickup"));
             AssertSeparated(experience.Payload, fragment.Payload, spawner.SpawnSeparation);
             AssertSeparated(experience.Payload, heal.Payload, spawner.SpawnSeparation);
             AssertSeparated(fragment.Payload, heal.Payload, spawner.SpawnSeparation);

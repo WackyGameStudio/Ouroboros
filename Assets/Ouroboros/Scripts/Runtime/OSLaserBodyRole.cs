@@ -457,6 +457,7 @@ namespace Ouroboros.Runtime
 
             view.useWorldSpace = true;
             view.positionCount = 2;
+            view.widthMultiplier = 1f;
             view.startWidth = EffectiveWidth;
             view.endWidth = EffectiveWidth;
             view.SetPosition(0, _origins[index]);

@@ -20,6 +20,10 @@ namespace Ouroboros.Editor
         private const string PickupPrefabPath =
             "Assets/Ouroboros/Prefabs/Pickups/PF_Pickup_BodyFragment.prefab";
         private const string PickupSpritePath = "Assets/Ouroboros/Art/Placeholders/Pickup.png";
+        private const string BodyFragmentSpritePath =
+            "Assets/Ouroboros/Art/Placeholders/Body_Control.png";
+        private const string ExperienceSpritePath =
+            "Assets/Ouroboros/Art/Placeholders/Projectile.png";
         private const string WebGLProfilePath =
             "Assets/Ouroboros/BuildProfiles/WebGL Development.asset";
         private static readonly string[] SeveredBodySpritePaths =
@@ -103,7 +107,7 @@ namespace Ouroboros.Editor
                 $"size {summary.totalSize} bytes.");
         }
 
-        private static void ConfigurePickupVisuals()
+        internal static void ConfigurePickupVisuals()
         {
             var root = PrefabUtility.LoadPrefabContents(PickupPrefabPath);
             try
@@ -123,6 +127,11 @@ namespace Ouroboros.Editor
                 var serialized = new SerializedObject(pickup);
                 serialized.FindProperty("bodyRenderer").objectReferenceValue = renderer;
                 serialized.FindProperty("pickupSprite").objectReferenceValue = pickupSprite;
+                serialized.FindProperty("bodyFragmentSprite").objectReferenceValue =
+                    LoadRequiredSprite(BodyFragmentSpritePath);
+                serialized.FindProperty("experienceSprite").objectReferenceValue =
+                    LoadRequiredSprite(ExperienceSpritePath);
+                serialized.FindProperty("healSprite").objectReferenceValue = pickupSprite;
                 var roleSprites = serialized.FindProperty("severedBodyRoleSprites")
                                   ?? throw new InvalidOperationException(
                                       "OSPickup.severedBodyRoleSprites is missing.");
@@ -143,6 +152,13 @@ namespace Ouroboros.Editor
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
+
+        private static Sprite LoadRequiredSprite(string path)
+        {
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path)
+                   ?? throw new InvalidOperationException(
+                       $"Pickup type sprite is missing at '{path}'.");
         }
 
         private static void ConfigureBodyBalance()

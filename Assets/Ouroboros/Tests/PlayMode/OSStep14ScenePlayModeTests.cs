@@ -33,6 +33,7 @@ namespace Ouroboros.Tests.PlayMode
 
             Assert.That(pools.GetCapacity("boss_swarm_core"), Is.EqualTo(1));
             Assert.That(encounter, Is.Not.Null);
+            Assert.That(encounter.TimeLimitSeconds, Is.EqualTo(150f));
             Assert.That(summary, Is.Not.Null);
             Assert.That(bossPresenter, Is.Not.Null);
             Assert.That(resultPanel, Is.Not.Null);
@@ -64,7 +65,7 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator BossSelectionPause_FreezesPatternAndNinetySecondLimit()
+        public IEnumerator BossSelectionPause_FreezesPatternAndOneHundredFiftySecondLimit()
         {
             yield return LoadGameAndEnterCombat();
             var session = Object.FindAnyObjectByType<OSGameSessionController>();
@@ -189,13 +190,16 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(session.RestartSession().IsAccepted, Is.True);
             CompleteStartSelections(session);
             Assert.That(encounter.RequestBossSpawn().IsAccepted, Is.True);
-            encounter.AdvanceForTesting(90.1f);
+            encounter.AdvanceForTesting(149.9f);
+            Assert.That(session.State, Is.EqualTo(OSSessionState.Combat));
+            Assert.That(encounter.BossTimeoutCount, Is.Zero);
+            encounter.AdvanceForTesting(0.2f);
             yield return null;
 
             Assert.That(session.State, Is.EqualTo(OSSessionState.Dead));
             Assert.That(session.ResultKind, Is.EqualTo(OSSessionResultKind.BossTimeout));
             Assert.That(summary.Summary.ResultKind, Is.EqualTo(OSSessionResultKind.BossTimeout));
-            Assert.That(resultLabel.text, Does.Contain("90s TIMEOUT"));
+            Assert.That(resultLabel.text, Does.Contain("150s TIMEOUT"));
         }
 
         [UnityTest]
