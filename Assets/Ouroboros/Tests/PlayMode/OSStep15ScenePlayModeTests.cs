@@ -44,9 +44,16 @@ namespace Ouroboros.Tests.PlayMode
                     "ReadabilityHUD/CombatSummaryPanel/HealthBarBackground/HealthBarFill")
                 ?.GetComponent<Image>();
             Assert.That(healthFill, Is.Not.Null);
+            Assert.That(healthFill.sprite, Is.Not.Null);
+            Assert.That(healthFill.sprite.name, Is.EqualTo("UISprite"));
             Assert.That(healthFill.type, Is.EqualTo(Image.Type.Filled));
             Assert.That(healthFill.fillMethod, Is.EqualTo(Image.FillMethod.Horizontal));
             Assert.That(healthFill.fillOrigin, Is.EqualTo((int)Image.OriginHorizontal.Left));
+            var healthBackground = (RectTransform)healthFill.transform.parent;
+            Assert.That(healthBackground.anchorMin, Is.EqualTo(new Vector2(0f, 1f)));
+            Assert.That(healthBackground.anchorMax, Is.EqualTo(new Vector2(1f, 1f)));
+            Assert.That(healthBackground.pivot, Is.EqualTo(new Vector2(0.5f, 1f)));
+            Assert.That(healthBackground.anchoredPosition.y, Is.EqualTo(-36f).Within(0.001f));
             Assert.That(canvas?.Find("ReadabilityHUD/ThreatPriorityPanel/ThreatLabel"), Is.Not.Null);
             Assert.That(head?.Find("CoreReadabilityRing"), Is.Not.Null);
             Assert.That(head.GetComponentsInChildren<SpriteRenderer>(true).Min(renderer => renderer.sortingOrder),
@@ -67,11 +74,20 @@ namespace Ouroboros.Tests.PlayMode
             yield return LoadGameAndEnterCombat();
             var health = Object.FindAnyObjectByType<OSPlayerHealth>();
             var hud = Object.FindAnyObjectByType<OSCombatHudPresenter>();
+            var healthFill = GameObject.Find("Canvas")?.transform.Find(
+                    "ReadabilityHUD/CombatSummaryPanel/HealthBarBackground/HealthBarFill")
+                ?.GetComponent<Image>();
             hud.ForceRefreshForTesting();
+            Canvas.ForceUpdateCanvases();
 
             Assert.That(hud.PrimaryText, Does.Contain("HP  100/100"));
+            Assert.That(hud.PrimaryText, Does.Contain("HP  100/100\n\nBODY"));
             Assert.That(hud.PrimaryText, Does.Not.Contain("CORE  100/100"));
             Assert.That(hud.HealthFillAmount, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(healthFill, Is.Not.Null);
+            Assert.That(healthFill.sprite, Is.Not.Null);
+            var fullVisualWidth = healthFill.canvasRenderer.GetMesh().bounds.size.x;
+            Assert.That(fullVisualWidth, Is.GreaterThan(0f));
 
             var damage = new OSDamageEvent(
                 1514001,
@@ -84,9 +100,12 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(health.TryApplyHeadDamage(damage).IsAccepted, Is.True);
             yield return null;
             yield return new WaitForEndOfFrame();
+            Canvas.ForceUpdateCanvases();
 
             Assert.That(hud.PrimaryText, Does.Contain("HP  92/100"));
             Assert.That(hud.HealthFillAmount, Is.EqualTo(0.92f).Within(0.001f));
+            var damagedVisualWidth = healthFill.canvasRenderer.GetMesh().bounds.size.x;
+            Assert.That(damagedVisualWidth / fullVisualWidth, Is.EqualTo(0.92f).Within(0.01f));
         }
 
         [UnityTest]

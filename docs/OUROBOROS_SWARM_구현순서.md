@@ -1762,6 +1762,40 @@ Enter 입력으로 사망·결과 상태를 전환할 때 같은 `UI/Submit` Act
 
 ---
 
+## 16.18 플레이어 HP 바 시각 갱신 복구 — Step 15.18
+
+### 목표
+
+HP 수치만 변하고 막대가 가득 찬 채로 남는 회귀를 수정하고, HP 막대를 좌상단 HP 숫자 바로 아래의 상단 위치로 복원한다.
+
+### 구현 현황
+
+- 상태: 완료
+- 최근 갱신: 2026-07-20
+- 완료: 기존 `OSCombatHudPresenter`의 `HealthChanged` dirty 갱신과 `fillAmount` 계산은 정상이나, `HealthBarFill`의 Source Image가 비어 있어 Unity가 `Filled` 메시 대신 항상 가득 찬 단순 사각형을 렌더하던 원인을 확인했다. 내장 `UISprite`를 명시해 `fillAmount`가 실제 렌더 메시 폭에 반영되도록 수정했고, 막대 배경을 `CombatSummaryPanel` 상단 기준 HP 숫자 바로 아래로 옮겼다. HP와 Body 사이에는 막대 전용 한 줄 간격을 두며 기존 단일 HP 소스와 구형 HUD 비활성 규칙은 유지한다. `Ouroboros/Setup/Apply Step 15.18 HP Bar Visual Fix`와 `Ouroboros/Build/Build Step 15.18 WebGL` 메뉴를 추가했다.
+- 남음: 없음. Step 전용 커밋·원격 푸시 뒤 Step 16 성능 최적화·WebGL 착수 가능.
+- 검증: Unity 6000.5.1f1 집중 `OSStep15ScenePlayModeTests` 9/9 통과(job `266e0029fb4b4270bf48b0b84baf9a9f`)로 내장 `UISprite`, 상단 앵커, HP 100→92에서 `fillAmount` 1.00→0.92와 Canvas 실제 메시 폭 92% 감소를 확인했다. 전체 EditMode 62/62(job `dba01f9be1c44539b9e4889474c1e388`)와 PlayMode 118/118(job `72034901ff634f8985e3ed81c873d2ac`)이 통과했고 최종 Unity Console Error/Exception은 0이다. `Builds/Step15_18/WebGL/` Development 빌드는 오류 0·경고 5·135,680,263바이트로 성공했고 Windows 빌드는 실행하지 않았다. HTTP에서 `index.html`과 `WebGL.wasm`이 200, wasm MIME `application/wasm`, Canvas 960×540을 확인했다. 브라우저 전투에서 HP 100/100의 상단 막대와 실제 피격 후 HP 78/100·약 78% 막대 감소를 확인했으며 Error 0, 페이지 재로드마다 발생한 기존 URP FSR 미지원 경고만 남았다.
+
+### 프로그래머 체크
+
+- [x] `Filled Image`용 비어 있지 않은 UI Sprite 연결
+- [x] HP 숫자 바로 아래 상단 앵커 배치
+- [x] HP와 Body 텍스트 사이 막대 전용 간격 확보
+- [x] 피해 후 `fillAmount`와 Canvas 실제 렌더 메시 폭 동시 감소
+- [x] 구형 `PlayerHealthHUD` 비활성과 단일 `OSPlayerHealth` 소스 유지
+- [x] Step 15.18 전용 재적용·WebGL 빌드 경로
+- [x] 집중 테스트와 전체 EditMode/PlayMode 회귀
+- [x] WebGL HTTP·Canvas·실제 피격 화면·Console 검증
+
+### 완료 기준
+
+- HP 숫자가 감소하면 같은 프레임 말에 초록 막대의 실제 화면 폭도 동일 비율로 감소한다.
+- HP 막대가 좌상단 HP 숫자 바로 아래에 있고 Body·FRAG 정보와 겹치지 않는다.
+- 피해·회복·최대 HP 변경은 기존 `OSPlayerHealth.HealthChanged` 단일 경로를 유지한다.
+- 전체 회귀와 WebGL 빌드·HTTP·Canvas·브라우저 Console 검증을 통과한다.
+
+---
+
 ## 17. 성능 최적화·WebGL — Step 16
 
 ### 목표
@@ -1770,7 +1804,7 @@ Enter 입력으로 사망·결과 상태를 전환할 때 같은 `UI/Submit` Act
 
 ### 선행 조건
 
-- Step 15.17 전투 명료성 마감과 전체 런 확정
+- Step 15.18 플레이어 HP 바 시각 갱신 복구와 전체 런 확정
 
 ### 측정 순서
 

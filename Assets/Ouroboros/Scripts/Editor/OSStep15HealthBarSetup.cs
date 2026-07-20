@@ -71,9 +71,27 @@ namespace Ouroboros.Editor
         public static void BuildStep15PlayerHealthBarWebGL()
         {
             ApplyStep15PlayerHealthBar();
+            BuildWebGL("Step15_16", "Step 15.16");
+        }
 
-            var outputPath = Path.GetFullPath(
-                Path.Combine("Builds", "Step15_16", "WebGL"));
+        [MenuItem("Ouroboros/Setup/Apply Step 15.18 HP Bar Visual Fix")]
+        public static void ApplyStep15PlayerHealthBarVisualFix()
+        {
+            ApplyStep15PlayerHealthBar();
+            Debug.Log(
+                "[OUROBOROS][SETUP] Step 15.18 visible HP depletion and upper HUD placement applied.");
+        }
+
+        [MenuItem("Ouroboros/Build/Build Step 15.18 WebGL")]
+        public static void BuildStep15PlayerHealthBarVisualFixWebGL()
+        {
+            ApplyStep15PlayerHealthBarVisualFix();
+            BuildWebGL("Step15_18", "Step 15.18");
+        }
+
+        private static void BuildWebGL(string stepFolder, string stepLabel)
+        {
+            var outputPath = Path.GetFullPath(Path.Combine("Builds", stepFolder, "WebGL"));
             var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(WebGLProfilePath)
                           ?? throw new BuildFailedException(
                               $"WebGL build profile is missing at '{WebGLProfilePath}'.");
@@ -100,12 +118,12 @@ namespace Ouroboros.Editor
             if (summary.result != BuildResult.Succeeded)
             {
                 throw new BuildFailedException(
-                    $"Step 15.16 WebGL build failed: {summary.result}, " +
+                    $"{stepLabel} WebGL build failed: {summary.result}, " +
                     $"errors {summary.totalErrors}.");
             }
 
             Debug.Log(
-                $"[OUROBOROS][BUILD] Step 15.16 WebGL succeeded at '{outputPath}' " +
+                $"[OUROBOROS][BUILD] {stepLabel} WebGL succeeded at '{outputPath}' " +
                 $"with errors {summary.totalErrors}, warnings {summary.totalWarnings}, " +
                 $"size {summary.totalSize} bytes.");
         }
@@ -117,11 +135,11 @@ namespace Ouroboros.Editor
         {
             var background = GetOrCreateImage(panel, "HealthBarBackground");
             var backgroundRect = (RectTransform)background.transform;
-            backgroundRect.anchorMin = new Vector2(0f, 0f);
-            backgroundRect.anchorMax = new Vector2(1f, 0f);
-            backgroundRect.pivot = new Vector2(0.5f, 0f);
-            backgroundRect.anchoredPosition = new Vector2(0f, 10f);
-            backgroundRect.sizeDelta = new Vector2(-28f, 14f);
+            backgroundRect.anchorMin = new Vector2(0f, 1f);
+            backgroundRect.anchorMax = new Vector2(1f, 1f);
+            backgroundRect.pivot = new Vector2(0.5f, 1f);
+            backgroundRect.anchoredPosition = new Vector2(0f, -36f);
+            backgroundRect.sizeDelta = new Vector2(-28f, 12f);
             background.color = new Color32(31, 38, 56, 235);
             background.raycastTarget = false;
 
@@ -133,14 +151,18 @@ namespace Ouroboros.Editor
             fillRect.anchoredPosition = Vector2.zero;
             fillRect.sizeDelta = new Vector2(-4f, -4f);
             fill.color = new Color32(80, 224, 142, 255);
+            fill.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd")
+                          ?? throw new InvalidOperationException(
+                              "Built-in UI fill sprite is unavailable.");
             fill.type = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Horizontal;
             fill.fillOrigin = (int)Image.OriginHorizontal.Left;
             fill.fillClockwise = true;
+            fill.fillAmount = 1f;
             fill.raycastTarget = false;
 
             var primaryRect = (RectTransform)primaryLabel.transform;
-            primaryRect.offsetMin = new Vector2(14f, 30f);
+            primaryRect.offsetMin = new Vector2(14f, 8f);
             primaryRect.offsetMax = new Vector2(-14f, -8f);
 
             var legacy = canvas.Find("CombatHUD/PlayerHealthHUD");
@@ -197,11 +219,11 @@ namespace Ouroboros.Editor
             return healthFill != null
                    && healthFill.objectReferenceValue == fill
                    && (legacy == null || !legacy.gameObject.activeSelf)
-                   && Approximately(backgroundRect.anchorMin, new Vector2(0f, 0f))
-                   && Approximately(backgroundRect.anchorMax, new Vector2(1f, 0f))
-                   && Approximately(backgroundRect.pivot, new Vector2(0.5f, 0f))
-                   && Approximately(backgroundRect.anchoredPosition, new Vector2(0f, 10f))
-                   && Approximately(backgroundRect.sizeDelta, new Vector2(-28f, 14f))
+                   && Approximately(backgroundRect.anchorMin, new Vector2(0f, 1f))
+                   && Approximately(backgroundRect.anchorMax, new Vector2(1f, 1f))
+                   && Approximately(backgroundRect.pivot, new Vector2(0.5f, 1f))
+                   && Approximately(backgroundRect.anchoredPosition, new Vector2(0f, -36f))
+                   && Approximately(backgroundRect.sizeDelta, new Vector2(-28f, 12f))
                    && Approximately(background.color, new Color32(31, 38, 56, 235))
                    && !background.raycastTarget
                    && Approximately(fillRect.anchorMin, Vector2.zero)
@@ -210,12 +232,14 @@ namespace Ouroboros.Editor
                    && Approximately(fillRect.anchoredPosition, Vector2.zero)
                    && Approximately(fillRect.sizeDelta, new Vector2(-4f, -4f))
                    && Approximately(fill.color, new Color32(80, 224, 142, 255))
+                   && fill.sprite != null
+                   && fill.sprite.name == "UISprite"
                    && fill.type == Image.Type.Filled
                    && fill.fillMethod == Image.FillMethod.Horizontal
                    && fill.fillOrigin == (int)Image.OriginHorizontal.Left
                    && fill.fillClockwise
                    && !fill.raycastTarget
-                   && Approximately(primaryRect.offsetMin, new Vector2(14f, 30f))
+                   && Approximately(primaryRect.offsetMin, new Vector2(14f, 8f))
                    && Approximately(primaryRect.offsetMax, new Vector2(-14f, -8f));
         }
 

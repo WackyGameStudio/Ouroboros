@@ -766,7 +766,7 @@ SpawnRateMultiplier(minute > 3) = 1.15 ^ 3 × 1.02 ^ (minute - 3)
 | 보스 HP | 상단 하단 | 본체/보호막 | `BossStateChanged` |
 | 역할 상태 | 몸통 HUD 또는 월드 | 실드 충전, 제어 지속, 레이저 예고 | 역할 이벤트 |
 
-- 플레이어 머리 체력은 `OSPlayerHealth` 한 값만 사용하며 통합 HUD에는 `HP 현재/최대` 숫자와 `Clamp01(CurrentHealth / MaxHealth)` 비율의 가로 바를 함께 표시한다. 바는 왼쪽을 원점으로 줄어들며 최대 HP 변경, 피해, 회복, 사망을 모두 같은 `HealthChanged` 이벤트로 반영한다. `CORE`는 별도 플레이어 자원이 아니므로 구형 정적 `HP`와 플레이어 `CORE` 중복 표기를 동시에 노출하지 않는다. 보스의 `CORE HP` 표기는 보스 고유 명칭으로만 유지한다.
+- 플레이어 머리 체력은 `OSPlayerHealth` 한 값만 사용하며 통합 HUD에는 `HP 현재/최대` 숫자와 `Clamp01(CurrentHealth / MaxHealth)` 비율의 가로 바를 함께 표시한다. 바는 좌상단 HP 숫자 바로 아래에 두고 왼쪽을 원점으로 줄어들며 최대 HP 변경, 피해, 회복, 사망을 모두 같은 `HealthChanged` 이벤트로 반영한다. uGUI `Filled Image`는 실제 렌더 메시가 `fillAmount`를 반영하도록 비어 있지 않은 UI Sprite를 사용한다. `CORE`는 별도 플레이어 자원이 아니므로 구형 정적 `HP`와 플레이어 `CORE` 중복 표기를 동시에 노출하지 않는다. 보스의 `CORE HP` 표기는 보스 고유 명칭으로만 유지한다.
 - 무제한 길이이므로 `현재/최대 몸통` 표시는 사용하지 않는다.
 - 기술 안전 한도 64를 HUD 최대치로 노출하지 않는다.
 - 역할 세그먼트는 색 외에 실루엣, 문양, 발사 형태 중 2개 이상으로 구분한다.
@@ -834,7 +834,7 @@ SpawnRateMultiplier(minute > 3) = 1.15 ^ 3 × 1.02 ^ (minute - 3)
 
 **[확정]** Step 14의 `OSRunSummaryController`가 세션 시작부터 위 통계를 누적하고 Dead/Cleared 진입 시 불변 `OSSessionSummary`로 고정한다. `OSResultPanel`은 결과 중 전투 입력을 차단한 상태에서 같은 씬 새 런 재시작과 `10_MainMenu` 복귀를 제공한다. 캐릭터 변경은 현재 단일 캐릭터 MVP에서는 메인 메뉴 복귀 경로로 처리한다.
 
-**[확정]** Step 15의 `OSCombatHudPresenter`는 전투 규칙 객체를 수정하지 않는 읽기 전용 표시 모델이다. 상태 이벤트는 dirty 표식으로 모으고 `LateUpdate`에서 프레임당 최대 1회 TMP 텍스트와 UI Image에 반영한다. 플레이어 체력은 `OSPlayerHealth.HealthChanged`를 읽는 단일 `HP` 숫자와 왼쪽 기준 가로형 비율 바로 노출하고 구형 `Canvas/CombatHUD/PlayerHealthHUD`는 비활성화한다. 몸통은 현재 수만 표시하며 기술 가드 64를 최대치나 분모로 노출하지 않는다. Shield/Attack/Laser/Control은 색과 함께 `[O]`, `[>]`, `[=]`, `[+]` 문양을 사용한다.
+**[확정]** Step 15의 `OSCombatHudPresenter`는 전투 규칙 객체를 수정하지 않는 읽기 전용 표시 모델이다. 상태 이벤트는 dirty 표식으로 모으고 `LateUpdate`에서 프레임당 최대 1회 TMP 텍스트와 UI Image에 반영한다. 플레이어 체력은 `OSPlayerHealth.HealthChanged`를 읽는 단일 `HP` 숫자와 그 바로 아래의 왼쪽 기준 가로형 비율 바로 노출하고 구형 `Canvas/CombatHUD/PlayerHealthHUD`는 비활성화한다. Filled Image는 내장 `UISprite`를 사용해 값뿐 아니라 실제 렌더 메시 폭도 같은 비율로 감소해야 한다. 몸통은 현재 수만 표시하며 기술 가드 64를 최대치나 분모로 노출하지 않는다. Shield/Attack/Laser/Control은 색과 함께 `[O]`, `[>]`, `[=]`, `[+]` 문양을 사용한다.
 
 **[확정]** 판독성 Sorting Order 기준은 머리 코어 220, 적·보스 즉시 위험 200, 레이저 198, 절단 경계 185, 제어 잔여 원호 182, 실드 175다. 대시는 별도 피해 범위 View 없이 몸통 수축과 HUD 상태로 표시한다. 제어 잔여량은 적 둘레의 감소 원호로도 표시하고, 절단 피드백은 충돌 위치의 경계와 꼬리 방향 및 역할별 상실 수를 한 메시지로 축약한다. 표시 오브젝트나 피드백이 부족하거나 비활성화되어도 전투 판정은 되돌리지 않는다.
 
