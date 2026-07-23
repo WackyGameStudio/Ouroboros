@@ -29,7 +29,8 @@ namespace Ouroboros.Runtime
         public float MaxHealth => _maxHealth;
         public float HealMultiplier => _healMultiplier;
         public float HitInvulnerabilityRemaining { get; private set; }
-        public bool IsInvulnerable => HitInvulnerabilityRemaining > 0f;
+        public bool IsAbilityInvulnerable { get; private set; }
+        public bool IsInvulnerable => HitInvulnerabilityRemaining > 0f || IsAbilityInvulnerable;
         public float LastAppliedDamage { get; private set; }
 
         private void Awake()
@@ -138,6 +139,11 @@ namespace Ouroboros.Runtime
             HealthChanged?.Invoke(CurrentHealth, _maxHealth);
         }
 
+        public void SetAbilityInvulnerable(bool value)
+        {
+            IsAbilityInvulnerable = value;
+        }
+
         internal void ConfigureForTesting(
             OSGameSessionController session,
             float maxHealth = DefaultMaxHealth,
@@ -175,6 +181,7 @@ namespace Ouroboros.Runtime
             ResolveBalance();
             CurrentHealth = _maxHealth;
             HitInvulnerabilityRemaining = 0f;
+            IsAbilityInvulnerable = false;
             LastAppliedDamage = 0f;
             HealthChanged?.Invoke(CurrentHealth, _maxHealth);
         }

@@ -20,6 +20,7 @@ namespace Ouroboros.Runtime
         public event Action<OSSessionState, OSSessionState> StateChanged;
         public event Action<OSSelectionRequest?> ActiveSelectionChanged;
         public event Action BodyDashRequested;
+        public event Action BombRequested;
 
         public OSSessionState State { get; private set; } = OSSessionState.Boot;
         public OSSessionResultKind ResultKind { get; private set; }
@@ -33,8 +34,10 @@ namespace Ouroboros.Runtime
                                                      OSSelectionKind.BodyRole
                                                     ? 1
                                                     : 0);
-        public bool IsSimulationRunning => State is OSSessionState.Combat or OSSessionState.BodyDash;
-        public bool IsPlayerInputAllowed => State is OSSessionState.Combat or OSSessionState.BodyDash;
+        public bool IsSimulationRunning =>
+            State is OSSessionState.Combat or OSSessionState.BodyDash or OSSessionState.Bomb;
+        public bool IsPlayerInputAllowed =>
+            State is OSSessionState.Combat or OSSessionState.BodyDash or OSSessionState.Bomb;
 
         private void OnEnable()
         {
@@ -121,7 +124,8 @@ namespace Ouroboros.Runtime
         /// </summary>
         public OSRuleResult<OSSelectionRequest> QueueSelection(OSSelectionKind kind)
         {
-            if (State is not OSSessionState.Combat and not OSSessionState.BodyDash)
+            if (State is not OSSessionState.Combat and not OSSessionState.BodyDash and
+                not OSSessionState.Bomb)
             {
                 return OSRuleResult<OSSelectionRequest>.Rejected(
                     OSResultCode.RejectedState,
@@ -208,12 +212,38 @@ namespace Ouroboros.Runtime
                 : RejectState("body_dash.complete.invalid_state");
         }
 
+        public OSRuleResult<OSSessionState> TryRequestBomb()
+        {
+            if (State != OSSessionState.Combat)
+            {
+                return RejectState("bomb.invalid_state");
+            }
+
+            BombRequested?.Invoke();
+            return OSRuleResult<OSSessionState>.Accepted(State, "bomb.requested");
+        }
+
+        public OSRuleResult<OSSessionState> BeginBomb()
+        {
+            return State == OSSessionState.Combat
+                ? SetState(OSSessionState.Bomb)
+                : RejectState("bomb.begin.invalid_state");
+        }
+
+        public OSRuleResult<OSSessionState> CompleteBomb()
+        {
+            return State == OSSessionState.Bomb
+                ? SetState(OSSessionState.Combat)
+                : RejectState("bomb.complete.invalid_state");
+        }
+
         /// <summary>
         /// Stops simulation immediately and enters Dead.
         /// </summary>
         public OSRuleResult<OSSessionState> RequestDeath()
         {
-            if (State is not OSSessionState.Combat and not OSSessionState.BodyDash)
+            if (State is not OSSessionState.Combat and not OSSessionState.BodyDash and
+                not OSSessionState.Bomb)
             {
                 return RejectState("session.death.invalid_state");
             }
@@ -228,7 +258,8 @@ namespace Ouroboros.Runtime
         /// </summary>
         public OSRuleResult<OSSessionState> RequestClear()
         {
-            if (State is not OSSessionState.Combat and not OSSessionState.BodyDash)
+            if (State is not OSSessionState.Combat and not OSSessionState.BodyDash and
+                not OSSessionState.Bomb)
             {
                 return RejectState("session.clear.invalid_state");
             }
@@ -243,7 +274,8 @@ namespace Ouroboros.Runtime
         /// </summary>
         public OSRuleResult<OSSessionState> RequestBossTimeout()
         {
-            if (State is not OSSessionState.Combat and not OSSessionState.BodyDash)
+            if (State is not OSSessionState.Combat and not OSSessionState.BodyDash and
+                not OSSessionState.Bomb)
             {
                 return RejectState("session.boss_timeout.invalid_state");
             }
@@ -350,6 +382,7 @@ namespace Ouroboros.Runtime
             }
 
             inputRouter.BodyDashRequested += HandleBodyDashRequested;
+            inputRouter.BombRequested += HandleBombRequested;
             inputRouter.SubmitRequested += HandleSubmitRequested;
             _routerSubscribed = true;
         }
@@ -363,6 +396,7 @@ namespace Ouroboros.Runtime
             }
 
             inputRouter.BodyDashRequested -= HandleBodyDashRequested;
+            inputRouter.BombRequested -= HandleBombRequested;
             inputRouter.SubmitRequested -= HandleSubmitRequested;
             _routerSubscribed = false;
         }
@@ -370,6 +404,11 @@ namespace Ouroboros.Runtime
         private void HandleBodyDashRequested()
         {
             TryRequestBodyDash();
+        }
+
+        private void HandleBombRequested()
+        {
+            TryRequestBomb();
         }
 
         private void HandleSubmitRequested()
@@ -402,9 +441,12 @@ namespace Ouroboros.Runtime
                 OSSessionState.Boot => to == OSSessionState.StartBodySelection,
                 OSSessionState.StartBodySelection => to is OSSessionState.StartBodySelection or OSSessionState.Combat,
                 OSSessionState.Combat => to is OSSessionState.BodyDash or
+                    OSSessionState.Bomb or
                     OSSessionState.BodyRoleSelection or OSSessionState.LevelUpSelection or
                     OSSessionState.Dead or OSSessionState.Cleared,
                 OSSessionState.BodyDash => to is OSSessionState.Combat or
+                    OSSessionState.Dead or OSSessionState.Cleared,
+                OSSessionState.Bomb => to is OSSessionState.Combat or
                     OSSessionState.Dead or OSSessionState.Cleared,
                 OSSessionState.BodyRoleSelection => to is OSSessionState.BodyRoleSelection or
                     OSSessionState.LevelUpSelection or OSSessionState.Combat,

@@ -148,7 +148,9 @@ namespace Ouroboros.UI
             }
 
             var state = sessionController.State;
-            SetActive(combatHud, state is OSSessionState.Combat or OSSessionState.BodyDash);
+            SetActive(
+                combatHud,
+                state is OSSessionState.Combat or OSSessionState.BodyDash or OSSessionState.Bomb);
             SetActive(
                 bodyRoleSelectionPanel,
                 state is OSSessionState.StartBodySelection or OSSessionState.BodyRoleSelection);

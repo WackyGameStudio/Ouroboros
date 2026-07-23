@@ -89,7 +89,9 @@ namespace Ouroboros.Core
             float healMultiplier,
             float magnetMultiplier,
             float experienceMultiplier,
-            bool elitePriority)
+            bool elitePriority,
+            float bombDamageMultiplier = 1f,
+            float bombCooldownDelta = 0f)
         {
             HeadDamageMultiplier = headDamageMultiplier;
             HeadRateBonus = headRateBonus;
@@ -106,6 +108,8 @@ namespace Ouroboros.Core
             MagnetMultiplier = magnetMultiplier;
             ExperienceMultiplier = experienceMultiplier;
             ElitePriority = elitePriority;
+            BombDamageMultiplier = bombDamageMultiplier;
+            BombCooldownDelta = bombCooldownDelta;
         }
 
         public static OSUpgradeModifiers Default => new(
@@ -140,6 +144,8 @@ namespace Ouroboros.Core
         public float MagnetMultiplier { get; }
         public float ExperienceMultiplier { get; }
         public bool ElitePriority { get; }
+        public float BombDamageMultiplier { get; }
+        public float BombCooldownDelta { get; }
     }
 
     public readonly struct OSUpgradeCandidate
@@ -390,6 +396,8 @@ namespace Ouroboros.Core
             var magnet = 1f;
             var experience = 1f;
             var elitePriority = false;
+            var bombDamage = 1f;
+            var bombCooldownDelta = 0f;
 
             for (var index = 0; index < _definitions.Length; index++)
             {
@@ -447,6 +455,12 @@ namespace Ouroboros.Core
                     case OSUpgradeOperation.EnableElitePriority:
                         elitePriority = true;
                         break;
+                    case OSUpgradeOperation.AddBombDamageMultiplier:
+                        bombDamage += value;
+                        break;
+                    case OSUpgradeOperation.AddBombCooldownDelta:
+                        bombCooldownDelta += value;
+                        break;
                 }
             }
 
@@ -465,7 +479,9 @@ namespace Ouroboros.Core
                 Math.Max(0.01f, heal),
                 Math.Max(0.01f, magnet),
                 Math.Max(0.01f, experience),
-                elitePriority);
+                elitePriority,
+                Math.Max(0.01f, bombDamage),
+                bombCooldownDelta);
         }
 
         private int FindIndex(string id)

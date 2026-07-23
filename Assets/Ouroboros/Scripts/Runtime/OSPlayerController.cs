@@ -25,6 +25,7 @@ namespace Ouroboros.Runtime
         [SerializeField, Range(1, 5)] private int maxSlideIterations = 3;
 
         private readonly RaycastHit2D[] _castHits = new RaycastHit2D[16];
+        private readonly Collider2D[] _overlapHits = new Collider2D[16];
         private ContactFilter2D _blockerFilter;
         private Vector2 _moveInput;
         private Vector2 _lastDirection = Vector2.right;
@@ -38,10 +39,19 @@ namespace Ouroboros.Runtime
         private float _bodyDashDistance;
         private float _bodyDashElapsed;
         private float _bodyDashTravelledDistance;
+        private bool _bombOrbitActive;
+        private Vector2 _bombOrbitStart;
+        private Vector2 _bombOrbitForward = Vector2.right;
+        private Vector2 _bombOrbitCenter;
+        private OSBombTurnSide _bombTurnSide;
+        private float _bombOrbitRadius;
+        private float _bombOrbitDuration;
+        private float _bombOrbitElapsed;
 
         public event Action PositionReset;
         public event Action<Vector2, Vector2> BodyDashSegmentMoved;
         public event Action<float> BodyDashCompleted;
+        public event Action<bool> BombOrbitCompleted;
 
         public Vector2 MoveInput => _moveInput;
         public Vector2 LastDirection => _lastDirection;
@@ -52,6 +62,11 @@ namespace Ouroboros.Runtime
             playerBalance != null ? playerBalance.MoveSpeed : DefaultMoveSpeed,
             _moveSpeedMultiplier);
         public bool IsBodyDashActive => _bodyDashActive;
+        public bool IsBombOrbitActive => _bombOrbitActive;
+        public Vector2 BombOrbitCenter => _bombOrbitCenter;
+        public float BombOrbitProgress => _bombOrbitActive && _bombOrbitDuration > 0f
+            ? Mathf.Clamp01(_bombOrbitElapsed / _bombOrbitDuration)
+            : 0f;
         public float BodyDashRemaining => _bodyDashActive
             ? Mathf.Max(0f, _bodyDashDuration - _bodyDashElapsed)
             : 0f;
@@ -80,7 +95,11 @@ namespace Ouroboros.Runtime
 
         private void FixedUpdate()
         {
-            if (_bodyDashActive)
+            if (_bombOrbitActive)
+            {
+                SimulateBombOrbitStep(Time.fixedDeltaTime);
+            }
+            else if (_bodyDashActive)
             {
                 SimulateBodyDashStep(Time.fixedDeltaTime);
             }
@@ -160,6 +179,7 @@ namespace Ouroboros.Runtime
             body.linearVelocity = Vector2.zero;
             body.angularVelocity = 0f;
             CancelBodyDash();
+            CancelBombOrbit();
             _moveInput = Vector2.zero;
             _lastDirection = Vector2.right;
             PositionReset?.Invoke();
@@ -167,7 +187,8 @@ namespace Ouroboros.Runtime
 
         public bool TryStartBodyDash(Vector2 direction, float duration, float distance)
         {
-            if (_bodyDashActive || !IsMovementAllowed || body == null || solidCollider == null ||
+            if (_bodyDashActive || _bombOrbitActive || !IsMovementAllowed ||
+                body == null || solidCollider == null ||
                 !float.IsFinite(duration) || !float.IsFinite(distance) ||
                 duration < OSBodyDashMath.MinimumDuration || distance < OSBodyDashMath.MinimumDistance)
             {
@@ -193,12 +214,123 @@ namespace Ouroboros.Runtime
             _bodyDashTravelledDistance = 0f;
         }
 
+        public bool CanTraceBombCircle(
+            Vector2 forward,
+            float radius,
+            float duration,
+            OSBombTurnSide turnSide,
+            out Vector2 center)
+        {
+            center = Vector2.zero;
+            if (body == null || solidCollider == null || worldBlockerMask.value == 0 ||
+                !float.IsFinite(radius) || !float.IsFinite(duration) ||
+                radius <= 0f || duration <= 0f)
+            {
+                return false;
+            }
+
+            var direction = OSBodyDashMath.ResolveDirection(forward, _lastDirection);
+            var start = body.position;
+            center = OSBombMath.CalculateCenter(start, direction, radius);
+            var bounds = solidCollider.bounds;
+            var centerOffset = (Vector2)bounds.center - start;
+            var castRadius = Mathf.Max(bounds.extents.x, bounds.extents.y);
+            var startColliderCenter = start + centerOffset;
+            if (!IsSolidWithinWorldAt(start, centerOffset, bounds.extents) ||
+                Physics2D.OverlapCircle(
+                    startColliderCenter,
+                    castRadius,
+                    _blockerFilter,
+                    _overlapHits) > 0)
+            {
+                Array.Clear(_overlapHits, 0, _overlapHits.Length);
+                return false;
+            }
+
+            var steps = Mathf.Max(
+                8,
+                Mathf.CeilToInt(duration / Mathf.Max(0.001f, Time.fixedDeltaTime)));
+            var previous = start;
+            for (var step = 1; step <= steps; step++)
+            {
+                var next = OSBombMath.CalculateOrbitPoint(
+                    start,
+                    direction,
+                    radius,
+                    step / (float)steps,
+                    turnSide);
+                if (!IsSolidWithinWorldAt(next, centerOffset, bounds.extents))
+                {
+                    return false;
+                }
+
+                var displacement = next - previous;
+                var distance = displacement.magnitude;
+                if (distance > MinimumMoveDistance)
+                {
+                    var hitCount = Physics2D.CircleCast(
+                        previous + centerOffset,
+                        castRadius,
+                        displacement / distance,
+                        _blockerFilter,
+                        _castHits,
+                        distance + skinWidth);
+                    if (hitCount > 0)
+                    {
+                        Array.Clear(_castHits, 0, Mathf.Min(hitCount, _castHits.Length));
+                        return false;
+                    }
+                }
+
+                previous = next;
+            }
+
+            return true;
+        }
+
+        public bool TryStartBombOrbit(
+            Vector2 forward,
+            float radius,
+            float duration,
+            OSBombTurnSide turnSide)
+        {
+            if (_bombOrbitActive || _bodyDashActive || !IsMovementAllowed ||
+                !CanTraceBombCircle(forward, radius, duration, turnSide, out var center))
+            {
+                return false;
+            }
+
+            _bombOrbitStart = body.position;
+            _bombOrbitForward = OSBodyDashMath.ResolveDirection(forward, _lastDirection);
+            _bombOrbitCenter = center;
+            _bombTurnSide = turnSide;
+            _bombOrbitRadius = radius;
+            _bombOrbitDuration = duration;
+            _bombOrbitElapsed = 0f;
+            _bombOrbitActive = true;
+            return true;
+        }
+
+        public void CancelBombOrbit()
+        {
+            if (_bombOrbitForward.sqrMagnitude > MinimumMoveInput)
+            {
+                _lastDirection = _bombOrbitForward;
+            }
+
+            _bombOrbitActive = false;
+            _bombOrbitRadius = 0f;
+            _bombOrbitDuration = 0f;
+            _bombOrbitElapsed = 0f;
+        }
+
         /// <summary>
         /// Applies boss-forced movement through the same kinematic cast and world bounds as player input.
         /// </summary>
         public bool ApplyExternalDisplacement(Vector2 displacement)
         {
             if (sessionController == null || !sessionController.IsSimulationRunning || body == null ||
+                _bombOrbitActive ||
                 solidCollider == null || !float.IsFinite(displacement.x) ||
                 !float.IsFinite(displacement.y) || displacement.sqrMagnitude <= MinimumMoveDistance)
             {
@@ -238,9 +370,48 @@ namespace Ouroboros.Runtime
             BodyDashCompleted?.Invoke(travelledDistance);
         }
 
+        internal void SimulateBombOrbitStep(float deltaTime)
+        {
+            if (!_bombOrbitActive || !IsMovementAllowed || body == null || solidCollider == null ||
+                !float.IsFinite(deltaTime) || deltaTime <= 0f)
+            {
+                return;
+            }
+
+            var nextElapsed = Mathf.Min(_bombOrbitDuration, _bombOrbitElapsed + deltaTime);
+            var target = OSBombMath.CalculateOrbitPoint(
+                _bombOrbitStart,
+                _bombOrbitForward,
+                _bombOrbitRadius,
+                nextElapsed / Mathf.Max(0.001f, _bombOrbitDuration),
+                _bombTurnSide);
+            var displacement = target - body.position;
+            if (!TryMoveBombStrict(displacement))
+            {
+                CancelBombOrbit();
+                BombOrbitCompleted?.Invoke(true);
+                return;
+            }
+
+            if (displacement.sqrMagnitude > MinimumMoveDistance)
+            {
+                _lastDirection = displacement.normalized;
+            }
+
+            _bombOrbitElapsed = nextElapsed;
+            if (_bombOrbitElapsed + MinimumMoveDistance < _bombOrbitDuration)
+            {
+                return;
+            }
+
+            _lastDirection = _bombOrbitForward;
+            CancelBombOrbit();
+            BombOrbitCompleted?.Invoke(false);
+        }
+
         internal void SimulateMovementStep(Vector2 rawInput, float deltaTime)
         {
-            if (!IsMovementAllowed || body == null || solidCollider == null)
+            if (_bombOrbitActive || !IsMovementAllowed || body == null || solidCollider == null)
             {
                 return;
             }
@@ -313,6 +484,48 @@ namespace Ouroboros.Runtime
 
             body.position = ClampToWorld(body.position);
             return Vector2.Distance(startPosition, body.position);
+        }
+
+        private bool TryMoveBombStrict(Vector2 displacement)
+        {
+            if (displacement.sqrMagnitude <= MinimumMoveDistance)
+            {
+                return true;
+            }
+
+            var distance = displacement.magnitude;
+            var direction = displacement / distance;
+            var hitCount = solidCollider.Cast(
+                direction,
+                _blockerFilter,
+                _castHits,
+                distance + skinWidth);
+            if (TryGetClosestHit(hitCount, direction, out _))
+            {
+                return false;
+            }
+
+            var target = body.position + displacement;
+            var clamped = ClampToWorld(target);
+            if ((clamped - target).sqrMagnitude > MinimumMoveDistance)
+            {
+                return false;
+            }
+
+            body.position = target;
+            return true;
+        }
+
+        private bool IsSolidWithinWorldAt(
+            Vector2 bodyPosition,
+            Vector2 centerOffset,
+            Vector2 extents)
+        {
+            var center = bodyPosition + centerOffset;
+            return center.x - extents.x >= worldMin.x - MinimumMoveDistance &&
+                   center.y - extents.y >= worldMin.y - MinimumMoveDistance &&
+                   center.x + extents.x <= worldMax.x + MinimumMoveDistance &&
+                   center.y + extents.y <= worldMax.y + MinimumMoveDistance;
         }
 
         private void PublishBodyDashSegment(
@@ -453,10 +666,12 @@ namespace Ouroboros.Runtime
 
         private void HandleStateChanged(OSSessionState previous, OSSessionState current)
         {
-            if (current is not OSSessionState.Combat and not OSSessionState.BodyDash)
+            if (current is not OSSessionState.Combat and not OSSessionState.BodyDash and
+                not OSSessionState.Bomb)
             {
                 _moveInput = Vector2.zero;
                 CancelBodyDash();
+                CancelBombOrbit();
             }
 
             if (current == OSSessionState.Boot ||

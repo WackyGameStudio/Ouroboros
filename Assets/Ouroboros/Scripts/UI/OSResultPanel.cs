@@ -90,10 +90,11 @@ namespace Ouroboros.UI
             resultLabel.text =
                 $"{title}\n" +
                 $"TIME {seconds / 60:00}:{seconds % 60:00}  |  KILLS {summary.TotalKills}  " +
-                $"ELITE {summary.EliteKills}  DASH {summary.DashUseCount}\n" +
+                $"ELITE {summary.EliteKills}  DASH {summary.DashUseCount}  BOMB {summary.BombUseCount}\n" +
                 $"BODY MAX {summary.MaxBodyCount} / FINAL {summary.FinalBodyCount}  |  " +
                 $"GAIN {summary.AcquiredBodyCount}  CUT {summary.CutBodyCount}  " +
-                $"DASH BODY PULL {summary.DashConvergedBodyCount}\n" +
+                $"DASH BODY PULL {summary.DashConvergedBodyCount}  |  " +
+                $"BOMB COST {summary.BombConsumedBodyCount}  HIT {summary.BombHitCount}\n" +
                 $"HEAD DAMAGE {summary.ReceivedHeadDamage:0.0}\n" +
                 $"ROLE MAX  S{summary.MaxRoleCounts.Shield} A{summary.MaxRoleCounts.Attack} " +
                 $"L{summary.MaxRoleCounts.Laser} C{summary.MaxRoleCounts.Control}\n" +

@@ -13,6 +13,7 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSBodyChain bodyChain;
         [SerializeField] private OSBodyRoleRegistry roleRegistry;
         [SerializeField] private OSBodyDashController bodyDashController;
+        [SerializeField] private OSBombController bombController;
         [SerializeField] private OSLevelUpController levelUpController;
         [SerializeField] private OSEncounterBalanceData encounterBalance;
         [SerializeField] private OSWaveScheduleData waveSchedule;
@@ -25,6 +26,9 @@ namespace Ouroboros.Runtime
         private int _acquiredBodyCount;
         private int _cutBodyCount;
         private int _dashConvergedBodyCount;
+        private int _bombUseCount;
+        private int _bombConsumedBodyCount;
+        private int _bombHitCount;
         private float _receivedHeadDamage;
         private OSRoleCountSnapshot _maxRoleCounts;
 
@@ -36,6 +40,7 @@ namespace Ouroboros.Runtime
         public int TotalKills => _totalKills;
         public int EliteKills => _eliteKills;
         public int DashUseCount => _dashUseCount;
+        public int BombUseCount => _bombUseCount;
 
         private void OnEnable()
         {
@@ -91,6 +96,13 @@ namespace Ouroboros.Runtime
             EnemyDefeated?.Invoke(_totalKills);
         }
 
+        public void ConfigureBomb(OSBombController bomb)
+        {
+            Unsubscribe();
+            bombController = bomb;
+            Subscribe();
+        }
+
         internal void BuildSummaryForTesting()
         {
             BuildSummary();
@@ -107,6 +119,9 @@ namespace Ouroboros.Runtime
             _acquiredBodyCount = 0;
             _cutBodyCount = 0;
             _dashConvergedBodyCount = 0;
+            _bombUseCount = 0;
+            _bombConsumedBodyCount = 0;
+            _bombHitCount = 0;
             _receivedHeadDamage = 0f;
             _maxRoleCounts = CaptureRoleCounts();
         }
@@ -138,7 +153,10 @@ namespace Ouroboros.Runtime
                 levelUpController != null ? levelUpController.AppliedUpgradeCount : 0,
                 levelUpController != null ? levelUpController.RunSeed : 0,
                 BuildDataVersion(),
-                levelUpController != null ? levelUpController.GetAppliedUpgradeSummary() : "NONE");
+                levelUpController != null ? levelUpController.GetAppliedUpgradeSummary() : "NONE",
+                _bombUseCount,
+                _bombConsumedBodyCount,
+                _bombHitCount);
             HasSummary = true;
             SummaryBuilt?.Invoke(Summary);
         }
@@ -237,6 +255,16 @@ namespace Ouroboros.Runtime
             }
         }
 
+        private void HandleBombCompleted(OSBombResolution resolution)
+        {
+            if (!HasSummary && !resolution.WasCancelled)
+            {
+                _bombUseCount++;
+                _bombConsumedBodyCount += Mathf.Max(0, resolution.ConsumedBodyCount);
+                _bombHitCount += Mathf.Max(0, resolution.HitCount);
+            }
+        }
+
         private void Subscribe()
         {
             if (_subscribed || !isActiveAndEnabled)
@@ -268,6 +296,11 @@ namespace Ouroboros.Runtime
             if (bodyDashController != null)
             {
                 bodyDashController.DashCompleted += HandleBodyDashCompleted;
+            }
+
+            if (bombController != null)
+            {
+                bombController.BombCompleted += HandleBombCompleted;
             }
 
             _subscribed = true;
@@ -304,6 +337,11 @@ namespace Ouroboros.Runtime
             if (bodyDashController != null)
             {
                 bodyDashController.DashCompleted -= HandleBodyDashCompleted;
+            }
+
+            if (bombController != null)
+            {
+                bombController.BombCompleted -= HandleBombCompleted;
             }
 
             _subscribed = false;

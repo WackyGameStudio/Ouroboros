@@ -12,7 +12,8 @@ namespace Ouroboros.Core
         LevelUpSelection,
         Dead,
         Cleared,
-        Result
+        Result,
+        Bomb
     }
 
     public enum OSSessionResultKind
@@ -80,7 +81,9 @@ namespace Ouroboros.Core
         AddHealMultiplier,
         AddMagnetMultiplier,
         AddExperienceMultiplier,
-        EnableElitePriority
+        EnableElitePriority,
+        AddBombDamageMultiplier,
+        AddBombCooldownDelta
     }
 
     public enum OSUpgradeCategory
@@ -89,7 +92,21 @@ namespace Ouroboros.Core
         Body,
         Dash,
         Survival,
-        Utility
+        Utility,
+        Bomb
+    }
+
+    public enum OSBombTurnSide
+    {
+        Left,
+        Right
+    }
+
+    public enum OSBombPhase
+    {
+        Inactive,
+        DrawingCircle,
+        Gathering
     }
 
     public enum OSEnemyArchetype
@@ -270,7 +287,10 @@ namespace Ouroboros.Core
             int appliedUpgradeCount,
             int runSeed,
             string dataVersion,
-            string upgradeSummary)
+            string upgradeSummary,
+            int bombUseCount = 0,
+            int bombConsumedBodyCount = 0,
+            int bombHitCount = 0)
         {
             ResultState = resultState;
             ResultKind = resultKind;
@@ -291,6 +311,9 @@ namespace Ouroboros.Core
             RunSeed = runSeed;
             DataVersion = dataVersion ?? string.Empty;
             UpgradeSummary = upgradeSummary ?? string.Empty;
+            BombUseCount = Mathf.Max(0, bombUseCount);
+            BombConsumedBodyCount = Mathf.Max(0, bombConsumedBodyCount);
+            BombHitCount = Mathf.Max(0, bombHitCount);
         }
 
         public OSSessionState ResultState { get; }
@@ -312,5 +335,8 @@ namespace Ouroboros.Core
         public int RunSeed { get; }
         public string DataVersion { get; }
         public string UpgradeSummary { get; }
+        public int BombUseCount { get; }
+        public int BombConsumedBodyCount { get; }
+        public int BombHitCount { get; }
     }
 }

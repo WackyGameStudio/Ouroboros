@@ -122,6 +122,39 @@ namespace Ouroboros.Core
         }
     }
 
+    [Serializable]
+    public sealed class OSBombSettings
+    {
+        [SerializeField] private int minimumBodyCount = OSBombMath.DefaultMinimumBodyCount;
+        [SerializeField] private float consumeRate = OSBombMath.DefaultConsumeRate;
+        [SerializeField] private float drawDuration = OSBombMath.DefaultDrawDuration;
+        [SerializeField] private float gatherDuration = OSBombMath.DefaultGatherDuration;
+        [SerializeField] private float damage = OSBombMath.DefaultDamage;
+        [SerializeField] private float cooldown = OSBombMath.DefaultCooldown;
+
+        public int MinimumBodyCount => minimumBodyCount;
+        public float ConsumeRate => consumeRate;
+        public float DrawDuration => drawDuration;
+        public float GatherDuration => gatherDuration;
+        public float Damage => damage;
+        public float Cooldown => cooldown;
+
+        internal void CollectValidationErrors(List<string> errors, string path)
+        {
+            OSValidationUtility.RequireAtLeastOne(minimumBodyCount, $"{path}.minimumBodyCount", errors);
+            OSValidationUtility.RequireFinitePositive(consumeRate, $"{path}.consumeRate", errors);
+            if (float.IsFinite(consumeRate) && consumeRate > 1f)
+            {
+                errors.Add($"{path}.consumeRate: expected a value no greater than 1, actual {consumeRate}.");
+            }
+
+            OSValidationUtility.RequireFinitePositive(drawDuration, $"{path}.drawDuration", errors);
+            OSValidationUtility.RequireFinitePositive(gatherDuration, $"{path}.gatherDuration", errors);
+            OSValidationUtility.RequireFinitePositive(damage, $"{path}.damage", errors);
+            OSValidationUtility.RequireFinitePositive(cooldown, $"{path}.cooldown", errors);
+        }
+    }
+
     [CreateAssetMenu(fileName = "OSBodyBalance", menuName = "Ouroboros/Data/Body Balance")]
     public sealed class OSBodyBalanceData : ScriptableObject, IOSValidatableData
     {
@@ -136,6 +169,7 @@ namespace Ouroboros.Core
         [SerializeField] private List<OSBodyRoleDefinition> roleDefinitions = new();
         [FormerlySerializedAs("explosion")]
         [SerializeField] private OSBodyDashSettings bodyDash = new();
+        [SerializeField] private OSBombSettings bomb = new();
 
         [NonSerialized] private OSDataValidationReport _lastValidationReport;
 
@@ -149,6 +183,7 @@ namespace Ouroboros.Core
         public float CutGuardDuration => cutGuardDuration;
         public IReadOnlyList<OSBodyRoleDefinition> RoleDefinitions => roleDefinitions;
         public OSBodyDashSettings BodyDash => bodyDash;
+        public OSBombSettings Bomb => bomb;
         public string LastValidationMessage => _lastValidationReport?.Message ?? string.Empty;
 
         public OSBodyRoleDefinition GetRoleDefinition(OSBodyRoleType role)
@@ -243,6 +278,15 @@ namespace Ouroboros.Core
             else
             {
                 bodyDash.CollectValidationErrors(errors, $"{path}.bodyDash");
+            }
+
+            if (bomb == null)
+            {
+                errors.Add($"{path}.bomb: settings are missing.");
+            }
+            else
+            {
+                bomb.CollectValidationErrors(errors, $"{path}.bomb");
             }
         }
 

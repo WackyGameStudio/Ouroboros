@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f02dfbaa56d0d241be127ea154ef414, type: 3}
   m_Name: OSFeedbackCatalog
   m_EditorClassIdentifier: Ouroboros.Core::Ouroboros.Core.OSFeedbackCatalog
-  dataVersion: step02-v1
+  dataVersion: step16.1-v1
   roleVisuals:
   - id: shield
     roleType: 0
@@ -42,8 +42,10 @@ MonoBehaviour:
   - charger_line
   - laser_line
   - body_dash
+  - bomb_ring
   audioKeys:
   - ui_select
   - hit_head
   - cut_body
   - body_dash
+  - bomb

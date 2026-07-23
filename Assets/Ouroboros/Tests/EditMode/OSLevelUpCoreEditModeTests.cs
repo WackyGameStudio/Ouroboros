@@ -119,6 +119,8 @@ namespace Ouroboros.Tests.EditMode
             Assert.That(modifiers.MagnetMultiplier, Is.EqualTo(1.3f).Within(0.0001f));
             Assert.That(modifiers.ExperienceMultiplier, Is.EqualTo(1.1f).Within(0.0001f));
             Assert.That(modifiers.ElitePriority, Is.True);
+            Assert.That(modifiers.BombDamageMultiplier, Is.EqualTo(1.2f).Within(0.0001f));
+            Assert.That(modifiers.BombCooldownDelta, Is.EqualTo(-1f).Within(0.0001f));
             Assert.That(EditorJsonUtility.ToJson(_catalog), Is.EqualTo(before));
         }
 

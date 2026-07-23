@@ -118,6 +118,14 @@ namespace Ouroboros.Editor
             bodyDash.FindPropertyRelative("duration").floatValue = 0.5f;
             bodyDash.FindPropertyRelative("distance").floatValue = 4.5f;
             bodyDash.FindPropertyRelative("cooldown").floatValue = 2f;
+
+            var bomb = Require(serialized, "bomb");
+            bomb.FindPropertyRelative("minimumBodyCount").intValue = 10;
+            bomb.FindPropertyRelative("consumeRate").floatValue = 0.1f;
+            bomb.FindPropertyRelative("drawDuration").floatValue = 1f;
+            bomb.FindPropertyRelative("gatherDuration").floatValue = 0.5f;
+            bomb.FindPropertyRelative("damage").floatValue = 100f;
+            bomb.FindPropertyRelative("cooldown").floatValue = 10f;
         }
 
         private static void ConfigureRole(
@@ -273,7 +281,7 @@ namespace Ouroboros.Editor
         {
             SetString(serialized, "dataVersion", DataVersion);
             var entries = Require(serialized, "entries");
-            entries.arraySize = 15;
+            entries.arraySize = 17;
             ConfigureUpgrade(entries, 0, "head_damage", OSUpgradeCategory.Firepower,
                 OSUpgradeOperation.AddHeadDamageMultiplier, 0.15f, 3, 0f, 10f);
             ConfigureUpgrade(entries, 1, "head_rate", OSUpgradeCategory.Firepower,
@@ -304,6 +312,10 @@ namespace Ouroboros.Editor
                 OSUpgradeOperation.AddExperienceMultiplier, 0.1f, 2, 0f, 10f);
             ConfigureUpgrade(entries, 14, "elite_priority", OSUpgradeCategory.Utility,
                 OSUpgradeOperation.EnableElitePriority, 1f, 1, 0f, 1f);
+            ConfigureUpgrade(entries, 15, "bomb_damage", OSUpgradeCategory.Bomb,
+                OSUpgradeOperation.AddBombDamageMultiplier, 0.2f, 3, 1f, 3f);
+            ConfigureUpgrade(entries, 16, "bomb_cooldown", OSUpgradeCategory.Bomb,
+                OSUpgradeOperation.AddBombCooldownDelta, -1f, 3, 5f, 10f);
         }
 
         private static void ConfigureUpgrade(
@@ -342,8 +354,21 @@ namespace Ouroboros.Editor
             ConfigureVisual(visuals.GetArrayElementAtIndex(3), "control", OSBodyRoleType.Control,
                 "Body_Control", "diamond_cross", new Color32(65, 230, 145, 255));
             SetStringArray(serialized, "attackVfxKeys", "head_projectile", "body_projectile", "laser_beam");
-            SetStringArray(serialized, "telegraphKeys", "charger_line", "laser_line", "body_dash");
-            SetStringArray(serialized, "audioKeys", "ui_select", "hit_head", "cut_body", "body_dash");
+            SetStringArray(
+                serialized,
+                "telegraphKeys",
+                "charger_line",
+                "laser_line",
+                "body_dash",
+                "bomb_ring");
+            SetStringArray(
+                serialized,
+                "audioKeys",
+                "ui_select",
+                "hit_head",
+                "cut_body",
+                "body_dash",
+                "bomb");
         }
 
         private static void ConfigureVisual(

@@ -163,6 +163,12 @@ namespace Ouroboros.Runtime
                 return;
             }
 
+            if (playerHealth != null && playerHealth.IsAbilityInvulnerable)
+            {
+                DamageResolved?.Invoke(selectedEvent, OSResultCode.RejectedInvulnerable);
+                return;
+            }
+
             if (bodyChain.CutGuardRemaining <= 0f && shieldBodyRole != null &&
                 shieldBodyRole.TryBlockDamage(selectedEvent).IsAccepted)
             {

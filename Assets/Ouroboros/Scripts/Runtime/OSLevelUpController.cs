@@ -19,6 +19,7 @@ namespace Ouroboros.Runtime
         [SerializeField] private OSBodyGrowthController bodyGrowth;
         [SerializeField] private OSPickupSpawner pickupSpawner;
         [SerializeField] private OSBodyDashController bodyDashController;
+        [SerializeField] private OSBombController bombController;
         [SerializeField] private OSAttackBodyRole attackBodyRole;
         [SerializeField] private OSLaserBodyRole laserBodyRole;
         [SerializeField] private OSControlBodyRole controlBodyRole;
@@ -114,6 +115,12 @@ namespace Ouroboros.Runtime
             }
 
             return builder.Length > 0 ? builder.ToString() : "NONE";
+        }
+
+        public void ConfigureBomb(OSBombController bomb)
+        {
+            bombController = bomb;
+            bombController?.ApplyUpgradeModifiers(Modifiers);
         }
 
         public OSRuleResult<int> AddExperience(int baseAmount)
@@ -227,6 +234,8 @@ namespace Ouroboros.Runtime
                 "magnet_radius" => "COLLECTION FIELD",
                 "experience_gain" => "LEARNING SYNC",
                 "elite_priority" => "THREAT IDENTIFICATION",
+                "bomb_damage" => "RING DETONATION",
+                "bomb_cooldown" => "RING RECHARGE",
                 _ => id?.Replace('_', ' ').ToUpperInvariant() ?? "UNKNOWN"
             };
         }
@@ -240,6 +249,7 @@ namespace Ouroboros.Runtime
                 OSUpgradeCategory.Dash => "DASH",
                 OSUpgradeCategory.Survival => "SURVIVAL",
                 OSUpgradeCategory.Utility => "UTILITY",
+                OSUpgradeCategory.Bomb => "BOMB",
                 _ => category.ToString().ToUpperInvariant()
             };
         }
@@ -280,6 +290,10 @@ namespace Ouroboros.Runtime
                 OSUpgradeOperation.AddExperienceMultiplier =>
                     $"XP GAIN  {Percent(1f + (value * level))} → {Percent(1f + (value * next))}",
                 OSUpgradeOperation.EnableElitePriority => "AUTO-AIM PRIORITY  NEAREST → ELITE / BOSS",
+                OSUpgradeOperation.AddBombDamageMultiplier =>
+                    $"BOMB DAMAGE  {BombDamage(value, level):0} → {BombDamage(value, next):0}",
+                OSUpgradeOperation.AddBombCooldownDelta =>
+                    $"BOMB COOLDOWN  {BombCooldown(value, level):0.00}s → {BombCooldown(value, next):0.00}s",
                 _ => $"LEVEL {level} → {next}"
             };
         }
@@ -321,6 +335,10 @@ namespace Ouroboros.Runtime
                     $"Experience pickups grant {PercentValue(value)} more XP.",
                 OSUpgradeOperation.EnableElitePriority =>
                     "Head auto-fire prioritizes Elite and Boss targets.",
+                OSUpgradeOperation.AddBombDamageMultiplier =>
+                    $"Bomb explosions deal {PercentValue(value)} more fixed damage.",
+                OSUpgradeOperation.AddBombCooldownDelta =>
+                    $"Bomb cooldown becomes {value:0.00}s shorter (minimum 5.00s).",
                 _ => "Improves this upgrade by one level."
             };
         }
@@ -346,6 +364,7 @@ namespace Ouroboros.Runtime
             bodyGrowth?.ApplyUpgradeModifiers(modifiers);
             pickupSpawner?.ApplyUpgradeModifiers(modifiers);
             bodyDashController?.ApplyUpgradeModifiers(modifiers);
+            bombController?.ApplyUpgradeModifiers(modifiers);
             attackBodyRole?.ApplyUpgradeModifiers(modifiers);
             laserBodyRole?.ApplyUpgradeModifiers(modifiers);
             controlBodyRole?.ApplyUpgradeModifiers(modifiers);
@@ -471,6 +490,18 @@ namespace Ouroboros.Runtime
         {
             var cooldown = bodyBalance != null ? bodyBalance.BodyDash.Cooldown : 2f;
             return OSBodyDashMath.CalculateCooldown(cooldown, 1f, value * level);
+        }
+
+        private float BombDamage(float value, int level)
+        {
+            var damage = bodyBalance != null ? bodyBalance.Bomb.Damage : OSBombMath.DefaultDamage;
+            return OSBombMath.CalculateDamage(damage, 1f + (value * level));
+        }
+
+        private float BombCooldown(float value, int level)
+        {
+            var cooldown = bodyBalance != null ? bodyBalance.Bomb.Cooldown : OSBombMath.DefaultCooldown;
+            return OSBombMath.CalculateCooldown(cooldown, value * level);
         }
 
         private float MaxHealth(float value, int level)

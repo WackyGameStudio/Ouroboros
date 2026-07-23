@@ -22,6 +22,7 @@ namespace Ouroboros.UI
         [SerializeField] private OSControlBodyRole controlRole;
         [SerializeField] private OSShieldBodyRole shieldRole;
         [SerializeField] private OSBodyDashController bodyDashController;
+        [SerializeField] private OSBombController bombController;
         [SerializeField] private OSLevelUpController levelUpController;
         [SerializeField] private OSWaveDirector waveDirector;
         [SerializeField] private OSBossEncounterController bossEncounter;
@@ -141,6 +142,14 @@ namespace Ouroboros.UI
             }
         }
 
+        public void ConfigureBomb(OSBombController bomb)
+        {
+            Unsubscribe();
+            bombController = bomb;
+            Subscribe();
+            MarkDirty();
+        }
+
         private void RefreshNow()
         {
             _dirty = false;
@@ -162,8 +171,10 @@ namespace Ouroboros.UI
 
             if (primaryLabel != null)
             {
-                var invulnerability = playerHealth != null && playerHealth.IsInvulnerable
-                    ? $"  INVULN {playerHealth.HitInvulnerabilityRemaining:0.0}s"
+                var invulnerability = playerHealth != null && playerHealth.IsAbilityInvulnerable
+                    ? "  BOMB INVULN"
+                    : playerHealth != null && playerHealth.IsInvulnerable
+                        ? $"  INVULN {playerHealth.HitInvulnerabilityRemaining:0.0}s"
                     : string.Empty;
                 primaryLabel.text =
                     $"HP  {playerHealth?.CurrentHealth ?? 0f:0}/{playerHealth?.MaxHealth ?? 0f:0}{invulnerability}\n\n" +
@@ -188,8 +199,20 @@ namespace Ouroboros.UI
                         : bodyDashController.CooldownRemaining > 0f
                             ? $"DASH COOLDOWN  {bodyDashController.CooldownRemaining:0.0}s"
                             : $"DASH READY [SPACE]  {bodyDashController.Distance:0.0}u / {bodyDashController.Duration:0.0}s";
+                var bombText = bombController == null
+                    ? "BOMB OFFLINE"
+                    : bombController.Phase == OSBombPhase.DrawingCircle
+                        ? $"BOMB DRAWING  {bombController.DrawRemaining:0.0}s"
+                        : bombController.Phase == OSBombPhase.Gathering
+                            ? $"BOMB GATHER  {bombController.GatherRemaining:0.0}s"
+                            : bombController.CooldownRemaining > 0f
+                                ? $"BOMB COOLDOWN  {bombController.CooldownRemaining:0.0}s"
+                                : bodyChain != null &&
+                                  bodyChain.ActiveCount >= bombController.MinimumBodyCount
+                                    ? $"BOMB READY [B]  DMG {bombController.Damage:0}"
+                                    : $"BOMB NEEDS {bombController.MinimumBodyCount} BODY [B]";
                 actionLabel.text =
-                    $"{dashText}\n" +
+                    $"{dashText}   |   {bombText}\n" +
                     $"SHIELD [O] {shieldRole?.ChargedCount ?? 0}/{shieldCount}   " +
                     $"ATTACK [>] {attackRole?.ShotsFired ?? 0}   LASER [=] {laserRole?.BeamsFired ?? 0}   " +
                     $"CONTROL [+] {controlRole?.ControlsApplied ?? 0}";
@@ -300,6 +323,13 @@ namespace Ouroboros.UI
                 bodyDashController.DashCompleted += HandleBodyDashResolved;
             }
 
+            if (bombController != null)
+            {
+                bombController.BombStarted += HandleBombSnapshot;
+                bombController.BombExploded += HandleBombResolution;
+                bombController.BombCompleted += HandleBombResolution;
+            }
+
             if (levelUpController != null)
             {
                 levelUpController.ExperienceChanged += HandleExperienceChanged;
@@ -369,6 +399,13 @@ namespace Ouroboros.UI
                 bodyDashController.DashCompleted -= HandleBodyDashResolved;
             }
 
+            if (bombController != null)
+            {
+                bombController.BombStarted -= HandleBombSnapshot;
+                bombController.BombExploded -= HandleBombResolution;
+                bombController.BombCompleted -= HandleBombResolution;
+            }
+
             if (levelUpController != null)
             {
                 levelUpController.ExperienceChanged -= HandleExperienceChanged;
@@ -401,6 +438,8 @@ namespace Ouroboros.UI
         private void HandleShieldChanged(OSShieldChargeEvent chargeEvent) => MarkDirty();
         private void HandleBodyDashSnapshot(OSBodyDashSnapshot snapshot) => MarkDirty();
         private void HandleBodyDashResolved(OSBodyDashResolution resolution) => MarkDirty();
+        private void HandleBombSnapshot(OSBombSnapshot snapshot) => MarkDirty();
+        private void HandleBombResolution(OSBombResolution resolution) => MarkDirty();
         private void HandleExperienceChanged(int level, float current, int required) => MarkDirty();
         private void HandleUpgradeApplied(OSUpgradeCandidate candidate, OSUpgradeModifiers modifiers) => MarkDirty();
         private void HandleEnemySpawned(OSEnemyController enemy) => MarkDirty();

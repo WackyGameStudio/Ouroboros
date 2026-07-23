@@ -22,6 +22,15 @@
           "processors": "",
           "interactions": "Press",
           "initialStateCheck": false
+        },
+        {
+          "name": "Bomb",
+          "type": "Button",
+          "id": "6c6eef47-956d-4a88-8f14-d26458731464",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "Press",
+          "initialStateCheck": false
         }
       ],
       "bindings": [
@@ -143,6 +152,17 @@
           "processors": "",
           "groups": "Keyboard&Mouse",
           "action": "BodyDash",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "a42dcc83-3ea7-4c5a-a988-fce47bd3e58a",
+          "path": "<Keyboard>/b",
+          "interactions": "Press",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Bomb",
           "isComposite": false,
           "isPartOfComposite": false
         }

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a96f86f3bc1ab124284acc4f7a8958bf, type: 3}
   m_Name: OSUpgradeCatalog
   m_EditorClassIdentifier: Ouroboros.Core::Ouroboros.Core.OSUpgradeCatalog
-  dataVersion: step02-v1
+  dataVersion: step16.1-v1
   entries:
   - id: head_damage
     category: 0
@@ -133,4 +133,20 @@ MonoBehaviour:
     perLevelValue: 1
     clampMinimum: 0
     clampMaximum: 1
+    candidateWeight: 1
+  - id: bomb_damage
+    category: 5
+    maxLevel: 3
+    operation: 15
+    perLevelValue: 0.2
+    clampMinimum: 1
+    clampMaximum: 3
+    candidateWeight: 1
+  - id: bomb_cooldown
+    category: 5
+    maxLevel: 3
+    operation: 16
+    perLevelValue: -1
+    clampMinimum: 5
+    clampMaximum: 10
     candidateWeight: 1

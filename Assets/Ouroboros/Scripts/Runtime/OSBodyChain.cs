@@ -8,7 +8,8 @@ namespace Ouroboros.Runtime
     public enum OSBodyRemovalCause
     {
         Cut,
-        Tail
+        Tail,
+        Bomb
     }
 
     public readonly struct OSBodyRemovalEvent
@@ -74,6 +75,10 @@ namespace Ouroboros.Runtime
         private bool _naturalUnfoldActive;
         private float _bodyConvergenceDuration;
         private float _bodyConvergenceElapsed;
+        private readonly float[] _bombConvergenceStartDistances = new float[DefaultTechnicalGuard];
+        private bool _bombConvergenceActive;
+        private float _bombConvergenceDuration;
+        private float _bombConvergenceElapsed;
 
         public event Action<int, int, OSBodyRoleType> SegmentAppended;
         public event Action<OSBodyRemovalEvent> SegmentsRemoving;
@@ -81,6 +86,7 @@ namespace Ouroboros.Runtime
         public event Action<OSBodyRemovalEvent> SegmentsCut;
         public event Action<int> SegmentCountChanged;
         public event Action ChainOrderChanged;
+        public event Action BombPathConvergenceCompleted;
 
         public int ActiveCount { get; private set; }
         public int PoolCapacity => _poolViews.Length;
@@ -89,6 +95,7 @@ namespace Ouroboros.Runtime
         public float CutGuardRemaining => _cutGuardRemaining;
         public bool IsBodyConvergenceActive => _bodyConvergenceActive;
         public bool IsNaturalUnfoldActive => _naturalUnfoldActive;
+        public bool IsBombPathConvergenceActive => _bombConvergenceActive;
         public float BodyConvergenceProgress => !_bodyConvergenceActive || _bodyConvergenceDuration <= 0f
             ? 0f
             : Mathf.Clamp01(_bodyConvergenceElapsed / _bodyConvergenceDuration);
@@ -133,6 +140,7 @@ namespace Ouroboros.Runtime
 
             RecordHeadPosition(ResolveCurrentHeadPosition());
             SimulateBodyConvergence(Time.fixedDeltaTime);
+            SimulateBombPathConvergence(Time.fixedDeltaTime);
             ApplySegmentPoses();
         }
 
@@ -266,6 +274,7 @@ namespace Ouroboros.Runtime
 
         public void BeginBodyConvergence(float duration)
         {
+            CancelBombPathConvergence();
             _bodyConvergenceDuration = Mathf.Max(OSBodyDashMath.MinimumDuration, duration);
             _bodyConvergenceElapsed = 0f;
             _bodyConvergenceActive = true;
@@ -300,6 +309,29 @@ namespace Ouroboros.Runtime
             ApplySegmentPoses();
         }
 
+        public void BeginBombPathConvergence(float duration)
+        {
+            CancelBodyConvergence();
+            _bombConvergenceDuration = Mathf.Max(0.01f, duration);
+            _bombConvergenceElapsed = 0f;
+            _bombConvergenceActive = true;
+            _naturalUnfoldActive = false;
+            for (var index = 0;
+                 index < ActiveCount && index < _bombConvergenceStartDistances.Length;
+                 index++)
+            {
+                _bombConvergenceStartDistances[index] = _headCumulativeDistance -
+                                                        ((index + 1) * EffectiveSegmentSpacing);
+            }
+        }
+
+        public void CancelBombPathConvergence()
+        {
+            _bombConvergenceActive = false;
+            _bombConvergenceDuration = 0f;
+            _bombConvergenceElapsed = 0f;
+        }
+
         /// <summary>
         /// Removes a requested number of tail segments in reverse order and reports the new count.
         /// </summary>
@@ -315,6 +347,20 @@ namespace Ouroboros.Runtime
 
             RemoveFrom(ActiveCount - removeCount, OSBodyRemovalCause.Tail, Vector2.zero);
             return OSRuleResult<int>.Accepted(ActiveCount, "body.remove_tail.accepted");
+        }
+
+        public OSRuleResult<int> ConsumeBombTail(int removeCount)
+        {
+            if (removeCount <= 0 || removeCount > ActiveCount)
+            {
+                return OSRuleResult<int>.Rejected(
+                    OSResultCode.RejectedRequirement,
+                    "body.bomb.invalid_count",
+                    ActiveCount);
+            }
+
+            RemoveFrom(ActiveCount - removeCount, OSBodyRemovalCause.Bomb, Vector2.zero);
+            return OSRuleResult<int>.Accepted(ActiveCount, "body.bomb.consumed");
         }
 
         /// <summary>
@@ -466,6 +512,12 @@ namespace Ouroboros.Runtime
             ApplySegmentPoses();
         }
 
+        internal void SimulateBombPathConvergenceForTesting(float deltaTime)
+        {
+            SimulateBombPathConvergence(deltaTime);
+            ApplySegmentPoses();
+        }
+
         internal void SimulateCutGuardForTesting(float deltaTime)
         {
             SimulateCutGuard(deltaTime);
@@ -507,6 +559,7 @@ namespace Ouroboros.Runtime
         private void ClearSegments()
         {
             CancelBodyConvergence();
+            CancelBombPathConvergence();
             for (var index = 0; index < ActiveCount; index++)
             {
                 _poolViews[index]?.Deactivate();
@@ -584,6 +637,28 @@ namespace Ouroboros.Runtime
             {
                 _bodyConvergenceElapsed = _bodyConvergenceDuration;
             }
+        }
+
+        private void SimulateBombPathConvergence(float deltaTime)
+        {
+            if (!_bombConvergenceActive || !float.IsFinite(deltaTime) || deltaTime <= 0f)
+            {
+                return;
+            }
+
+            _bombConvergenceElapsed = Mathf.Min(
+                _bombConvergenceDuration,
+                _bombConvergenceElapsed + deltaTime);
+            if (_bombConvergenceElapsed + PositionEpsilon < _bombConvergenceDuration)
+            {
+                return;
+            }
+
+            _bombConvergenceActive = false;
+            _bombConvergenceDuration = 0f;
+            _bombConvergenceElapsed = 0f;
+            ResetPathAt(_currentHeadPosition, ActiveCount > 0);
+            BombPathConvergenceCompleted?.Invoke();
         }
 
         private void BuildPool()
@@ -742,6 +817,18 @@ namespace Ouroboros.Runtime
                     {
                         targetDistance = anchorDistance;
                     }
+                }
+
+                if (_bombConvergenceActive &&
+                    (uint)chainIndex < (uint)_bombConvergenceStartDistances.Length)
+                {
+                    var progress = OSBodyDashMath.EaseOutCubic(
+                        _bombConvergenceElapsed /
+                        Mathf.Max(0.01f, _bombConvergenceDuration));
+                    targetDistance = Mathf.Lerp(
+                        _bombConvergenceStartDistances[chainIndex],
+                        _headCumulativeDistance,
+                        progress);
                 }
 
                 var sample = EvaluateTarget(targetDistance, ref newerIndex);
@@ -911,6 +998,7 @@ namespace Ouroboros.Runtime
             else if (current is OSSessionState.Dead or OSSessionState.Cleared or OSSessionState.Result)
             {
                 CancelBodyConvergence();
+                CancelBombPathConvergence();
             }
         }
 

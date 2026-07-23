@@ -92,6 +92,29 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [Test]
+        public void BKeyRequestsBombOnlyWhilePlayerMapIsActive()
+        {
+            Assert.That(_session.BeginSession().IsAccepted, Is.True);
+
+            var bombCount = 0;
+            _session.BombRequested += () => bombCount++;
+            Tap(_keyboard.bKey);
+            Assert.That(bombCount, Is.Zero);
+
+            Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
+            Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
+            Assert.That(_session.State, Is.EqualTo(OSSessionState.Combat));
+
+            Tap(_keyboard.bKey);
+            Assert.That(bombCount, Is.EqualTo(1));
+
+            Assert.That(_session.QueueSelection(OSSelectionKind.BodyRole).IsAccepted, Is.True);
+            Assert.That(_session.ProcessPendingSelection().IsAccepted, Is.True);
+            Tap(_keyboard.bKey);
+            Assert.That(bombCount, Is.EqualTo(1));
+        }
+
+        [Test]
         public void UiSubmitWorksAtTimeScaleZeroAndRestartPreservesRoleSelectionContract()
         {
             Assert.That(_session.BeginSession().IsAccepted, Is.True);
@@ -173,6 +196,7 @@ namespace Ouroboros.Tests.PlayMode
             var player = actions.AddActionMap("Player");
             player.AddAction("Move", InputActionType.Value, expectedControlLayout: "Vector2");
             player.AddAction("BodyDash", InputActionType.Button, "<Keyboard>/space", interactions: "Press");
+            player.AddAction("Bomb", InputActionType.Button, "<Keyboard>/b", interactions: "Press");
 
             var ui = actions.AddActionMap("UI");
             ui.AddAction("Submit", InputActionType.Button, "<Keyboard>/enter", interactions: "Press");

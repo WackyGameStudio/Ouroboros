@@ -335,6 +335,7 @@ namespace Ouroboros.Tests.PlayMode
             var player = actions.AddActionMap("Player");
             player.AddAction("Move", InputActionType.Value, expectedControlLayout: "Vector2");
             player.AddAction("BodyDash", InputActionType.Button, "<Keyboard>/space", interactions: "Press");
+            player.AddAction("Bomb", InputActionType.Button, "<Keyboard>/b", interactions: "Press");
             var ui = actions.AddActionMap("UI");
             ui.AddAction("Submit", InputActionType.Button, "<Keyboard>/enter", interactions: "Press");
             ui.AddAction("Cancel", InputActionType.Button, "<Keyboard>/escape", interactions: "Press");

@@ -51,6 +51,26 @@ namespace Ouroboros.Core
         public float Cooldown { get; }
     }
 
+    public readonly struct OSBombRuntimeSettings
+    {
+        public OSBombRuntimeSettings(OSBombSettings source)
+        {
+            MinimumBodyCount = source.MinimumBodyCount;
+            ConsumeRate = source.ConsumeRate;
+            DrawDuration = source.DrawDuration;
+            GatherDuration = source.GatherDuration;
+            Damage = source.Damage;
+            Cooldown = source.Cooldown;
+        }
+
+        public int MinimumBodyCount { get; }
+        public float ConsumeRate { get; }
+        public float DrawDuration { get; }
+        public float GatherDuration { get; }
+        public float Damage { get; }
+        public float Cooldown { get; }
+    }
+
     public readonly struct OSDropRuntimeData
     {
         public OSDropRuntimeData(OSDropTable source)
@@ -216,6 +236,7 @@ namespace Ouroboros.Core
             BodyDamageRate = body.BodyDamageRate;
             CutGuardDuration = body.CutGuardDuration;
             BodyDash = new OSBodyDashRuntimeSettings(body.BodyDash);
+            Bomb = new OSBombRuntimeSettings(body.Bomb);
             BodyRoles = CopyBodyRoles(body.RoleDefinitions);
 
             ActiveEnemyLimit = encounter.ActiveEnemyLimit;
@@ -249,6 +270,7 @@ namespace Ouroboros.Core
         public float BodyDamageRate { get; internal set; }
         public float CutGuardDuration { get; }
         public OSBodyDashRuntimeSettings BodyDash { get; internal set; }
+        public OSBombRuntimeSettings Bomb { get; internal set; }
         public IReadOnlyList<OSBodyRoleRuntimeDefinition> BodyRoles { get; }
         public int ActiveEnemyLimit { get; }
         public int ProjectileLimit { get; }

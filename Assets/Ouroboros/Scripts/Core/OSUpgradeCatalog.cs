@@ -54,7 +54,7 @@ namespace Ouroboros.Core
     [CreateAssetMenu(fileName = "OSUpgradeCatalog", menuName = "Ouroboros/Data/Upgrade Catalog")]
     public sealed class OSUpgradeCatalog : ScriptableObject, IOSValidatableData
     {
-        public const int RequiredUpgradeCount = 15;
+        public const int RequiredUpgradeCount = 17;
 
         [SerializeField] private string dataVersion = "step02-v1";
         [SerializeField] private List<OSUpgradeDefinition> entries = new();

@@ -122,6 +122,7 @@ namespace Ouroboros.Tests.PlayMode
             var growth = Object.FindAnyObjectByType<OSBodyGrowthController>();
             var pickups = Object.FindAnyObjectByType<OSPickupSpawner>();
             var bodyDash = Object.FindAnyObjectByType<OSBodyDashController>();
+            var bomb = Object.FindAnyObjectByType<OSBombController>();
             var attack = Object.FindAnyObjectByType<OSAttackBodyRole>();
             var laser = Object.FindAnyObjectByType<OSLaserBodyRole>();
             var shield = Object.FindAnyObjectByType<OSShieldBodyRole>();
@@ -133,6 +134,8 @@ namespace Ouroboros.Tests.PlayMode
             var baseMagnet = pickups.MagnetRadius;
             var baseDashDistance = bodyDash.Distance;
             var baseDashCooldown = bodyDash.Cooldown;
+            var baseBombDamage = bomb.Damage;
+            var baseBombCooldown = bomb.Cooldown;
             var baseAttackInterval = attack.Interval;
             var baseLaserInterval = laser.Interval;
             var baseShieldRecharge = shield.RechargeDuration;
@@ -152,7 +155,9 @@ namespace Ouroboros.Tests.PlayMode
                 1.25f,
                 1.3f,
                 1.1f,
-                true);
+                true,
+                1.2f,
+                -1f);
 
             health.ApplyUpgradeModifiers(modifiers);
             player.ApplyUpgradeModifiers(modifiers);
@@ -160,6 +165,7 @@ namespace Ouroboros.Tests.PlayMode
             growth.ApplyUpgradeModifiers(modifiers);
             pickups.ApplyUpgradeModifiers(modifiers);
             bodyDash.ApplyUpgradeModifiers(modifiers);
+            bomb.ApplyUpgradeModifiers(modifiers);
             attack.ApplyUpgradeModifiers(modifiers);
             laser.ApplyUpgradeModifiers(modifiers);
             shield.ApplyUpgradeModifiers(modifiers);
@@ -177,6 +183,8 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(bodyDash.Distance, Is.EqualTo(baseDashDistance * 1.15f).Within(0.001f));
             Assert.That(bodyDash.Cooldown,
                 Is.EqualTo((baseDashCooldown * 0.88f) - 0.2f).Within(0.001f));
+            Assert.That(bomb.Damage, Is.EqualTo(baseBombDamage * 1.2f).Within(0.001f));
+            Assert.That(bomb.Cooldown, Is.EqualTo(baseBombCooldown - 1f).Within(0.001f));
             Assert.That(attack.Interval, Is.EqualTo(baseAttackInterval * 0.92f).Within(0.001f));
             Assert.That(laser.Interval, Is.EqualTo(baseLaserInterval * 0.92f).Within(0.001f));
             Assert.That(shield.RechargeDuration, Is.EqualTo(baseShieldRecharge * 0.92f).Within(0.001f));
