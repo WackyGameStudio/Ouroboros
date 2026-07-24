@@ -65,6 +65,32 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [Test]
+        public void HoldPreview_DrawsTheFullCircleAndTracksPlayerMovement()
+        {
+            var rig = CreateRig(10);
+
+            rig.Bomb.SetPreviewHeldForTesting(true);
+            rig.Bomb.RefreshPreviewForTesting();
+
+            Assert.That(rig.Bomb.IsPreviewVisible, Is.True);
+            Assert.That(rig.Ring.enabled, Is.True);
+            Assert.That(rig.Ring.positionCount, Is.EqualTo(65));
+            var firstStart = (Vector2)rig.Ring.GetPosition(0);
+            Assert.That(Vector2.Distance(firstStart, rig.Player.Position), Is.LessThan(0.001f));
+
+            Assert.That(rig.Player.ApplyExternalDisplacement(Vector2.up), Is.True);
+            rig.Bomb.RefreshPreviewForTesting();
+            var movedStart = (Vector2)rig.Ring.GetPosition(0);
+
+            Assert.That(Vector2.Distance(movedStart, firstStart), Is.EqualTo(1f).Within(0.001f));
+            Assert.That(Vector2.Distance(movedStart, rig.Player.Position), Is.LessThan(0.001f));
+
+            rig.Bomb.SetPreviewHeldForTesting(false);
+            Assert.That(rig.Bomb.IsPreviewVisible, Is.False);
+            Assert.That(rig.Ring.enabled, Is.False);
+        }
+
+        [Test]
         public void FullCycle_DrawsCircleThenGathersAlongRecordedPath()
         {
             var rig = CreateRig(10);
@@ -153,7 +179,7 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [Test]
-        public void BlockedCircle_RejectsBeforeCostCooldownOrInvulnerability()
+        public void BlockedCircle_PassesThroughWorldBlockerAndReturnsToItsStart()
         {
             var rig = CreateRig(10);
             var blocker = new GameObject("BombBlocker", typeof(BoxCollider2D));
@@ -165,17 +191,18 @@ namespace Ouroboros.Tests.PlayMode
 
             var result = rig.Bomb.RequestBomb();
 
-            Assert.That(result.Code, Is.EqualTo(OSResultCode.RejectedRange));
-            Assert.That(rig.Chain.ActiveCount, Is.EqualTo(10));
-            Assert.That(rig.Bomb.CooldownRemaining, Is.Zero);
-            Assert.That(rig.Health.IsAbilityInvulnerable, Is.False);
-            Assert.That(rig.Session.State, Is.EqualTo(OSSessionState.Combat));
+            Assert.That(result.IsAccepted, Is.True);
+            SimulateDraw(rig);
+            Assert.That(rig.Bomb.Phase, Is.EqualTo(OSBombPhase.Gathering));
+            Assert.That(rig.Chain.ActiveCount, Is.EqualTo(9));
+            Assert.That(rig.Health.IsAbilityInvulnerable, Is.True);
+            Assert.That(Vector2.Distance(rig.Player.Position, Vector2.zero), Is.LessThan(0.002f));
         }
 
         [Test]
-        public void Upgrades_IncreaseFixedDamageAndReduceTenSecondCooldown()
+        public void Upgrades_MultiplyBodyScaledDamageAndReduceTenSecondCooldown()
         {
-            var rig = CreateRig(10);
+            var rig = CreateRig(20);
             rig.Bomb.ApplyUpgradeModifiers(new OSUpgradeModifiers(
                 1f,
                 0f,
@@ -199,7 +226,7 @@ namespace Ouroboros.Tests.PlayMode
             rig.Bomb.BombStarted += value => snapshot = value;
             Assert.That(rig.Bomb.RequestBomb().IsAccepted, Is.True);
 
-            Assert.That(snapshot.Damage, Is.EqualTo(160f).Within(0.001f));
+            Assert.That(snapshot.Damage, Is.EqualTo(320f).Within(0.001f));
             Assert.That(snapshot.Cooldown, Is.EqualTo(7f).Within(0.001f));
             Assert.That(rig.Bomb.CooldownRemaining, Is.EqualTo(7f).Within(0.001f));
         }
@@ -275,10 +302,20 @@ namespace Ouroboros.Tests.PlayMode
             var health = healthObject.GetComponent<OSPlayerHealth>();
             health.ConfigureForTesting(session);
 
+            var viewObject = new GameObject(
+                "BombVfx",
+                typeof(LineRenderer),
+                typeof(OSBombView));
+            viewObject.transform.SetParent(root.transform, false);
+            var ring = viewObject.GetComponent<LineRenderer>();
+            ring.useWorldSpace = true;
+            var view = viewObject.GetComponent<OSBombView>();
+            view.Configure(ring, null);
+
             var bombObject = new GameObject("Bomb", typeof(OSBombController));
             bombObject.transform.SetParent(root.transform, false);
             var bomb = bombObject.GetComponent<OSBombController>();
-            bomb.ConfigureForTesting(session, player, health, chain);
+            bomb.ConfigureForTesting(session, player, health, chain, view: view);
 
             root.SetActive(true);
             Assert.That(session.BeginSession().IsAccepted, Is.True);
@@ -286,7 +323,7 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(session.CompleteActiveSelection().IsAccepted, Is.True);
             Assert.That(session.State, Is.EqualTo(OSSessionState.Combat));
             Assert.That(chain.SetDebugSegmentCount(segmentCount).IsAccepted, Is.True);
-            return new BombRig(root, session, player, health, chain, bomb);
+            return new BombRig(root, session, player, health, chain, bomb, ring);
         }
 
         private static InputActionAsset CreateActions()
@@ -316,7 +353,8 @@ namespace Ouroboros.Tests.PlayMode
                 OSPlayerController player,
                 OSPlayerHealth health,
                 OSBodyChain chain,
-                OSBombController bomb)
+                OSBombController bomb,
+                LineRenderer ring)
             {
                 Root = root;
                 Session = session;
@@ -324,6 +362,7 @@ namespace Ouroboros.Tests.PlayMode
                 Health = health;
                 Chain = chain;
                 Bomb = bomb;
+                Ring = ring;
             }
 
             public GameObject Root { get; }
@@ -332,6 +371,7 @@ namespace Ouroboros.Tests.PlayMode
             public OSPlayerHealth Health { get; }
             public OSBodyChain Chain { get; }
             public OSBombController Bomb { get; }
+            public LineRenderer Ring { get; }
         }
     }
 }

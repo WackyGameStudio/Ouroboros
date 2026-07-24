@@ -19,7 +19,7 @@ namespace Ouroboros.Tests.EditMode
         }
 
         [Test]
-        public void Circle_UsesRemainingSnakeLengthAndClosesAtStart()
+        public void Circle_UsesOnePointFiveTimesTheFormerRadiusAndClosesAtStart()
         {
             const int remaining = 18;
             const float spacing = 0.55f;
@@ -28,7 +28,9 @@ namespace Ouroboros.Tests.EditMode
             var radius = OSBombMath.CalculateRadius(remaining, spacing);
             var center = OSBombMath.CalculateCenter(start, forward, radius);
 
-            Assert.That(radius * Mathf.PI * 2f, Is.EqualTo(remaining * spacing).Within(0.0001f));
+            Assert.That(
+                radius * Mathf.PI * 2f,
+                Is.EqualTo(remaining * spacing * 1.5f).Within(0.0001f));
             Assert.That(center, Is.EqualTo(start + (forward.normalized * radius)));
             Assert.That(
                 Vector2.Distance(
@@ -50,6 +52,23 @@ namespace Ouroboros.Tests.EditMode
                         OSBombTurnSide.Right),
                     start),
                 Is.LessThan(0.0001f));
+        }
+
+        [Test]
+        public void RhythmicProgress_EasesAtBothEndsAndMovesFastestNearTheMiddle()
+        {
+            var startStep = OSBombMath.CalculateRhythmicProgress(0.1f) -
+                            OSBombMath.CalculateRhythmicProgress(0f);
+            var middleStep = OSBombMath.CalculateRhythmicProgress(0.55f) -
+                             OSBombMath.CalculateRhythmicProgress(0.45f);
+            var endStep = OSBombMath.CalculateRhythmicProgress(1f) -
+                          OSBombMath.CalculateRhythmicProgress(0.9f);
+
+            Assert.That(OSBombMath.CalculateRhythmicProgress(0f), Is.Zero);
+            Assert.That(OSBombMath.CalculateRhythmicProgress(0.5f), Is.EqualTo(0.5f));
+            Assert.That(OSBombMath.CalculateRhythmicProgress(1f), Is.EqualTo(1f));
+            Assert.That(middleStep, Is.GreaterThan(startStep * 3f));
+            Assert.That(middleStep, Is.GreaterThan(endStep * 3f));
         }
 
         [Test]
@@ -93,9 +112,11 @@ namespace Ouroboros.Tests.EditMode
         }
 
         [Test]
-        public void Upgrades_KeepFixedDamageAndCooldownFloor()
+        public void Damage_ScalesWithBodyCountAndUpgradeWhileCooldownKeepsFloor()
         {
-            Assert.That(OSBombMath.CalculateDamage(100f, 1.6f), Is.EqualTo(160f));
+            Assert.That(OSBombMath.CalculateDamage(10, 10f, 1f), Is.EqualTo(100f));
+            Assert.That(OSBombMath.CalculateDamage(20, 10f, 1f), Is.EqualTo(200f));
+            Assert.That(OSBombMath.CalculateDamage(20, 10f, 1.6f), Is.EqualTo(320f));
             Assert.That(OSBombMath.CalculateCooldown(10f, -3f), Is.EqualTo(7f));
             Assert.That(OSBombMath.CalculateCooldown(10f, -100f), Is.EqualTo(5f));
         }

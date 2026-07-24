@@ -212,6 +212,7 @@ namespace Ouroboros.Runtime
             }
 
             _spawnBudget += entry.SpawnRate *
+                            _runtimeSchedule.SpawnDensityMultiplier *
                             OSWaveScheduleRuntime.CalculateSpawnRateMultiplier(_elapsedSeconds) *
                             deltaTime;
             SpawnAvailableTickets(entryIndex, entry.TargetActiveEnemies);
@@ -376,7 +377,7 @@ namespace Ouroboros.Runtime
         private void BuildRuntimeCopy()
         {
             _runtimeSchedule = waveSchedule != null
-                ? new OSWaveScheduleRuntime(waveSchedule.Entries)
+                ? new OSWaveScheduleRuntime(waveSchedule)
                 : null;
             _random = new OSRunRandom(runSeed);
         }

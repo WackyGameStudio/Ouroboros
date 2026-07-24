@@ -21,6 +21,7 @@ namespace Ouroboros.Editor
         private const string GameScenePath = "Assets/Ouroboros/Scenes/20_Game.unity";
         private const string InputActionsPath = "Assets/Ouroboros/Input/OSInputActions.inputactions";
         private const string BodyBalancePath = "Assets/Ouroboros/Data/Balance/OSBodyBalance.asset";
+        private const string WaveSchedulePath = "Assets/Ouroboros/Data/Waves/OSWaveSchedule.asset";
         private const string UpgradeCatalogPath = "Assets/Ouroboros/Data/Upgrades/OSUpgradeCatalog.asset";
         private const string FeedbackCatalogPath =
             "Assets/Ouroboros/Data/Balance/OSFeedbackCatalog.asset";
@@ -32,22 +33,42 @@ namespace Ouroboros.Editor
         [MenuItem("Ouroboros/Setup/Apply Step 16.1 Bomb")]
         public static void ApplyStep16Bomb()
         {
+            ApplyCurrentBomb();
+        }
+
+        [MenuItem("Ouroboros/Setup/Apply Step 16.2 Bomb Rhythm And Density")]
+        public static void ApplyStep16Point2Bomb()
+        {
+            ApplyCurrentBomb();
+        }
+
+        private static void ApplyCurrentBomb()
+        {
             EnsureBombInput();
             var bodyBalance = ConfigureBodyBalance();
+            ConfigureWaveDensity();
             ConfigureUpgradeCatalog();
             ConfigureFeedbackCatalog();
             ConfigureGameScene(bodyBalance);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log(
-                "[OUROBOROS][SETUP] Step 16.1 Bomb input, data, upgrades, visuals, and scene wiring applied.");
+                "[OUROBOROS][SETUP] Step 16.2 Bomb rhythm, hold preview, proportional damage, " +
+                "wall pass-through, x1.5 radius, and x1.2 enemy density applied.");
         }
 
         [MenuItem("Ouroboros/Build/Build Step 16.1 WebGL")]
         public static void BuildStep16BombWebGL()
         {
             ApplyStep16Bomb();
-            BuildWebGL();
+            BuildWebGL("Step 16.1", "Step16_1");
+        }
+
+        [MenuItem("Ouroboros/Build/Build Step 16.2 WebGL")]
+        public static void BuildStep16Point2WebGL()
+        {
+            ApplyStep16Point2Bomb();
+            BuildWebGL("Step 16.2", "Step16_2");
         }
 
         private static void EnsureBombInput()
@@ -91,18 +112,31 @@ namespace Ouroboros.Editor
                           ?? throw new InvalidOperationException(
                               $"Body balance is missing at '{BodyBalancePath}'.");
             var serialized = new SerializedObject(balance);
-            serialized.FindProperty("dataVersion").stringValue = "step16.1-v1";
+            serialized.FindProperty("dataVersion").stringValue = "step16.2-v1";
             var bomb = serialized.FindProperty("bomb")
                        ?? throw new InvalidOperationException("OSBodyBalanceData.bomb is missing.");
             bomb.FindPropertyRelative("minimumBodyCount").intValue = 10;
             bomb.FindPropertyRelative("consumeRate").floatValue = 0.1f;
             bomb.FindPropertyRelative("drawDuration").floatValue = 1f;
             bomb.FindPropertyRelative("gatherDuration").floatValue = 0.5f;
-            bomb.FindPropertyRelative("damage").floatValue = 100f;
+            bomb.FindPropertyRelative("radiusMultiplier").floatValue = 1.5f;
+            bomb.FindPropertyRelative("damagePerBody").floatValue = 10f;
             bomb.FindPropertyRelative("cooldown").floatValue = 10f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(balance);
             return balance;
+        }
+
+        private static void ConfigureWaveDensity()
+        {
+            var waves = AssetDatabase.LoadAssetAtPath<OSWaveScheduleData>(WaveSchedulePath)
+                        ?? throw new InvalidOperationException(
+                            $"Wave schedule is missing at '{WaveSchedulePath}'.");
+            var serialized = new SerializedObject(waves);
+            serialized.FindProperty("dataVersion").stringValue = "step16.2-v1";
+            serialized.FindProperty("spawnDensityMultiplier").floatValue = 1.2f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(waves);
         }
 
         private static void ConfigureUpgradeCatalog()
@@ -111,7 +145,7 @@ namespace Ouroboros.Editor
                           ?? throw new InvalidOperationException(
                               $"Upgrade catalog is missing at '{UpgradeCatalogPath}'.");
             var serialized = new SerializedObject(catalog);
-            serialized.FindProperty("dataVersion").stringValue = "step16.1-v1";
+            serialized.FindProperty("dataVersion").stringValue = "step16.2-v1";
             var entries = serialized.FindProperty("entries")
                           ?? throw new InvalidOperationException("OSUpgradeCatalog.entries is missing.");
             entries.arraySize = OSUpgradeCatalog.RequiredUpgradeCount;
@@ -163,7 +197,7 @@ namespace Ouroboros.Editor
                           ?? throw new InvalidOperationException(
                               $"Feedback catalog is missing at '{FeedbackCatalogPath}'.");
             var serialized = new SerializedObject(catalog);
-            serialized.FindProperty("dataVersion").stringValue = "step16.1-v1";
+            serialized.FindProperty("dataVersion").stringValue = "step16.2-v1";
             AppendUnique(serialized.FindProperty("telegraphKeys"), "bomb_ring");
             AppendUnique(serialized.FindProperty("audioKeys"), "bomb");
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -314,9 +348,9 @@ namespace Ouroboros.Editor
             EditorUtility.SetDirty(label);
         }
 
-        private static void BuildWebGL()
+        private static void BuildWebGL(string stepLabel, string outputFolder)
         {
-            var outputPath = Path.GetFullPath(Path.Combine("Builds", "Step16_1", "WebGL"));
+            var outputPath = Path.GetFullPath(Path.Combine("Builds", outputFolder, "WebGL"));
             var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(WebGLProfilePath)
                           ?? throw new BuildFailedException(
                               $"WebGL build profile is missing at '{WebGLProfilePath}'.");
@@ -342,11 +376,11 @@ namespace Ouroboros.Editor
             if (summary.result != BuildResult.Succeeded)
             {
                 throw new BuildFailedException(
-                    $"Step 16.1 WebGL build failed: {summary.result}, errors {summary.totalErrors}.");
+                    $"{stepLabel} WebGL build failed: {summary.result}, errors {summary.totalErrors}.");
             }
 
             Debug.Log(
-                $"[OUROBOROS][BUILD] Step 16.1 WebGL succeeded at '{outputPath}' " +
+                $"[OUROBOROS][BUILD] {stepLabel} WebGL succeeded at '{outputPath}' " +
                 $"with errors {summary.totalErrors}, warnings {summary.totalWarnings}, " +
                 $"size {summary.totalSize} bytes.");
         }

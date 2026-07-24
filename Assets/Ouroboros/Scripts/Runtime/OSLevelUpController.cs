@@ -291,7 +291,7 @@ namespace Ouroboros.Runtime
                     $"XP GAIN  {Percent(1f + (value * level))} → {Percent(1f + (value * next))}",
                 OSUpgradeOperation.EnableElitePriority => "AUTO-AIM PRIORITY  NEAREST → ELITE / BOSS",
                 OSUpgradeOperation.AddBombDamageMultiplier =>
-                    $"BOMB DAMAGE  {BombDamage(value, level):0} → {BombDamage(value, next):0}",
+                    $"BOMB DAMAGE (CURRENT BODY)  {BombDamage(value, level):0} → {BombDamage(value, next):0}",
                 OSUpgradeOperation.AddBombCooldownDelta =>
                     $"BOMB COOLDOWN  {BombCooldown(value, level):0.00}s → {BombCooldown(value, next):0.00}s",
                 _ => $"LEVEL {level} → {next}"
@@ -336,7 +336,7 @@ namespace Ouroboros.Runtime
                 OSUpgradeOperation.EnableElitePriority =>
                     "Head auto-fire prioritizes Elite and Boss targets.",
                 OSUpgradeOperation.AddBombDamageMultiplier =>
-                    $"Bomb explosions deal {PercentValue(value)} more fixed damage.",
+                    $"Bomb damage per body increases by {PercentValue(value)}.",
                 OSUpgradeOperation.AddBombCooldownDelta =>
                     $"Bomb cooldown becomes {value:0.00}s shorter (minimum 5.00s).",
                 _ => "Improves this upgrade by one level."
@@ -494,8 +494,21 @@ namespace Ouroboros.Runtime
 
         private float BombDamage(float value, int level)
         {
-            var damage = bodyBalance != null ? bodyBalance.Bomb.Damage : OSBombMath.DefaultDamage;
-            return OSBombMath.CalculateDamage(damage, 1f + (value * level));
+            if (bombController != null)
+            {
+                return bombController.PredictDamage(1f + (value * level));
+            }
+
+            var bodyCount = bodyBalance != null
+                ? bodyBalance.Bomb.MinimumBodyCount
+                : OSBombMath.DefaultMinimumBodyCount;
+            var damagePerBody = bodyBalance != null
+                ? bodyBalance.Bomb.DamagePerBody
+                : OSBombMath.DefaultDamagePerBody;
+            return OSBombMath.CalculateDamage(
+                bodyCount,
+                damagePerBody,
+                1f + (value * level));
         }
 
         private float BombCooldown(float value, int level)

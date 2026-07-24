@@ -124,7 +124,8 @@ namespace Ouroboros.Editor
             bomb.FindPropertyRelative("consumeRate").floatValue = 0.1f;
             bomb.FindPropertyRelative("drawDuration").floatValue = 1f;
             bomb.FindPropertyRelative("gatherDuration").floatValue = 0.5f;
-            bomb.FindPropertyRelative("damage").floatValue = 100f;
+            bomb.FindPropertyRelative("radiusMultiplier").floatValue = 1.5f;
+            bomb.FindPropertyRelative("damagePerBody").floatValue = 10f;
             bomb.FindPropertyRelative("cooldown").floatValue = 10f;
         }
 
@@ -217,6 +218,10 @@ namespace Ouroboros.Editor
         internal static void ConfigureWaves(SerializedObject serialized)
         {
             SetString(serialized, "dataVersion", DataVersion);
+            SetFloat(
+                serialized,
+                "spawnDensityMultiplier",
+                OSWaveScheduleData.DefaultSpawnDensityMultiplier);
             var entries = Require(serialized, "entries");
             entries.arraySize = 12;
             ConfigureWave(entries.GetArrayElementAtIndex(0), 0f, 60f, 0.5f, 25,

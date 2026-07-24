@@ -16,7 +16,7 @@ namespace Ouroboros.Tests.EditMode
             _waves = AssetDatabase.LoadAssetAtPath<OSWaveScheduleData>(WavePath);
             Assert.That(_waves, Is.Not.Null);
             Assert.That(_waves.Validate().IsValid, Is.True, _waves.LastValidationMessage);
-            _runtime = new OSWaveScheduleRuntime(_waves.Entries);
+            _runtime = new OSWaveScheduleRuntime(_waves);
         }
 
         [Test]
@@ -50,7 +50,7 @@ namespace Ouroboros.Tests.EditMode
         }
 
         [Test]
-        public void HealthAndLateSpawnMultipliers_CompoundWithoutMutatingData()
+        public void HealthTimeCurveAndStep16DensityMultiplier_CompoundWithoutMutatingData()
         {
             var before = EditorJsonUtility.ToJson(_waves);
 
@@ -76,6 +76,11 @@ namespace Ouroboros.Tests.EditMode
             Assert.That(OSWaveScheduleRuntime.CalculateSpawnRateMultiplier(600f),
                 Is.EqualTo((float)(System.Math.Pow(1.15d, 3d) *
                                    System.Math.Pow(1.02d, 7d))).Within(0.0001f));
+            Assert.That(_runtime.SpawnDensityMultiplier, Is.EqualTo(1.2f));
+            Assert.That(
+                _runtime.SpawnDensityMultiplier *
+                OSWaveScheduleRuntime.CalculateSpawnRateMultiplier(60f),
+                Is.EqualTo(1.2f * 1.15f).Within(0.0001f));
             Assert.That(EditorJsonUtility.ToJson(_waves), Is.EqualTo(before));
         }
 

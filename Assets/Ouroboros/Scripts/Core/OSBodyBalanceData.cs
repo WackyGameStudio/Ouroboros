@@ -129,14 +129,17 @@ namespace Ouroboros.Core
         [SerializeField] private float consumeRate = OSBombMath.DefaultConsumeRate;
         [SerializeField] private float drawDuration = OSBombMath.DefaultDrawDuration;
         [SerializeField] private float gatherDuration = OSBombMath.DefaultGatherDuration;
-        [SerializeField] private float damage = OSBombMath.DefaultDamage;
+        [SerializeField] private float radiusMultiplier = OSBombMath.DefaultRadiusMultiplier;
+        [FormerlySerializedAs("damage")]
+        [SerializeField] private float damagePerBody = OSBombMath.DefaultDamagePerBody;
         [SerializeField] private float cooldown = OSBombMath.DefaultCooldown;
 
         public int MinimumBodyCount => minimumBodyCount;
         public float ConsumeRate => consumeRate;
         public float DrawDuration => drawDuration;
         public float GatherDuration => gatherDuration;
-        public float Damage => damage;
+        public float RadiusMultiplier => radiusMultiplier;
+        public float DamagePerBody => damagePerBody;
         public float Cooldown => cooldown;
 
         internal void CollectValidationErrors(List<string> errors, string path)
@@ -150,7 +153,14 @@ namespace Ouroboros.Core
 
             OSValidationUtility.RequireFinitePositive(drawDuration, $"{path}.drawDuration", errors);
             OSValidationUtility.RequireFinitePositive(gatherDuration, $"{path}.gatherDuration", errors);
-            OSValidationUtility.RequireFinitePositive(damage, $"{path}.damage", errors);
+            OSValidationUtility.RequireFinitePositive(
+                radiusMultiplier,
+                $"{path}.radiusMultiplier",
+                errors);
+            OSValidationUtility.RequireFinitePositive(
+                damagePerBody,
+                $"{path}.damagePerBody",
+                errors);
             OSValidationUtility.RequireFinitePositive(cooldown, $"{path}.cooldown", errors);
         }
     }

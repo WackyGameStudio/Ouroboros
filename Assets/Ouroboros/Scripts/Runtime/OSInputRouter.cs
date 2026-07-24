@@ -33,10 +33,12 @@ namespace Ouroboros.Runtime
         private bool _isBound;
         private bool _afterInputUpdateSubscribed;
         private bool _submitPending;
+        private bool _bombHeld;
         private Vector2 _moveValue;
 
         public event Action<Vector2> MoveChanged;
         public event Action BodyDashRequested;
+        public event Action<bool> BombHoldChanged;
         public event Action BombRequested;
         public event Action SubmitRequested;
         public event Action CancelRequested;
@@ -76,6 +78,7 @@ namespace Ouroboros.Runtime
         {
             UnsubscribeAfterInputUpdate();
             _submitPending = false;
+            ClearBombHold();
             UnbindActions();
             DisableAllMaps();
             CurrentMode = OSInputMode.None;
@@ -90,6 +93,7 @@ namespace Ouroboros.Runtime
             var wasActive = isActiveAndEnabled;
             if (wasActive)
             {
+                ClearBombHold();
                 UnbindActions();
                 DisableAllMaps();
             }
@@ -135,6 +139,11 @@ namespace Ouroboros.Runtime
         public void SetInputMode(OSInputMode mode)
         {
             CurrentMode = mode;
+            if (mode != OSInputMode.Player)
+            {
+                ClearBombHold();
+            }
+
             if (!ResolveActions())
             {
                 DisableAllMaps();
@@ -191,7 +200,8 @@ namespace Ouroboros.Runtime
             _moveAction.performed += HandleMovePerformed;
             _moveAction.canceled += HandleMoveCanceled;
             _bodyDashAction.performed += HandleBodyDashPerformed;
-            _bombAction.performed += HandleBombPerformed;
+            _bombAction.started += HandleBombStarted;
+            _bombAction.canceled += HandleBombCanceled;
             _submitAction.performed += HandleSubmitPerformed;
             _cancelAction.performed += HandleCancelPerformed;
             _isBound = true;
@@ -207,7 +217,8 @@ namespace Ouroboros.Runtime
             _moveAction.performed -= HandleMovePerformed;
             _moveAction.canceled -= HandleMoveCanceled;
             _bodyDashAction.performed -= HandleBodyDashPerformed;
-            _bombAction.performed -= HandleBombPerformed;
+            _bombAction.started -= HandleBombStarted;
+            _bombAction.canceled -= HandleBombCanceled;
             _submitAction.performed -= HandleSubmitPerformed;
             _cancelAction.performed -= HandleCancelPerformed;
             _isBound = false;
@@ -285,12 +296,41 @@ namespace Ouroboros.Runtime
             }
         }
 
-        private void HandleBombPerformed(InputAction.CallbackContext context)
+        private void HandleBombStarted(InputAction.CallbackContext context)
         {
+            if (CurrentMode != OSInputMode.Player || _bombHeld)
+            {
+                return;
+            }
+
+            _bombHeld = true;
+            BombHoldChanged?.Invoke(true);
+        }
+
+        private void HandleBombCanceled(InputAction.CallbackContext context)
+        {
+            if (!_bombHeld)
+            {
+                return;
+            }
+
+            _bombHeld = false;
+            BombHoldChanged?.Invoke(false);
             if (CurrentMode == OSInputMode.Player)
             {
                 BombRequested?.Invoke();
             }
+        }
+
+        private void ClearBombHold()
+        {
+            if (!_bombHeld)
+            {
+                return;
+            }
+
+            _bombHeld = false;
+            BombHoldChanged?.Invoke(false);
         }
 
         private void HandleSubmitPerformed(InputAction.CallbackContext context)

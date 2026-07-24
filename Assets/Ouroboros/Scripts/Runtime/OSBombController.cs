@@ -92,12 +92,14 @@ namespace Ouroboros.Runtime
         private bool _orbitCompletionPending;
         private bool _orbitInterrupted;
         private bool _gatherCompletionPending;
+        private bool _previewHeld;
         private int _requestId;
         private int _consumedBodyCount;
         private int _hitCount;
         private int _killCount;
         private float _cooldownRemaining;
         private float _gatherRemaining;
+        private float _damage;
         private Vector2 _start;
         private Vector2 _center;
         private Vector2 _forward = Vector2.right;
@@ -108,7 +110,8 @@ namespace Ouroboros.Runtime
         private float _testConsumeRate = -1f;
         private float _testDrawDuration = -1f;
         private float _testGatherDuration = -1f;
-        private float _testDamage = -1f;
+        private float _testRadiusMultiplier = -1f;
+        private float _testDamagePerBody = -1f;
         private float _testCooldown = -1f;
 
         public event Action<OSBombSnapshot> BombStarted;
@@ -124,10 +127,11 @@ namespace Ouroboros.Runtime
                                bodyChain != null && bodyChain.ActiveCount >= MinimumBodyCount;
         public float CooldownRemaining => _cooldownRemaining;
         public float Cooldown => EffectiveCooldown;
-        public float Damage => EffectiveDamage;
+        public float Damage => _active ? _damage : PredictDamage(_upgradeModifiers.BombDamageMultiplier);
         public float Radius => _radius;
+        public bool IsPreviewVisible => _previewHeld && bombView != null && bombView.IsRingVisible;
         public float DrawRemaining => Phase == OSBombPhase.DrawingCircle
-            ? DrawDuration * (1f - (playerController?.BombOrbitProgress ?? 0f))
+            ? playerController?.BombOrbitRemaining ?? 0f
             : 0f;
         public float GatherRemaining => Phase == OSBombPhase.Gathering ? _gatherRemaining : 0f;
         public int MinimumBodyCount => _testMinimumBodyCount > 0
@@ -142,12 +146,17 @@ namespace Ouroboros.Runtime
         public float GatherDuration => _testGatherDuration >= 0f
             ? _testGatherDuration
             : bodyBalance != null ? bodyBalance.Bomb.GatherDuration : OSBombMath.DefaultGatherDuration;
+        public float RadiusMultiplier => _testRadiusMultiplier >= 0f
+            ? _testRadiusMultiplier
+            : bodyBalance != null
+                ? bodyBalance.Bomb.RadiusMultiplier
+                : OSBombMath.DefaultRadiusMultiplier;
+        public float DamagePerBody => _testDamagePerBody >= 0f
+            ? _testDamagePerBody
+            : bodyBalance != null
+                ? bodyBalance.Bomb.DamagePerBody
+                : OSBombMath.DefaultDamagePerBody;
 
-        private float EffectiveDamage => OSBombMath.CalculateDamage(
-            _testDamage >= 0f
-                ? _testDamage
-                : bodyBalance != null ? bodyBalance.Bomb.Damage : OSBombMath.DefaultDamage,
-            _upgradeModifiers.BombDamageMultiplier);
         private float EffectiveCooldown => OSBombMath.CalculateCooldown(
             _testCooldown >= 0f
                 ? _testCooldown
@@ -171,11 +180,18 @@ namespace Ouroboros.Runtime
             Simulate(Time.fixedDeltaTime);
         }
 
+        private void Update()
+        {
+            RefreshPreview();
+        }
+
         private void OnDisable()
         {
             var returnToCombat = sessionController != null &&
                                  sessionController.State == OSSessionState.Bomb;
             Unsubscribe();
+            _previewHeld = false;
+            bombView?.HidePreview();
             CancelActive(OSResultCode.RejectedState, false, returnToCombat);
         }
 
@@ -237,21 +253,12 @@ namespace Ouroboros.Runtime
 
             var radius = OSBombMath.CalculateRadius(
                 remainingBodyCount,
-                bodyChain.SegmentSpacing);
+                bodyChain.SegmentSpacing,
+                RadiusMultiplier);
             var forward = OSBodyDashMath.ResolveDirection(
                 playerController.MoveInput,
                 playerController.LastDirection);
             var turnSide = ResolveTurnSide(forward);
-            Physics2D.SyncTransforms();
-            if (!playerController.CanTraceBombCircle(
-                    forward,
-                    radius,
-                    DrawDuration,
-                    turnSide,
-                    out var center))
-            {
-                return Reject(OSResultCode.RejectedRange, "bomb.request.blocked_circle");
-            }
 
             if (!playerController.TryStartBombOrbit(
                     forward,
@@ -285,11 +292,13 @@ namespace Ouroboros.Runtime
             _killCount = 0;
             _cooldownRemaining = EffectiveCooldown;
             _gatherRemaining = 0f;
+            _damage = PredictDamage(_upgradeModifiers.BombDamageMultiplier, bodyCountBefore);
             _start = playerController.Position;
-            _center = center;
+            _center = playerController.BombOrbitCenter;
             _forward = forward;
             _radius = radius;
             _turnSide = turnSide;
+            _previewHeld = false;
             playerHealth.SetAbilityInvulnerable(true);
             bombView?.BeginDrawing(_start, _forward, _radius, _turnSide);
 
@@ -301,7 +310,7 @@ namespace Ouroboros.Runtime
                 _center,
                 _forward,
                 _radius,
-                EffectiveDamage,
+                _damage,
                 EffectiveCooldown,
                 _turnSide);
             BombStarted?.Invoke(snapshot);
@@ -313,6 +322,14 @@ namespace Ouroboros.Runtime
             _upgradeModifiers = modifiers;
         }
 
+        public float PredictDamage(float damageMultiplier, int bodyCount = -1)
+        {
+            var count = bodyCount >= 0
+                ? bodyCount
+                : bodyChain != null ? bodyChain.ActiveCount : MinimumBodyCount;
+            return OSBombMath.CalculateDamage(count, DamagePerBody, damageMultiplier);
+        }
+
         internal void ConfigureForTesting(
             OSGameSessionController session,
             OSPlayerController player,
@@ -320,11 +337,13 @@ namespace Ouroboros.Runtime
             OSBodyChain chain,
             OSEnemyRegistry enemies = null,
             LayerMask hurtboxMask = default,
+            OSBombView view = null,
             int minimumBodyCount = OSBombMath.DefaultMinimumBodyCount,
             float consumeRate = OSBombMath.DefaultConsumeRate,
             float drawDuration = OSBombMath.DefaultDrawDuration,
             float gatherDuration = OSBombMath.DefaultGatherDuration,
-            float damage = OSBombMath.DefaultDamage,
+            float radiusMultiplier = OSBombMath.DefaultRadiusMultiplier,
+            float damagePerBody = OSBombMath.DefaultDamagePerBody,
             float cooldown = OSBombMath.DefaultCooldown)
         {
             Unsubscribe();
@@ -335,13 +354,14 @@ namespace Ouroboros.Runtime
             bodyGrowth = null;
             enemyRegistry = enemies;
             bodyBalance = null;
-            bombView = null;
+            bombView = view;
             enemyHurtboxMask = hurtboxMask;
             _testMinimumBodyCount = Mathf.Max(1, minimumBodyCount);
             _testConsumeRate = Mathf.Clamp01(consumeRate);
             _testDrawDuration = Mathf.Max(0.01f, drawDuration);
             _testGatherDuration = Mathf.Max(0.01f, gatherDuration);
-            _testDamage = Mathf.Max(0.01f, damage);
+            _testRadiusMultiplier = Mathf.Max(0.01f, radiusMultiplier);
+            _testDamagePerBody = Mathf.Max(0.01f, damagePerBody);
             _testCooldown = Mathf.Max(OSBombMath.MinimumCooldown, cooldown);
             _active = false;
             Phase = OSBombPhase.Inactive;
@@ -451,7 +471,7 @@ namespace Ouroboros.Runtime
                     continue;
                 }
 
-                var result = enemy.TryApplyDamage(EffectiveDamage);
+                var result = enemy.TryApplyDamage(_damage);
                 if (!result.IsAccepted)
                 {
                     continue;
@@ -612,17 +632,86 @@ namespace Ouroboros.Runtime
             if (current == OSSessionState.Boot)
             {
                 _cooldownRemaining = 0f;
+                _previewHeld = false;
+                bombView?.HidePreview();
                 CancelActive(OSResultCode.RejectedState, false, false);
             }
             else if (_active && current != OSSessionState.Bomb)
             {
                 CancelActive(OSResultCode.RejectedState, true, false);
             }
+            else if (current != OSSessionState.Combat)
+            {
+                _previewHeld = false;
+                bombView?.HidePreview();
+            }
         }
 
         private void HandleBombRequested()
         {
             RequestBomb();
+        }
+
+        private void HandleBombHoldChanged(bool held)
+        {
+            _previewHeld = held && !_active;
+            if (_previewHeld)
+            {
+                RefreshPreview();
+            }
+            else
+            {
+                bombView?.HidePreview();
+            }
+        }
+
+        internal void SetPreviewHeldForTesting(bool held)
+        {
+            HandleBombHoldChanged(held);
+        }
+
+        internal void RefreshPreviewForTesting()
+        {
+            RefreshPreview();
+        }
+
+        private void RefreshPreview()
+        {
+            if (_active)
+            {
+                return;
+            }
+
+            if (!_previewHeld || bombView == null || playerController == null ||
+                bodyChain == null || sessionController == null ||
+                sessionController.State != OSSessionState.Combat ||
+                _cooldownRemaining > 0f || bodyChain.ActiveCount < MinimumBodyCount)
+            {
+                bombView?.HidePreview();
+                return;
+            }
+
+            var bodyCount = bodyChain.ActiveCount;
+            var consumed = OSBombMath.CalculateConsumeCount(bodyCount, ConsumeRate);
+            var remaining = bodyCount - consumed;
+            if (consumed <= 0 || remaining <= 0)
+            {
+                bombView.HidePreview();
+                return;
+            }
+
+            var forward = OSBodyDashMath.ResolveDirection(
+                playerController.MoveInput,
+                playerController.LastDirection);
+            var radius = OSBombMath.CalculateRadius(
+                remaining,
+                bodyChain.SegmentSpacing,
+                RadiusMultiplier);
+            bombView.ShowPreview(
+                playerController.Position,
+                forward,
+                radius,
+                ResolveTurnSide(forward));
         }
 
         private void Subscribe()
@@ -644,6 +733,7 @@ namespace Ouroboros.Runtime
 
             if (sessionController != null)
             {
+                sessionController.BombHoldChanged += HandleBombHoldChanged;
                 sessionController.BombRequested += HandleBombRequested;
                 sessionController.StateChanged += HandleSessionStateChanged;
             }
@@ -670,6 +760,7 @@ namespace Ouroboros.Runtime
 
             if (sessionController != null)
             {
+                sessionController.BombHoldChanged -= HandleBombHoldChanged;
                 sessionController.BombRequested -= HandleBombRequested;
                 sessionController.StateChanged -= HandleSessionStateChanged;
             }

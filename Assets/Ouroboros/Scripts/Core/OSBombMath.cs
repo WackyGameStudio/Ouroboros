@@ -9,7 +9,8 @@ namespace Ouroboros.Core
         public const float DefaultConsumeRate = 0.1f;
         public const float DefaultDrawDuration = 1f;
         public const float DefaultGatherDuration = 0.5f;
-        public const float DefaultDamage = 100f;
+        public const float DefaultRadiusMultiplier = 1.5f;
+        public const float DefaultDamagePerBody = 10f;
         public const float DefaultCooldown = 10f;
         public const float MinimumCooldown = 5f;
         public const float SideEpsilon = 0.01f;
@@ -27,14 +28,30 @@ namespace Ouroboros.Core
                 bodyCount);
         }
 
-        public static float CalculateRadius(int remainingBodyCount, float segmentSpacing)
+        public static float CalculateRadius(
+            int remainingBodyCount,
+            float segmentSpacing,
+            float radiusMultiplier = DefaultRadiusMultiplier)
         {
-            if (remainingBodyCount <= 0 || !float.IsFinite(segmentSpacing) || segmentSpacing <= 0f)
+            if (remainingBodyCount <= 0 || !float.IsFinite(segmentSpacing) ||
+                !float.IsFinite(radiusMultiplier) || segmentSpacing <= 0f ||
+                radiusMultiplier <= 0f)
             {
                 return 0f;
             }
 
-            return (remainingBodyCount * segmentSpacing) / (Mathf.PI * 2f);
+            return (remainingBodyCount * segmentSpacing * radiusMultiplier) / (Mathf.PI * 2f);
+        }
+
+        public static float CalculateRhythmicProgress(float linearProgress)
+        {
+            if (!float.IsFinite(linearProgress))
+            {
+                return 0f;
+            }
+
+            var clamped = Mathf.Clamp01(linearProgress);
+            return 0.5f - (0.5f * Mathf.Cos(clamped * Mathf.PI));
         }
 
         public static int ClassifySide(
@@ -111,14 +128,18 @@ namespace Ouroboros.Core
             return center + rotated;
         }
 
-        public static float CalculateDamage(float baseDamage, float multiplier)
+        public static float CalculateDamage(
+            int bodyCount,
+            float damagePerBody,
+            float multiplier)
         {
-            if (!float.IsFinite(baseDamage) || !float.IsFinite(multiplier))
+            if (bodyCount <= 0 || !float.IsFinite(damagePerBody) ||
+                !float.IsFinite(multiplier))
             {
                 return 0f;
             }
 
-            return Mathf.Max(0f, baseDamage) * Mathf.Max(0.01f, multiplier);
+            return bodyCount * Mathf.Max(0f, damagePerBody) * Mathf.Max(0.01f, multiplier);
         }
 
         public static float CalculateCooldown(float baseCooldown, float delta)

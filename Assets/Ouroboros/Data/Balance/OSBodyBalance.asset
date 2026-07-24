@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46ae10c5228d9c148addd503c27859e0, type: 3}
   m_Name: OSBodyBalance
   m_EditorClassIdentifier: Ouroboros.Core::Ouroboros.Core.OSBodyBalanceData
-  dataVersion: step16.1-v1
+  dataVersion: step16.2-v1
   fragmentRequirement: 6
   technicalGuard: 64
   segmentSpacing: 0.55
@@ -78,5 +78,6 @@ MonoBehaviour:
     consumeRate: 0.1
     drawDuration: 1
     gatherDuration: 0.5
-    damage: 100
+    radiusMultiplier: 1.5
+    damagePerBody: 10
     cooldown: 10

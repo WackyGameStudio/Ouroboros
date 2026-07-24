@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e754a2f5c965094fb0ba4eb398c72d0, type: 3}
   m_Name: OSWaveSchedule
   m_EditorClassIdentifier: Ouroboros.Core::Ouroboros.Core.OSWaveScheduleData
-  dataVersion: step02-v1
+  dataVersion: step16.2-v1
+  spawnDensityMultiplier: 1.2
   entries:
   - startSeconds: 0
     endSeconds: 60

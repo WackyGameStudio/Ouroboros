@@ -48,7 +48,8 @@ namespace Ouroboros.Editor
 
             Debug.Log(
                 "[OUROBOROS][SETUP] Step 15.10 keeps the original 0-3 minute pacing " +
-                "and applies 1.02 per-minute growth after the 3 minute transition.");
+                "and applies 1.02 per-minute growth after the 3 minute transition, " +
+                "with the current Step 16.2 x1.2 density overlay.");
         }
 
         [MenuItem("Ouroboros/Build/Build Step 15.9 WebGL")]

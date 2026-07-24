@@ -30,6 +30,8 @@ namespace Ouroboros.Tests.PlayMode
             var hud = Object.FindAnyObjectByType<OSCombatHudPresenter>(FindObjectsInactive.Include);
             var catalog = Resources.FindObjectsOfTypeAll<OSUpgradeCatalog>()
                 .FirstOrDefault(candidate => candidate.name == "OSUpgradeCatalog");
+            var waves = Resources.FindObjectsOfTypeAll<OSWaveScheduleData>()
+                .FirstOrDefault(candidate => candidate.name == "OSWaveSchedule");
             var ring = GameObject.Find("BombRing")?.GetComponent<LineRenderer>();
             var fill = GameObject.Find("BombExplosionFill")?.GetComponent<SpriteRenderer>();
 
@@ -39,6 +41,7 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(router.IsConfigured, Is.True);
             Assert.That(hud, Is.Not.Null);
             Assert.That(catalog, Is.Not.Null);
+            Assert.That(waves, Is.Not.Null);
             Assert.That(catalog.Entries.Count, Is.EqualTo(17));
             Assert.That(catalog.Entries.Any(entry =>
                 entry.Id == "bomb_damage" &&
@@ -50,8 +53,11 @@ namespace Ouroboros.Tests.PlayMode
             Assert.That(bomb.ConsumeRate, Is.EqualTo(0.1f).Within(0.0001f));
             Assert.That(bomb.DrawDuration, Is.EqualTo(1f).Within(0.0001f));
             Assert.That(bomb.GatherDuration, Is.EqualTo(0.5f).Within(0.0001f));
-            Assert.That(bomb.Damage, Is.EqualTo(100f).Within(0.0001f));
+            Assert.That(bomb.RadiusMultiplier, Is.EqualTo(1.5f).Within(0.0001f));
+            Assert.That(bomb.DamagePerBody, Is.EqualTo(10f).Within(0.0001f));
+            Assert.That(bomb.PredictDamage(1f, 10), Is.EqualTo(100f).Within(0.0001f));
             Assert.That(bomb.Cooldown, Is.EqualTo(10f).Within(0.0001f));
+            Assert.That(waves.SpawnDensityMultiplier, Is.EqualTo(1.2f).Within(0.0001f));
             Assert.That(ring, Is.Not.Null);
             Assert.That(ring.sortingOrder, Is.EqualTo(190));
             Assert.That(fill, Is.Not.Null);

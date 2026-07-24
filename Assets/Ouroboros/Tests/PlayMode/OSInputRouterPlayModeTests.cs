@@ -92,20 +92,27 @@ namespace Ouroboros.Tests.PlayMode
         }
 
         [Test]
-        public void BKeyRequestsBombOnlyWhilePlayerMapIsActive()
+        public void BKeyPreviewsWhileHeldAndRequestsBombOnReleaseOnlyInCombat()
         {
             Assert.That(_session.BeginSession().IsAccepted, Is.True);
 
             var bombCount = 0;
+            var previewHeld = false;
+            _session.BombHoldChanged += held => previewHeld = held;
             _session.BombRequested += () => bombCount++;
             Tap(_keyboard.bKey);
             Assert.That(bombCount, Is.Zero);
+            Assert.That(previewHeld, Is.False);
 
             Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
             Assert.That(_session.CompleteActiveSelection().IsAccepted, Is.True);
             Assert.That(_session.State, Is.EqualTo(OSSessionState.Combat));
 
-            Tap(_keyboard.bKey);
+            Press(_keyboard.bKey);
+            Assert.That(previewHeld, Is.True);
+            Assert.That(bombCount, Is.Zero);
+            Release(_keyboard.bKey);
+            Assert.That(previewHeld, Is.False);
             Assert.That(bombCount, Is.EqualTo(1));
 
             Assert.That(_session.QueueSelection(OSSelectionKind.BodyRole).IsAccepted, Is.True);

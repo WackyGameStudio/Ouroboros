@@ -535,13 +535,15 @@ TotalHeadProjectileCount = 1 + AuxProjectileCount
 
 ## 5.4 Bomb 원형 폭발
 
-### 발동 조건과 선검사
+### 발동 조건과 홀드 프리뷰
 
 - 세션 상태가 `Combat`이고 활성 몸통이 10칸 이상이며 Bomb 재사용 대기 시간이 0이어야 한다.
+- `B`를 누르고 있는 동안 현재 머리 위치·진행 방향·몸통 배치로 계산한 완성 원을 `LineRenderer`로 표시한다. 이동하거나 몸통 좌·우 배치가 바뀌면 프리뷰를 매 프레임 다시 계산한다.
+- `B`를 놓는 순간의 프리뷰 조건을 스냅샷으로 잡아 발동한다. 선택·사망·결과 등 Player Map이 아닌 상태로 전환돼 입력이 취소되면 프리뷰만 닫고 예약 발동하지 않는다.
 - 발동 시 소비 수는 현재 활성 몸통 수 `N`에 대해 `floor(N × 0.10)`이다. 따라서 10~19칸은 1칸, 20~29칸은 2칸을 소비한다.
-- 원의 둘레는 소비 후 남은 몸통 수 `R = N - floor(N × 0.10)`와 세그먼트 간격 `S`를 사용해 `C = R × S`, 반지름은 `C / (2π)`로 계산한다.
+- 원 반지름은 소비 후 남은 몸통 수 `R = N - floor(N × 0.10)`와 세그먼트 간격 `S`를 사용해 `(R × S) / (2π) × 1.5`로 계산한다.
 - 원 중심은 발동 지점에서 스냅샷 머리 방향으로 반지름만큼 앞에 둔다. 머리는 원의 뒤쪽 한 점인 발동 지점에서 시작한다.
-- 발동 전에 머리 Solid가 1초 동안 지나갈 원 전체를 `WorldBlocker`와 월드 경계에 대해 비할당 검사한다. 한 구간이라도 막히면 발동을 거부하고 몸통·재사용·무적·선택 상태를 바꾸지 않는다.
+- Bomb 원 주행 중에는 `WorldBlocker`와 월드 경계 충돌을 무시한다. 1초가 끝나면 발동 원점으로 정확히 돌아오므로 장애물·경계와 겹치는 원도 사용할 수 있다.
 - 방향 스냅샷은 현재 `Move` 입력, `LastDirection`, 오른쪽 순서로 대체하며 발동 뒤에는 바꾸지 않는다.
 
 ### 회전 방향
@@ -557,14 +559,16 @@ TotalHeadProjectileCount = 1 + AuxProjectileCount
 | --- | ---: |
 | 최소 몸통 | **[확정] 10칸** |
 | 몸통 소비율 | **[확정] 현재 활성 수의 10%, 소수점 버림** |
+| 반지름 배율 | **[확정] 소비 후 길이 기반 기존 반지름의 1.5배** |
 | 원 그리기 | **[확정] 1초** |
 | 원 경로 집결 | **[확정] 0.5초** |
-| 기본 피해 | **[가설] 100 고정 피해** |
+| 기본 피해 | **[가설] 발동 직전 몸통 수 × 몸통당 10 피해** |
 | 기본 재사용 대기 | **[확정] 발동 시점부터 10초** |
 
-- 머리는 정확히 1초 동안 선택한 방향으로 원을 한 바퀴 그린다. `OSBodyChain`은 평상시와 같은 누적 거리 경로를 기록하므로 남은 몸통이 머리가 그린 원을 자연스럽게 따른다.
+- 머리는 정확히 1초 동안 선택한 방향으로 원을 한 바퀴 그린다. 각 물리 틱의 선형 시간 진행도 `t`는 `0.5 - 0.5 × cos(πt)`로 바꿔 초반·후반은 느리고 중간은 빠른 리듬을 만든다.
+- `OSBodyChain`은 완급이 적용된 실제 머리 위치의 누적 거리 경로를 기록하므로 남은 몸통이 머리가 그린 원을 자연스럽게 따른다.
 - 1초가 끝나면 원 내부에 있거나 원 경계와 `EnemyHurtbox`가 겹친 등록 적을 비할당 원형 겹침으로 찾는다.
-- 같은 적의 Collider가 여러 개 겹쳐도 안정 Runtime ID로 중복 제거해 고정 피해를 한 번만 적용한다. 몸통 길이는 피해가 아니라 원 반지름에만 영향을 준다.
+- 같은 적의 Collider가 여러 개 겹쳐도 안정 Runtime ID로 중복 제거해 `발동 직전 몸통 수 × 몸통당 피해 × 강화 배율`을 한 번만 적용한다. 비용으로 소비된 몸통도 해당 발동의 피해 스냅샷에는 포함한다.
 - 폭발 직후 0.5초 동안 각 몸통은 머리까지의 직선이 아니라 방금 기록한 원 경로의 누적 거리를 따라 머리로 모인다.
 - 집결 완료 시 경로를 현재 머리 위치에 재고정한다. 정지 중에는 뭉침을 유지하고 이후 머리의 평상 이동 거리와 세그먼트 간격만큼 앞쪽부터 자연 전개한다.
 - 소비 몸통은 현재 꼬리부터 제거하며 역할과 길이 화력이 즉시 줄어든다. 제거 원인은 `Bomb`이고 `SeveredBody` 픽업을 만들지 않는다.
@@ -579,7 +583,7 @@ TotalHeadProjectileCount = 1 + AuxProjectileCount
 
 ### Bomb 업그레이드
 
-- `bomb_damage`는 단계당 고정 폭발 피해를 20% 합연산으로 높이며 최대 3단계다. 기본 100에서 120/140/160이 된다.
+- `bomb_damage`는 몸통당 피해를 단계당 20% 합연산으로 높이며 최대 3단계다. 몸통당 10에서 12/14/16이 되고 총 피해는 발동 직전 몸통 수에 비례한다.
 - `bomb_cooldown`은 단계당 재사용 대기를 1초 줄이며 최대 3단계다. 최종 하한은 5초다.
 - 피해 업그레이드는 반지름·소비율·무적 시간에 영향을 주지 않고, 재사용 업그레이드는 피해·소비율에 영향을 주지 않는다.
 
@@ -656,7 +660,7 @@ RequiredXP(next) = ceil(previous × 1.18)
 | `magnet_radius` | 유틸 | 수집장 확장 | 자석 반경 +30% | 2 | 픽업 수집만 영향 |
 | `experience_gain` | 유틸 | 학습 동기화 | 경험치 획득 +10% | 2 | 몸통 조각에는 영향 없음 |
 | `elite_priority` | 유틸 | 위협 식별 | 머리 공격이 정예·보스를 우선 | 1 | 역할 공격은 기존 최근접 유지 |
-| `bomb_damage` | Bomb | 링 폭발 강화 | Bomb 고정 피해 +20% | 3 | 기본 100, 최대 160; 반지름·소비율 불변 |
+| `bomb_damage` | Bomb | 링 폭발 강화 | Bomb 몸통당 피해 +20% | 3 | 몸통당 기본 10, 최대 16; 반지름·소비율 불변 |
 | `bomb_cooldown` | Bomb | 링 재충전 | Bomb 재사용 시간 -1초 | 3 | 기본 10초, 최종 하한 5초 |
 
 ### 후보 생성 규칙
@@ -744,9 +748,9 @@ SpawnRateMultiplier(minute <= 3) = 1.15 ^ minute
 SpawnRateMultiplier(minute > 3) = 1.15 ^ 3 × 1.02 ^ (minute - 3)
 ```
 
-**[확정]** Step 13 런타임은 `elapsedSeconds / 60`을 분 단위 지수로 사용한다. Step 15.10에서 초반이 아닌 후반 폭증만 완화하도록 0~3분 생성 배율은 기존 `1.15^minute`을 유지하고, 3분 이후에는 3분 시점 값 `1.15^3`에서 분당 `1.02`만 연속 적용한다. 일반 생성 구간의 `spawnRate`도 기존 `0.50, 0.75, 1.00, 1.20, 1.40, 1.60, 1.80, 2.00, 2.00, 2.00`으로 복구한다. 3분·6분의 1초 정예 이벤트 구간은 생성률 0을 유지한다. `OSWaveScheduleData`와 `OSEncounterBalanceData` 원본은 세션 중 수정하지 않고 세션별 런타임 복사본과 스폰 시점 HP에만 반영한다.
+**[확정]** Step 13 런타임은 `elapsedSeconds / 60`을 분 단위 지수로 사용한다. Step 15.10에서 초반이 아닌 후반 폭증만 완화하도록 0~3분 생성 배율은 기존 `1.15^minute`을 유지하고, 3분 이후에는 3분 시점 값 `1.15^3`에서 분당 `1.02`만 연속 적용한다. 일반 생성 구간의 `spawnRate`도 기존 `0.50, 0.75, 1.00, 1.20, 1.40, 1.60, 1.80, 2.00, 2.00, 2.00`으로 유지한다. Step 16.2부터 이 값과 시간 배율의 곱에 `OSWaveScheduleData.spawnDensityMultiplier = 1.2`를 추가 적용한다. 3분·6분의 1초 정예 이벤트 구간은 생성률 0을 유지한다. `OSWaveScheduleData`와 `OSEncounterBalanceData` 원본은 세션 중 수정하지 않고 세션별 런타임 복사본과 스폰 시점 HP에만 반영한다.
 
-**[확정]** 이 조정은 0~3분 유효 생성률을 변경 전과 같게 유지한다. 유효 생성률은 시작 시 초당 0.50, 2분 초당 약 1.32, 5분 초당 약 2.53, 10분 초당 약 3.49다. 기존 10분 약 8.09/s 대비 후반만 약 57% 낮아진다. 목표 활성 수와 180 하드캡은 안전 상한으로 유지하되, 부족한 적을 즉시 목표 수까지 채우는 보충 규칙으로 사용하지 않는다.
+**[확정]** Step 16.2 밀도 배율 적용 후 유효 생성률은 시작 시 초당 0.60, 2분 초당 약 1.59, 5분 초당 약 3.04, 10분 초당 약 4.19다. 목표 활성 수와 180 하드캡은 안전 상한으로 유지하되, 부족한 적을 즉시 목표 수까지 채우는 보충 규칙으로 사용하지 않는다.
 
 ### 스폰 위치
 
@@ -1083,7 +1087,7 @@ public enum OSSessionState
 
 | 클래스 | 형태 | 단일 책임 |
 | --- | --- | --- |
-| `OSPlayerController` | MonoBehaviour | 머리 이동, 장애물 Cast, 마지막 방향, 0.5초 충돌 안전 대시, Bomb 원 전체 선검사와 1초 원 주행 |
+| `OSPlayerController` | MonoBehaviour | 머리 이동, 장애물 Cast, 마지막 방향, 0.5초 충돌 안전 대시, 충돌을 무시하는 1초 Bomb 리듬 원 주행과 원점 복귀 |
 | `OSPlayerHealth` | MonoBehaviour | 플레이어 HP에 회복·피격 무적·Bomb 능력 무적 규칙을 적용하고 사망 요청·새 세션 초기화를 확정 |
 | `OSHeadWeapon` | MonoBehaviour | 머리 표적, 발사 주기, 길이 배율과 보조탄 |
 | `OSBodyGrowthProgress` | 순수 C# | 조각 진행도, 다중 생성 요청, 활성+대기 64 기술 가드와 보류 상태 계산 |
@@ -1098,8 +1102,8 @@ public enum OSSessionState
 | `OSControlBodyRole` | MonoBehaviour | 제어탄 발사와 이동 불가 적용 |
 | `OSBodyDashController` | MonoBehaviour | Space 요청, 방향·수치 스냅샷, 대시/몸통 수축 시작, 재사용과 완료·취소 |
 | `OSBombMath` | 순수 C# | 소비 수·반지름·회전 방향·원 좌표·피해·재사용 강화 계산 |
-| `OSBombController` | MonoBehaviour | B 요청, 원 전체 선검사, 소비·무적·원 주행·고유 적 폭발·경로 집결·재사용과 완료·취소 |
-| `OSBombView` | MonoBehaviour | 원 그리기 진행도와 폭발 내부 채움 표시 |
+| `OSBombController` | MonoBehaviour | B 홀드 실시간 원 프리뷰와 릴리스 요청, 소비·무적·리듬 원 주행·몸통 비례 고유 적 폭발·경로 집결·재사용과 완료·취소 |
+| `OSBombView` | MonoBehaviour | 홀드 완성 원, 실제 원 그리기 진행도와 폭발 내부 채움 표시 |
 
 ### 적·웨이브·공통 전투
 
@@ -1293,7 +1297,7 @@ controlPayload
 | `OSPlayerBalanceData` | HP, 이동, 머리 공격, 자석, 피격 무적 | Player, Health, HeadWeapon |
 | `OSBodyBalanceData` | 간격, 경로 샘플, 조각 요구량, 기술 가드, 4역할, 절단, 대시, Bomb, 공통 화력 | BodyChain, Roles, BodyDash, Bomb |
 | `OSEncounterBalanceData` | 적 정의, 드롭, 상한, 정예, 보스 | Enemy, Wave, Pool |
-| `OSWaveScheduleData` | 시간 구간, 구성 가중치, 생성률, 특별 등장 | WaveDirector |
+| `OSWaveScheduleData` | 시간 구간, 구성 가중치, 기본 생성률, 전역 밀도 배율, 특별 등장 | WaveDirector |
 | `OSUpgradeCatalog` | 17종 ID, 계열, 최대 단계, 연산, 후보 가중치 | LevelUp, RuntimeState |
 | `OSFeedbackCatalog` | 역할/공격/VFX/SFX 키 | AudioVfxRouter |
 | `OSCustomCharacterSettings` | 업로드·API·목업·출력 규격 | CustomCharacter |
@@ -1386,7 +1390,7 @@ public enum OSUpgradeOperation
 | 절단과 대시 완료가 같은 틱 | 절단 결과를 보존하고 대시는 몸통 수를 변경하지 않음 |
 | 대시 완료와 조각 6개 수집이 같은 틱 | 대시 완료 후 Body 요청 열기 |
 | 적 공격과 Bomb 진행이 같은 틱 | Bomb 능력 무적으로 머리 피해·몸통 절단·Shield 소비 없음 |
-| Bomb 폭발과 같은 적의 복수 Hurtbox 겹침 | Runtime ID 기준 고정 피해 1회 |
+| Bomb 폭발과 같은 적의 복수 Hurtbox 겹침 | Runtime ID 기준 발동 직전 몸통 비례 피해 1회 |
 | Bomb 완료와 조각 6개 수집이 같은 틱 | 0.5초 집결 완료 후 Body 요청 열기 |
 | 사망과 픽업 수집이 같은 틱 | 사망 우선, 픽업 미적용 |
 | 보스 사망과 플레이어 사망이 같은 틱 | 머리 피해 우선 규칙상 플레이어 사망이면 실패; 별도 동시승리 없음 |
@@ -1559,7 +1563,6 @@ public OSRuleResult<OSCutResult> TryCutFrom(int segmentStableId, int attackEvent
 public OSRuleResult<int> RequestBodyDash();
 public bool TryStartBodyDash(Vector2 direction, float duration, float distance);
 public OSRuleResult<int> RequestBomb();
-public bool CanTraceBombCircle(Vector2 forward, float radius, float duration, OSBombTurnSide turnSide, out Vector2 center);
 public OSRuleResult<OSDamageResult> ApplyDamage(in OSDamageEvent damageEvent);
 ```
 
@@ -1573,7 +1576,7 @@ public OSRuleResult<OSDamageResult> ApplyDamage(in OSDamageEvent damageEvent);
 | --- | --- |
 | 몸통 공통 화력 | L=0,4,5,9,10,20,40,64 |
 | 대시 계산 | 0.5초 ease-out 이동 합이 4.5, 방향 fallback, 강화 하한 |
-| Bomb 계산 | 9 거부, 10/19/20/64 소비 버림, 소비 후 둘레 반지름, 좌우 반대 회전·동률, 피해/재사용 강화 하한 |
+| Bomb 계산 | 9 거부, 10/19/20/64 소비 버림, 소비 후 길이 기반 반지름×1.5, 사인 완급 진행도, 좌우 반대 회전·동률, 몸통 비례 피해/재사용 강화 하한 |
 | 체인 순서 | 생성·중간 절단·꼬리 절단·전체 절단·대시 중 순서/역할 보존 |
 | 몸통 수축 | 시작 위치→머리 수축, 정지 중 뭉침 유지, 이동 거리 기반 순차 전개, 몸통 수·역할 불변, 대시 신규 픽업 0 |
 | 선택 큐 | Body 2 + LevelUp 2 → Body, Body, Level, Level |
@@ -1664,7 +1667,7 @@ public OSRuleResult<OSDamageResult> ApplyDamage(in OSDamageEvent damageEvent);
 | 공통 화력 | 길이 경계값의 피해·보조탄 정확 |
 | 절단 | 피격 지점부터 꼬리 제거, HP 불변, 0.35초 방지 |
 | 몸통 수축 대시 | Space 1회, 0.5초·4.5 유닛, 장애물 관통 없음, 몸통/역할/HP 불변, 2초 재사용, 실제 경로의 자석 반경 안 기존 픽업 전량 고속 흡입 |
-| Bomb | B 1회, 10칸 미만·막힌 원 무소비 거부, `floor(N×0.10)` 꼬리 소비, 소비 후 길이의 원을 1초 주행, 경계 겹침 고유 적 1회 고정 피해, 전 구간 무적, 0.5초 원 경로 집결, 기본 10초 재사용 |
+| Bomb | B 홀드 실시간 완성 원·릴리스 발동, 10칸 미만 무소비 거부, `floor(N×0.10)` 꼬리 소비, 길이 기반 반지름×1.5의 원을 사인 완급으로 1초 주행, 장애물·경계 통과 뒤 원점 복귀, 경계 겹침 고유 적 1회 몸통 비례 피해, 전 구간 무적, 0.5초 원 경로 집결, 기본 10초 재사용 |
 | 성장 | 경험치·조각·회복 독립, 3택 중복 없음, 초반 계열 보정 |
 | 웨이브 | 3/6분 정예, 9분 예고, 10분 보스, 진행 막힘 없음 |
 | 가독성 | 적 150마리에서 머리·위험·픽업·대시 상태 구분 |

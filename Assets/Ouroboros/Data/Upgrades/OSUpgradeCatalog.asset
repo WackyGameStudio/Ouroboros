@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a96f86f3bc1ab124284acc4f7a8958bf, type: 3}
   m_Name: OSUpgradeCatalog
   m_EditorClassIdentifier: Ouroboros.Core::Ouroboros.Core.OSUpgradeCatalog
-  dataVersion: step16.1-v1
+  dataVersion: step16.2-v1
   entries:
   - id: head_damage
     category: 0

@@ -93,12 +93,16 @@ namespace Ouroboros.Core
     [CreateAssetMenu(fileName = "OSWaveSchedule", menuName = "Ouroboros/Data/Wave Schedule")]
     public sealed class OSWaveScheduleData : ScriptableObject, IOSValidatableData
     {
+        public const float DefaultSpawnDensityMultiplier = 1.2f;
+
         [SerializeField] private string dataVersion = "step02-v1";
+        [SerializeField] private float spawnDensityMultiplier = DefaultSpawnDensityMultiplier;
         [SerializeField] private List<OSWaveEntry> entries = new();
 
         [NonSerialized] private OSDataValidationReport _lastValidationReport;
 
         public string DataVersion => dataVersion;
+        public float SpawnDensityMultiplier => spawnDensityMultiplier;
         public IReadOnlyList<OSWaveEntry> Entries => entries;
         public string LastValidationMessage => _lastValidationReport?.Message ?? string.Empty;
 
@@ -112,6 +116,10 @@ namespace Ouroboros.Core
         public void CollectValidationErrors(List<string> errors, string path)
         {
             OSValidationUtility.RequireVersion(dataVersion, path, errors);
+            OSValidationUtility.RequireFinitePositive(
+                spawnDensityMultiplier,
+                $"{path}.spawnDensityMultiplier",
+                errors);
             if (entries == null || entries.Count == 0)
             {
                 errors.Add($"{path}.entries: at least one wave entry is required.");

@@ -76,8 +76,18 @@ namespace Ouroboros.Core
     {
         private readonly OSWaveScheduleEntryRuntime[] _entries;
 
-        public OSWaveScheduleRuntime(IReadOnlyList<OSWaveEntry> source)
+        public OSWaveScheduleRuntime(OSWaveScheduleData source)
+            : this(source?.Entries, source?.SpawnDensityMultiplier ?? 1f)
         {
+        }
+
+        public OSWaveScheduleRuntime(
+            IReadOnlyList<OSWaveEntry> source,
+            float spawnDensityMultiplier = 1f)
+        {
+            SpawnDensityMultiplier = float.IsFinite(spawnDensityMultiplier)
+                ? Math.Max(0.01f, spawnDensityMultiplier)
+                : 1f;
             _entries = new OSWaveScheduleEntryRuntime[source?.Count ?? 0];
             for (var index = 0; index < _entries.Length; index++)
             {
@@ -85,8 +95,13 @@ namespace Ouroboros.Core
             }
         }
 
-        public OSWaveScheduleRuntime(IReadOnlyList<OSWaveScheduleEntryRuntime> source)
+        public OSWaveScheduleRuntime(
+            IReadOnlyList<OSWaveScheduleEntryRuntime> source,
+            float spawnDensityMultiplier = 1f)
         {
+            SpawnDensityMultiplier = float.IsFinite(spawnDensityMultiplier)
+                ? Math.Max(0.01f, spawnDensityMultiplier)
+                : 1f;
             _entries = new OSWaveScheduleEntryRuntime[source?.Count ?? 0];
             for (var index = 0; index < _entries.Length; index++)
             {
@@ -102,6 +117,7 @@ namespace Ouroboros.Core
         }
 
         public int Count => _entries.Length;
+        public float SpawnDensityMultiplier { get; }
 
         public OSWaveScheduleEntryRuntime GetEntry(int index)
         {

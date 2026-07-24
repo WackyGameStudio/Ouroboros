@@ -20,6 +20,7 @@ namespace Ouroboros.Runtime
         public event Action<OSSessionState, OSSessionState> StateChanged;
         public event Action<OSSelectionRequest?> ActiveSelectionChanged;
         public event Action BodyDashRequested;
+        public event Action<bool> BombHoldChanged;
         public event Action BombRequested;
 
         public OSSessionState State { get; private set; } = OSSessionState.Boot;
@@ -382,6 +383,7 @@ namespace Ouroboros.Runtime
             }
 
             inputRouter.BodyDashRequested += HandleBodyDashRequested;
+            inputRouter.BombHoldChanged += HandleBombHoldChanged;
             inputRouter.BombRequested += HandleBombRequested;
             inputRouter.SubmitRequested += HandleSubmitRequested;
             _routerSubscribed = true;
@@ -396,6 +398,7 @@ namespace Ouroboros.Runtime
             }
 
             inputRouter.BodyDashRequested -= HandleBodyDashRequested;
+            inputRouter.BombHoldChanged -= HandleBombHoldChanged;
             inputRouter.BombRequested -= HandleBombRequested;
             inputRouter.SubmitRequested -= HandleSubmitRequested;
             _routerSubscribed = false;
@@ -409,6 +412,11 @@ namespace Ouroboros.Runtime
         private void HandleBombRequested()
         {
             TryRequestBomb();
+        }
+
+        private void HandleBombHoldChanged(bool held)
+        {
+            BombHoldChanged?.Invoke(held && State == OSSessionState.Combat);
         }
 
         private void HandleSubmitRequested()

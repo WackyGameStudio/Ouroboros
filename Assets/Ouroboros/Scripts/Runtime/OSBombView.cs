@@ -18,6 +18,8 @@ namespace Ouroboros.Runtime
         private OSBombTurnSide _turnSide;
         private float _flashRemaining;
 
+        public bool IsRingVisible => ringLine != null && ringLine.enabled;
+
         private void OnDisable()
         {
             ResetVisual();
@@ -70,6 +72,24 @@ namespace Ouroboros.Runtime
             }
 
             SetDrawingProgress(0f);
+        }
+
+        public void ShowPreview(
+            Vector2 start,
+            Vector2 forward,
+            float radius,
+            OSBombTurnSide turnSide)
+        {
+            BeginDrawing(start, forward, radius, turnSide);
+            SetDrawingProgress(1f);
+        }
+
+        public void HidePreview()
+        {
+            if (_flashRemaining <= 0f)
+            {
+                Complete();
+            }
         }
 
         public void SetDrawingProgress(float progress)

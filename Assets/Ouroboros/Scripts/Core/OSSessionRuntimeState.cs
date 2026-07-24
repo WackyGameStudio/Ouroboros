@@ -59,7 +59,8 @@ namespace Ouroboros.Core
             ConsumeRate = source.ConsumeRate;
             DrawDuration = source.DrawDuration;
             GatherDuration = source.GatherDuration;
-            Damage = source.Damage;
+            RadiusMultiplier = source.RadiusMultiplier;
+            DamagePerBody = source.DamagePerBody;
             Cooldown = source.Cooldown;
         }
 
@@ -67,7 +68,8 @@ namespace Ouroboros.Core
         public float ConsumeRate { get; }
         public float DrawDuration { get; }
         public float GatherDuration { get; }
-        public float Damage { get; }
+        public float RadiusMultiplier { get; }
+        public float DamagePerBody { get; }
         public float Cooldown { get; }
     }
 
@@ -243,6 +245,7 @@ namespace Ouroboros.Core
             ProjectileLimit = encounter.ProjectileLimit;
             PickupLimit = encounter.PickupLimit;
             VfxLimit = encounter.VfxLimit;
+            SpawnDensityMultiplier = waves.SpawnDensityMultiplier;
             EnemyDefinitions = CopyEnemies(encounter);
             WaveEntries = CopyWaves(waves.Entries);
             UpgradeDefinitions = CopyUpgrades(upgrades.Entries);
@@ -276,6 +279,7 @@ namespace Ouroboros.Core
         public int ProjectileLimit { get; }
         public int PickupLimit { get; }
         public int VfxLimit { get; }
+        public float SpawnDensityMultiplier { get; }
         public IReadOnlyList<OSEnemyRuntimeDefinition> EnemyDefinitions { get; }
         public IReadOnlyList<OSWaveRuntimeEntry> WaveEntries { get; }
         public IReadOnlyList<OSUpgradeRuntimeDefinition> UpgradeDefinitions { get; }
